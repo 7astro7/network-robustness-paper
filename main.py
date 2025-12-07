@@ -1,0 +1,10 @@
+"""
+Main entry point for network robustness experiments.
+"""
+
+from runner.run_experiment import run_default
+
+
+if __name__ == "__main__":
+    run_default()
+
