@@ -26,7 +26,13 @@ class Experiment:
         S_values, H_values, DKL_values = [], [], []
 
         for q in qs:
-            Gq = self.failure_model.random_failure(self.graph_model.G, q)
+            if hasattr(self.failure_model, "random_failure"):
+                Gq = self.failure_model.random_failure(self.graph_model.G, q)
+            elif hasattr(self.failure_model, "targeted_failure"):
+                Gq = self.failure_model.targeted_failure(self.graph_model.G, q)
+            else:
+                raise ValueError("Failure model must implement random_failure or targeted_failure.")
+
             S = Metrics.giant_component_fraction(Gq)
             H = Metrics.degree_entropy(Gq)
 
@@ -72,12 +78,42 @@ class Experiment:
         return np.gradient(H_values, qs)
 
     def plot_entropy_derivative(self, qs, dH):
-        plt.plot(qs, dH, marker='o', color='green')
+        """
+        Plot dH/dq and annotate the critical point q* = argmin(dH/dq).
+        """
+        # detect critical point
+        idx = np.argmin(dH)   # index of most negative derivative
+        qc = qs[idx]
+        dH_qc = dH[idx]
+
+        plt.figure(figsize=(6, 4))
+        plt.plot(qs, dH, marker='o', color='green', label="dH/dq")
+
+        # vertical line at q*
+        plt.axvline(qc, color='red', linestyle='--', alpha=0.7, label=f"q* = {qc:.3f}")
+
+        # highlight the point
+        plt.scatter([qc], [dH_qc], color='red', zorder=5)
+
+        # annotate the point with coordinates
+        plt.text(
+            qc, dH_qc,
+            f"  q*={qc:.3f}\n  dH/dq={dH_qc:.2f}",
+            fontsize=10,
+            verticalalignment='top',
+            color='red'
+        )
+
         plt.xlabel("Fraction Removed q")
         plt.ylabel("dH/dq")
         plt.title("Derivative of Degree Entropy")
         plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
         plt.show()
+
+        return qc, dH_qc
+
 
     def plot_full_results(self, qs, S_values, H_values, DKL_values):
         """Plot S(q), H(q), and D_KL(q) together."""
