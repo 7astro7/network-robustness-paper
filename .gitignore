@@ -3,3 +3,4 @@ __pycache__/
 *.py[cod]
 *$py.class
 todo.md
+zip_script.sh
