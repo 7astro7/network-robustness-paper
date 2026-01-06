@@ -168,3 +168,14 @@ class Metrics:
                 count = 0
 
         return None
+
+    @staticmethod
+    def detect_slope(dKL, m=3):
+        """
+        Detect first index where dKL increases for m consecutive steps.
+        """
+        for i in range(len(dKL) - m):
+            if all(dKL[i + j + 1] > dKL[i + j] for j in range(m)):
+                return i + m
+        return None
+

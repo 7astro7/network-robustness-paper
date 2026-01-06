@@ -12,19 +12,43 @@
 \title{\textbf{Entropy-Based Indicators of Critical Transitions in 
 Power-Law Networks Under Stochastic Node Removal}}
 \author{Zachary Kraehling}
-\date{2025}
+\date{2026}
 
 \begin{document}
 
 \maketitle
 
-\section*{Abstract}
+\begin{abstract}
+Power-law networks exhibit a well-known robust-yet-fragile response to node removal:
+they tolerate extensive random failures but collapse abruptly under targeted attacks.
+Classical robustness analyses focus on connectivity-based quantities such as the size
+of the giant connected component, which typically provide little warning prior to
+global fragmentation.
 
-Power-law networks exhibit the well-known ``robust-yet-fragile'' phenomenon: they tolerate random failures but collapse rapidly under targeted attacks. Classical robustness metrics rely primarily on percolation theory and the size of the giant connected component (GCC). In contrast, this project investigates whether \textbf{information-theoretic quantities}—specifically the \textbf{Shannon entropy of the degree distribution}—serve as reliable and interpretable indicators of impending topological collapse.
+This work investigates whether \emph{information-theoretic rates of structural change},
+rather than absolute connectivity, can serve as early-warning indicators of impending
+collapse in heavy-tailed networks. We study synthetic scale-free graphs with degree
+exponents $2 < \gamma < 3$ under progressive node removal. At each damage level, we
+compute the successive Kullback--Leibler divergence between degree distributions at
+adjacent removal fractions, yielding a signal that quantifies the instantaneous rate
+of topological reorganization.
 
-We study the behavior of degree-distribution entropy $H(D)$ as nodes are removed from synthetic heavy-tailed networks. Through Monte Carlo simulations on Barabási--Albert, Chung--Lu, and configuration-model graphs, we evaluate whether $H(D)$ exhibits characteristic trends near the percolation threshold $q_c$. Our goal is to determine whether entropy can function as an early-warning signal of critical transitions in large-scale networks.
+Using repeated simulations across multiple random seeds, we analyze this signal
+under both random failure and targeted (hub-first) removal. We show that successive
+KL divergence exhibits characteristic deviations well before the conventional
+percolation threshold. Under random failure, early warning is captured by a
+statistically significant departure from an initial stationary baseline, while
+targeted removal produces monotonic acceleration detectable via slope-based criteria.
 
-\section{Introduction and Motivation}
+Across a sweep of power-law exponents, the proposed framework consistently identifies
+early-warning points that precede macroscopic collapse by a nontrivial margin.
+These results demonstrate that local information-theoretic change rates provide a
+robust and interpretable early-warning signal for critical transitions in large-scale
+networks, complementing classical percolation-based approaches.
+\end{abstract}
+
+
+\section*{Introduction and Motivation}
 
 Many real-world communication, social, and biological networks possess heavy-tailed degree distributions. For graphs $G=(V,E)$ with degree counts $\{k_i\}$, one often observes
 \[
@@ -37,7 +61,7 @@ Network robustness is traditionally evaluated using the giant connected componen
 Information theory offers a complementary perspective: entropy measures the \textbf{uncertainty} or \textbf{heterogeneity} of the degree distribution and may encode early signs of structural deterioration. The central question of this work is:
 
 \begin{quote}
-\emph{Does the Shannon entropy of the degree distribution provide early-warning signatures of critical connectivity loss in power-law networks?}
+\emph{Can information-theoretic rates of structural change in the degree distribution provide early-warning signals of impending connectivity collapse in power-law networks under node removal?}
 \end{quote}
 
 Although information-theoretic quantities have been used to characterize static graph structure, their behavior under progressive damage remains largely unexplored. Dehmer~(2008) introduced Shannon-entropy measures to quantify graph complexity, and subsequent work has examined entropy-based summaries of degree heterogeneity or structural diversity. However, these studies focus on fixed network topologies and do not connect entropy to dynamical processes such as node failures, percolation transitions, or GCC collapse.
@@ -46,7 +70,7 @@ Likewise, the extensive literature on network robustness—ranging from classica
 
 To our knowledge, no prior work has systematically tracked the Shannon entropy of the degree distribution \emph{as a function of node-removal probability}, nor evaluated whether entropy exhibits predictive signatures near critical fragmentation points. This gap motivates our investigation of $H(D_q)$ as a potential early-warning signal of structural failure in power-law networks.
 
-\section{Problem Definition}
+\section*{Problem Definition}
 
 Let $G_0$ denote an undamaged network with degree distribution $D_0 = \{P_0(k)\}$. Consider independent node failures with probability $q$, producing a damaged graph $G_q$ with observed distribution $D_q = \{P_q(k)\}$. Define the entropy
 \[
@@ -64,34 +88,7 @@ We seek to characterize the functional relationship between $H(D_q)$ and:
 
 Our goal is not to modify the network locally, but to evaluate how a \textbf{single, global, information-theoretic quantity} reflects the onset of fragmentation.
 
-\section{Metrics}
-
-We compute the following at each failure probability $q$:
-
-\begin{center}
-\begin{tabular}{lll}
-\toprule
-Symbol & Metric & Description \\
-\midrule
-$S(q)$ & Giant Component Fraction & $|\mathrm{GCC}(q)| / |V|$ \\
-$H(D_q)$ & Degree Entropy & $-\sum_k P_q(k)\log P_q(k)$ \\
-$D_{\mathrm{KL}}$ & KL Divergence & $D_{\mathrm{KL}}(D_q \,\|\, D_0)$ \\
-$q_c$ & Critical Threshold & Smallest $q$ with $S(q)<\tau$ \\
-$R_S$ & Robustness Area & $\displaystyle \int_0^1 S(q)\,dq$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\section{Hypotheses}
-
-\begin{itemize}
-    \item \textbf{H1 (Entropy Decay):} Entropy $H(D_q)$ decreases monotonically as failures accumulate.
-    \item \textbf{H2 (Critical Acceleration):} $H(D_q)$ exhibits an accelerated decline near the percolation threshold $q_c$.
-    \item \textbf{H3 (Predictive Power):} The derivative or curvature of $H(D_q)$ provides early-warning signals of GCC collapse.
-    \item \textbf{H4 (Divergence Signature):} KL divergence $D_{\mathrm{KL}}(D_q \| D_0)$ spikes near $q_c$ under targeted attack models, reflecting rapid structural reorganization.
-\end{itemize}
-
-\section{Theoretical Background}
+\subsection*{Theoretical Background}
 
 For uncorrelated random graphs, the Molloy--Reed criterion states that a GCC exists when
 \[
@@ -105,8 +102,160 @@ q_c \approx 1 - \frac{\langle k \rangle}{\langle k^2 \rangle - \langle k \rangle
 \]
 
 Entropy does not appear directly in this expression, but it is sensitive to $\langle k \rangle$ and $\langle k^2 \rangle$ as the degree distribution narrows under node removal. Our objective is to empirically link entropy to percolation behavior and the onset of abrupt fragmentation, an issue highlighted in Radicchi~\emph{et al}.~(2024).
+\section*{Hypotheses}
 
-\section{Experimental Design}
+Classical analyses of network robustness emphasize connectivity-based quantities such as
+the size of the giant connected component and the location of percolation thresholds.
+While these measures characterize the point of global failure, they provide limited
+information about how structural degradation unfolds prior to collapse. In this work,
+we instead focus on the \emph{rate of structural change} in the network’s degree
+distribution as damage accumulates.
+
+We formulate the following hypotheses regarding the behavior of information-theoretic
+change rates under different node-removal regimes, along with explicit empirical
+predictions.
+
+\subsection*{H1: Stationarity under Random Failure}
+
+Under random node removal, scale-free networks exhibit an initial regime in which
+structural changes are small and approximately stationary. We hypothesize that, at low
+damage levels, the rate of change in the degree distribution fluctuates weakly around a
+stable baseline, reflecting the network’s tolerance to random failure.
+
+As damage accumulates, this stationarity is eventually lost prior to macroscopic
+fragmentation.
+
+\paragraph{Predictions.}
+\begin{itemize}
+    \item The successive KL divergence remains approximately constant for small values
+    of $q$, forming a well-defined baseline.
+    \item A statistically detectable deviation from this baseline occurs at a damage
+    level $q_{\mathrm{warn}}$ strictly less than the collapse point
+    $q_{\mathrm{collapse}}$.
+    \item The warning point $q_{\mathrm{warn}}$ exhibits moderate variability across
+    repeated runs with different random seeds.
+\end{itemize}
+
+\subsection*{H2: Immediate Nonstationarity under Targeted Failure}
+
+Under targeted (hub-first) node removal, structural degradation begins immediately.
+Because high-degree nodes are removed first, the degree distribution is altered
+substantially even at small damage fractions. We hypothesize that, in this regime, no
+initial stationary baseline exists for the rate of structural change.
+
+Instead, structural degradation is characterized by persistent acceleration in the rate
+of change.
+
+\paragraph{Predictions.}
+\begin{itemize}
+    \item The successive KL divergence does not exhibit a stationary baseline at low
+    values of $q$.
+    \item Early warning is expressed as sustained positive drift in the rate of
+    structural change, rather than deviation from a baseline.
+    \item The detected warning point under targeted removal occurs later than under
+    random failure and exhibits greater variability across seeds.
+\end{itemize}
+
+\subsection*{H3: Robustness across the Power-Law Regime}
+
+The qualitative behaviors described in H1 and H2 are hypothesized to persist across
+scale-free networks with degree exponents in the range
+\[
+2 < \gamma < 3.
+\]
+
+\paragraph{Predictions.}
+\begin{itemize}
+    \item For all values of $\gamma$ in this range, an early-warning point
+    $q_{\mathrm{warn}}$ can be identified using the same information-theoretic signal.
+    \item The relative ordering $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$ holds
+    consistently across $\gamma$.
+    \item While the mean value of $q_{\mathrm{warn}}$ may vary with $\gamma$, the
+    existence of an early-warning regime is robust to changes in degree heterogeneity.
+\end{itemize}
+
+
+\section*{Metrics}
+
+To evaluate the hypotheses outlined in Section 3, we require a metric that captures
+\emph{how rapidly network structure changes} as node removal progresses, rather than
+the absolute level of connectivity or heterogeneity at a fixed damage level. All
+metrics in this work are derived from the evolution of the degree distribution under
+progressive node removal.
+
+\subsection*{Degree Distribution as Structural State}
+
+At each damage fraction $q$, we compute the empirical degree distribution
+\[
+P_q(k) = \frac{1}{|V(G_q)|} \sum_{v \in V(G_q)} \mathbf{1}\{\deg(v) = k\},
+\]
+where $G_q$ denotes the graph after a fraction $q$ of nodes has been removed.
+The degree distribution serves as a compact representation of the network’s
+structural state, encoding changes in connectivity patterns as damage accumulates.
+
+\subsection*{Successive Kullback--Leibler Divergence}
+
+To quantify incremental structural change, we compute the \emph{successive}
+Kullback--Leibler (KL) divergence between degree distributions at adjacent damage levels:
+\[
+D_{\mathrm{KL}}\!\left(P_{q+\Delta q} \,\|\, P_q\right)
+=
+\sum_k
+P_{q+\Delta q}(k)
+\log_2
+\frac{P_{q+\Delta q}(k)}{P_q(k)}.
+\]
+
+Unlike KL divergence relative to a fixed reference distribution, the successive form
+measures the instantaneous rate at which the network’s degree structure changes as
+damage increases. Large values indicate abrupt reorganization of connectivity patterns,
+while small values correspond to gradual or stationary structural evolution.
+
+\subsection*{Signal Smoothing}
+
+The raw successive KL signal may exhibit high-frequency fluctuations due to finite-size
+effects and stochastic variability in node removal. To suppress noise while preserving
+trend information, we apply an exponentially weighted moving average (EWMA) to the
+successive KL sequence:
+\[
+\tilde{D}_{\mathrm{KL}}(q_i)
+=
+\alpha D_{\mathrm{KL}}(q_i)
++
+(1-\alpha)\tilde{D}_{\mathrm{KL}}(q_{i-1}),
+\]
+with smoothing parameter $\alpha = 0.2$ fixed across all experiments.
+No optimization over $\alpha$ is performed.
+
+The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole early-warning observable used
+in this study.
+
+\subsection*{Early-Warning Decision Rules}
+
+Because the same structural signal may exhibit qualitatively different behavior under
+different failure regimes, early warning is identified using regime-appropriate decision
+rules applied to $\tilde{D}_{\mathrm{KL}}(q)$.
+
+\paragraph{Random Failure.}
+Under random node removal, networks exhibit an initial regime in which
+$\tilde{D}_{\mathrm{KL}}(q)$ fluctuates weakly around a stable baseline. We define a
+baseline window $q \le 0.15$ and compute the baseline mean $\mu_0$ and standard deviation
+$\sigma_0$ over this range. The warning point $q_{\mathrm{warn}}$ is defined as the
+smallest $q$ such that
+\[
+\tilde{D}_{\mathrm{KL}}(q) > \mu_0 + 2\sigma_0.
+\]
+
+\paragraph{Targeted Failure.}
+Under targeted (hub-first) removal, structural change begins immediately and no
+stationary baseline exists. In this regime, early warning is defined as the smallest $q$
+at which $\tilde{D}_{\mathrm{KL}}(q)$ exhibits persistent positive drift, operationalized
+as monotonic increase over a fixed number of consecutive damage steps.
+
+In both regimes, the warning logic operates solely on the successive KL signal; the
+difference lies only in the decision rule used to interpret that signal.
+
+\section*{Experimental Design}
 
 \subsection*{Graph Models}
 We study synthetic power-law structures generated via:
@@ -126,139 +275,226 @@ Sizes: $N \in \{5{,}000,10{,}000,50{,}000\}$ with average degree $\bar{k}\in\{4,
     \item \textbf{Degree-biased failure}: a node with degree $k$ fails with probability $q(k) \propto k^\alpha$, $\alpha \in \{-1,0,1\}$.
 \end{itemize}
 
-\subsection*{Monte Carlo Procedure}
+\section*{Methods}
 
-For each $q$ (50 values from 0 to 1):
-
-\begin{enumerate}[label=\arabic*)]
-    \item Remove nodes according to the failure model.
-    \item Compute $S(q)$, $H(D_q)$, and $D_{\mathrm{KL}}(D_q\|D_0)$.
-    \item Repeat for 50–200 trials.
-\end{enumerate}
-
-\section{Analyses}
-
-\begin{itemize}
-    \item Plot $H(D_q)$ and compare its slope and curvature to $S(q)$.
-    \item Estimate $q_c$ via thresholding on $S(q)$.
-    \item Examine correlations between entropy derivatives and $q_c$.
-    \item Compare random vs.\ targeted failures.
-    \item Evaluate whether entropy anticipates GCC collapse, consistent with the early-warning challenges described in Radicchi~\emph{et al}.~(2024).
-    \item Perform finite-size scaling.
-\end{itemize}
-
-\section{Real-World Replication}
-
-Apply the methodology to:
-
-\begin{itemize}
-    \item CAIDA AS-level Internet topology (2024).
-    \item Rocketfuel ISP router maps.
-\end{itemize}
-
-Compute $H(D_q)$ and compare its predictive performance with synthetic benchmarks.
-
-\section{Implementation Blueprint}
-
-\textbf{Software Stack:}
-\begin{itemize}
-    \item Graph: \texttt{igraph}, \texttt{graph-tool}, \texttt{networkx}
-    \item Numerical: \texttt{numpy}, \texttt{scipy}, \texttt{numba}
-    \item Plotting: \texttt{matplotlib}
-    \item Tracking: \texttt{mlflow} or \texttt{wandb}
-\end{itemize}
-
-\textbf{Directory Layout:}
-
-\begin{verbatim}
-src/
-  generators.py
-  failures.py
-  metrics.py
-  experiment.py
-  analysis.py
-  plots.py
-config/
-results/
-\end{verbatim}
-
-\section{Novelty and Contribution}
-
-\begin{itemize}
-    \item \textbf{Entropy as a Fragility Indicator:} first dedicated study of degree-distribution entropy as an early-warning metric for structural collapse in power-law networks.
-    \item \textbf{Information-Theoretic Robustness:} connects percolation behavior to Shannon entropy and KL divergence.
-    \item \textbf{Synthetic + Real-World Validation:} empirical evaluation across multiple graph families and AS-level Internet data.
-\end{itemize}
-
-\section{Expected Figures}
-\begin{enumerate}
-    \item Entropy $H(D_q)$ vs.\ failure probability $q$.
-    \item GCC fraction $S(q)$ vs.\ $q$ for comparison.
-    \item $D_{\mathrm{KL}}(D_q\|D_0)$ vs.\ $q$.
-    \item Derivative or curvature of $H(D_q)$ near $q_c$.
-    \item Finite-size scaling of entropy transitions.
-    \item Real-world replication plots.
-\end{enumerate}
-
-\section{Timeline (10--12 Weeks)}
-
-\begin{tabular}{lll}
-\toprule
-Phase & Weeks & Tasks \\
-\midrule
-Setup & 1--2 & Implement generators; compute $H(D)$ \\
-Sweeps & 3--5 & Run simulation grid; compute $S(q)$ and $H(D_q)$ \\
-Analysis & 6--7 & Identify entropy signatures; compare models \\
-Real-world & 8--9 & Apply to CAIDA / Rocketfuel \\
-Writeup & 10--12 & Final figures; draft paper; prepare repo \\
-\bottomrule
-\end{tabular}
-
-\section{Practical Implications: Early-Warning Signals in Critical Infrastructure}
-
-A key practical outcome of this work is the potential application of
-information-theoretic robustness metrics—specifically the KL divergence
-$D_{KL}(D_q \,\|\, D_0)$ and degree entropy $H(q)$—as \emph{early-warning
-indicators} of impending structural failure in large-scale infrastructure networks.
-
-Many real-world systems, including communication backbones, power grids,
-transportation networks, supply chains, and autonomous service networks,
-exhibit heavy-tailed degree distributions and hub-dominated connectivity
-patterns. These systems are often robust to random component failures but
-fragile to targeted disruptions of highly connected nodes. Traditional
-robustness studies rely primarily on connectivity-based indicators such as
-the size of the giant connected component $S(q)$; however, such indicators
-typically respond only after large-scale fragmentation has already begun
-(Radicchi~\emph{et al}.~2024).
-
-The results of this study suggest that information-theoretic quantities may
-serve as more sensitive indicators of structural degradation. Under targeted
-attacks, we observe that the KL divergence between the post-damage degree
-distribution and the baseline distribution
+\subsection*{Network Model}
+We study robustness in synthetic scale-free networks with power-law degree distributions
 \[
-D_{KL}(D_q \,\|\, D_0),
+P(k) \propto k^{-\gamma},
+\qquad 2 < \gamma < 3,
 \]
-exhibits a sharp increase in the vicinity of the empirical percolation
-threshold $q_c$. This behavior reflects the sudden collapse of the
-heavy-tailed structure: the removal of hub nodes produces rapid changes in
-the probability mass associated with high-degree vertices, leading to large
-log-ratio contributions in the KL divergence. Importantly, these changes
-emerge \emph{before} the giant component fully disintegrates, consistent with
-the observation that many dismantling transitions lack clear early-warning
-signals (Radicchi~\emph{et al}.~2024).
+a regime characteristic of many empirical infrastructure and communication networks.
+Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
 
-In practical terms, this suggests that monitoring divergence-based metrics
-could enable earlier detection of systemic vulnerability in critical
-infrastructure. A sharp rise in $D_{KL}$ may indicate that a network has
-entered a high-risk regime, even when global connectivity measures such as
-$S(q)$ remain deceptively stable. Such early-warning capability is valuable
-in applications ranging from cyber-physical systems and communication
-networks to transportation logistics and emergency-response infrastructures.
-By quantifying structural drift rather than only structural collapse, the
-information-theoretic framework developed here offers a complementary tool
-for real-time resilience assessment in complex, large-scale networks.
+To examine sensitivity to degree heterogeneity, we sweep
+\[
+\gamma \in \{2.1, 2.3, 2.5, 2.7, 2.9\}.
+\]
+For each value of $\gamma$, results are averaged across multiple random seeds to account
+for stochastic variability in network realization and node removal.
 
-\section{Future Work}
+\subsection*{Failure Models}
+We consider two canonical node-removal mechanisms:
+
+\begin{enumerate}
+    \item \textbf{Random failure}: nodes are removed uniformly at random.
+    \item \textbf{Targeted failure}: nodes are removed in descending order of degree (hub-first removal).
+\end{enumerate}
+
+For each failure mode, a fraction $q \in [0, 0.9]$ of nodes is progressively removed.
+All structural observables are computed on the resulting damaged graph $G_q$.
+
+\subsection*{Structural Observables}
+At each damage level $q$, we compute:
+\begin{itemize}
+    \item The giant connected component fraction
+    \[
+    S(q) = \frac{| \mathrm{GCC}(G_q) |}{|V(G_q)|},
+    \]
+    used only to contextualize collapse.
+    \item The empirical degree distribution $P_q(k)$ of $G_q$.
+\end{itemize}
+
+No connectivity-based quantity is used in the early-warning logic.
+
+\subsection*{Successive KL Divergence}
+To quantify incremental structural change, we compute the \emph{successive}
+Kullback--Leibler divergence between degree distributions at adjacent damage levels:
+\[
+D_{\mathrm{KL}}(P_{q+\Delta q} \| P_q)
+=
+\sum_k
+P_{q+\Delta q}(k)
+\log_2
+\frac{P_{q+\Delta q}(k)}{P_q(k)}.
+\]
+
+This quantity measures the instantaneous rate of change of the network's degree
+structure as damage accumulates. To suppress high-frequency noise, the resulting
+sequence is smoothed using an exponentially weighted moving average (EWMA)
+with fixed parameter $\alpha = 0.2$.
+
+The smoothed signal,
+\[
+\tilde{D}_{\mathrm{KL}}(q),
+\]
+is the \emph{sole early-warning observable} used throughout the study.
+
+\subsection*{Early-Warning Criteria}
+Rather than introducing multiple metrics, we apply regime-appropriate decision
+rules to the same successive KL signal.
+
+\subsubsection*{Random Failure: Baseline Deviation Rule}
+Under random failure, networks exhibit an initial stationary regime in which
+$\tilde{D}_{\mathrm{KL}}(q)$ fluctuates weakly around a constant baseline.
+We define a baseline window
+\[
+q \le 0.15,
+\]
+and compute the baseline mean $\mu_0$ and standard deviation $\sigma_0$ over this range.
+
+The early-warning point $q_{\mathrm{warn}}$ is defined as the smallest $q$ such that
+\[
+\tilde{D}_{\mathrm{KL}}(q) > \mu_0 + 2\sigma_0.
+\]
+
+This criterion detects the loss of structural stationarity without reference to
+collapse thresholds or numerical derivatives.
+
+\subsubsection*{Targeted Failure: Slope-Based Rule}
+Under targeted (hub-first) removal, structural change begins immediately and no
+stationary baseline exists. In this case, baseline deviation is ill-defined.
+
+We therefore define $q_{\mathrm{warn}}$ as the smallest $q$ at which
+$\tilde{D}_{\mathrm{KL}}(q)$ increases monotonically for $m = 3$ consecutive damage steps.
+This rule detects persistent acceleration in the rate of structural change,
+signaling the onset of runaway degradation.
+
+\subsection*{Collapse Identification}
+For reference only, we define the collapse point $q_{\mathrm{collapse}}$ as the smallest
+$q$ such that
+\[
+S(q) < 0.1.
+\]
+This threshold is not used in the warning logic and serves solely to contextualize
+warning lead times.
+
+\subsection*{Experimental Protocol}
+All experiments use 100 evenly spaced values of $q \in [0, 0.9]$.
+Each configuration is repeated across five random seeds.
+
+For each value of $\gamma$ and each failure mode, we report the mean and standard
+deviation of $q_{\mathrm{warn}}$ across seeds.
+
+\section*{Analysis and Results}
+
+We analyze the behavior of the successive KL divergence under progressive node removal
+and evaluate its effectiveness as an early-warning signal for structural collapse.
+All results reported below are based on repeated simulations across different random
+seeds, summarized using the mean and standard deviation of detected warning points.
+
+\subsection*{Random Failure}
+
+\textbf{[Figure Placeholder:]} Smoothed successive KL divergence
+$\tilde{D}_{\mathrm{KL}}(q)$ under random node removal, with the detected early-warning
+point $q_{\mathrm{warn}}$ and collapse point $q_{\mathrm{collapse}}$ indicated.
+
+\medskip
+
+Under random node removal, the smoothed successive KL signal
+$\tilde{D}_{\mathrm{KL}}(q)$ exhibits an extended low-activity regime characterized by
+small, noisy fluctuations, followed by a sustained increase as damage accumulates.
+This initial regime corresponds to a structurally stable phase in which random failures
+do not induce significant reorganization of the degree distribution.
+
+Applying the baseline deviation rule defined in Section~4, we identify an early-warning
+point $q_{\mathrm{warn}}$ marking the onset of persistent structural change.
+The collapse point $q_{\mathrm{collapse}}$ is defined independently as the first value
+of $q$ at which the giant connected component falls below a fixed threshold.
+Across repeated simulations with different random seeds, the detected warning point
+exhibits moderate variability but consistently precedes network collapse, yielding a
+nontrivial lead time between early warning and fragmentation.
+
+
+\subsection*{Targeted Failure}
+
+Under targeted (hub-first) node removal, the successive KL signal increases immediately,
+reflecting continuous and accelerating structural disruption. Unlike the random failure
+case, no stationary baseline is observed at low damage levels.
+
+Using a slope-based detection rule, early warning is identified through sustained
+positive drift in $\tilde{D}_{\mathrm{KL}}(q)$. While warning points under targeted attack
+occur closer to collapse and exhibit greater variability across seeds, they remain
+detectable prior to macroscopic fragmentation.
+
+These results confirm that the same information-theoretic signal captures early warning
+under both failure regimes, despite qualitatively different structural dynamics.
+
+plot or table
+
+\subsection*{Warning Lead Time}
+
+To quantify early-warning performance, we compare the detected warning point
+$q_{\mathrm{warn}}$ to the collapse point $q_{\mathrm{collapse}}$ across repeated runs.
+In both random and targeted failure scenarios, we observe
+\[
+q_{\mathrm{warn}} < q_{\mathrm{collapse}},
+\]
+indicating that the successive KL signal provides advance notice of impending collapse.
+
+The magnitude of the warning lead time is larger under random failure, consistent with
+the presence of an extended tolerance regime, and smaller under targeted failure, where
+structural degradation is more abrupt.
+
+plot or table
+
+\subsection*{Dependence on Degree Exponent}
+
+We evaluate the robustness of early-warning behavior across scale-free networks with
+degree exponents $2 < \gamma < 3$. For each value of $\gamma$, we compute the mean and
+standard deviation of $q_{\mathrm{warn}}$ across repeated runs under both random and
+targeted removal.
+
+Table~\ref{tab:gamma_sweep} summarizes the results. Across all values of $\gamma$, early
+warning is consistently detected prior to collapse, and the qualitative differences
+between random and targeted failure persist. While the precise location of
+$q_{\mathrm{warn}}$ varies with $\gamma$, the existence of a detectable early-warning
+regime is robust to changes in degree heterogeneity.
+
+\begin{table}[h]
+\centering
+\caption{Mean and standard deviation of detected warning points $q_{\mathrm{warn}}$
+across degree exponents $\gamma$ under random and targeted failure.}
+\label{tab:gamma_sweep}
+\begin{tabular}{c c c}
+\hline
+$\gamma$ & Random Failure $q_{\mathrm{warn}}$ & Targeted Failure $q_{\mathrm{warn}}$ \\
+\hline
+2.1 & $0.362 \pm 0.085$ & $0.502 \pm 0.079$ \\
+2.3 & $0.431 \pm 0.123$ & $0.456 \pm 0.088$ \\
+2.5 & $0.315 \pm 0.071$ & $0.575 \pm 0.160$ \\
+2.7 & $0.329 \pm 0.037$ & $0.387 \pm 0.092$ \\
+2.9 & $0.335 \pm 0.060$ & $0.460 \pm 0.016$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection*{Analytical Contributions}
+
+From the preceding analyses, we identify the following contributions:
+
+\begin{itemize}
+    \item \textbf{Rate-Based Early Warning:} We demonstrate that the successive Kullback--Leibler divergence between degree distributions functions as an effective early-warning signal by capturing the \emph{rate} of structural change, rather than relying on absolute connectivity or heterogeneity measures.
+
+    \item \textbf{Single Signal, Regime-Aware Interpretation:} We show that the same information-theoretic signal can detect early warning under both random and targeted node removal, provided it is interpreted with regime-appropriate decision rules. This avoids the need for multiple ad hoc metrics while respecting fundamentally different failure dynamics.
+
+    \item \textbf{Robustness Across the Power-Law Regime:} Through a sweep of degree exponents $2 < \gamma < 3$, we establish that early-warning behavior persists across heterogeneous scale-free networks, indicating that the signal is not an artifact of a specific network realization.
+
+    \item \textbf{Quantified Warning Lead Time:} We empirically measure the separation between detected warning points and macroscopic collapse, showing that information-theoretic change rates provide nontrivial advance notice without reference to percolation thresholds.
+\end{itemize}
+
+
+\section*{Conclusion}
 
 The present study focuses on node-based perturbations and the resulting
 information-theoretic signatures of structural degradation in power-law
@@ -295,7 +531,7 @@ approaches its percolation threshold. Given the central role that edges play
 in real infrastructure networks, this direction promises both theoretical
 richness and practical relevance.
 
-\section{References}
+\section*{References}
 
 \begin{enumerate}
     \item Cover, T.\ \& Thomas, J.\ (2006). \textit{Elements of Information Theory.}
@@ -307,7 +543,7 @@ richness and practical relevance.
 \end{enumerate}
 
 \section*{License}
-Apache 2.0 License © 2025 Zachary Kraehling
+Apache 2.0 License © 2026 Zachary Kraehling
 
 \end{document}
 

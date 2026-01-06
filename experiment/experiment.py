@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib
+from models.graph_model import GraphModel
+from models.metrics import Metrics
 # Try to use an interactive backend for display
 try:
     matplotlib.use('TkAgg')
@@ -312,3 +314,30 @@ class Experiment:
         plt.tight_layout()
         plt.show()
 
+    def plot_successive_KL_overlay(self, qs, seeds, alpha=0.2):
+        """
+        Overlay successive-KL curves across multiple seeds.
+        """
+        plt.figure(figsize=(6, 4))
+        qs_mid = 0.5 * (qs[:-1] + qs[1:])
+
+        for seed in seeds:
+            np.random.seed(seed)
+
+            graph = GraphModel(n=self.graph_model.n, gamma=self.graph_model.gamma)
+            failure = self.failure_model.__class__()
+            experiment = Experiment(graph, failure)
+
+            _, _, _, Pq_values = experiment.sweep(qs)
+            dKL = Metrics.successive_kl(Pq_values)
+            dKL_smooth = experiment.ewma(dKL, alpha=alpha)
+
+            plt.plot(qs_mid, dKL_smooth, alpha=0.6, label=f"seed {seed}")
+
+        plt.xlabel("q")
+        plt.ylabel("Successive KL (EWMA)")
+        plt.title("Successive KL across seeds")
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
