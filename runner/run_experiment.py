@@ -42,16 +42,6 @@ def run_default(seed=None, gamma_override=None):
     )
     q_collapse = qs[collapse_idx] if collapse_idx is not None else None
 
-    # --- visualization only ---
-#    experiment.plot_successive_KL(
-#        qs,
-#        dKL_successive_smooth,
-#        q_warn,
-#        q_collapse
-#    )
-
-#    experiment.plot_successive_KL_overlay(qs, seeds=[0,1,2,3,4])
-
     return q_warn, q_collapse
 
 
@@ -68,13 +58,8 @@ def run_targeted():
 
     qs = np.linspace(0, 0.5, 20)  # targeted failure collapses earlier
 
-    S_values, H_values, DKL_values, Pq_values = experiment.sweep(qs)
-    experiment.plot_full_results(qs, S_values, H_values, DKL_values)
+    _, _, _, _ = experiment.sweep(qs)
 
-    dH = experiment.compute_derivative(qs, H_values)
-#    qc, _ = experiment.plot_entropy_derivative(qs, dH)
-
-    print(f"Entropy critical point under targeted attack: q* = {qc:.4f}")
 
 def run_targeted_warning(seed=None, gamma_override=None):
     if seed is not None:

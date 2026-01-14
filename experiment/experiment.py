@@ -23,27 +23,13 @@ class Experiment:
         self.graph_model = graph_model
         self.failure_model = failure_model
 
-    def sweep(self, qs):
-        """
-        Compute S(q) and H(q) for a sequence of q values.
 
-        Returns
-        -------
-        tuple of lists
-            S_values : list of giant component fractions
-            H_values : list of entropies (in bits)
-            DKL_values : list of KL divergences (in bits)
-        """
-        S_values, H_values, DKL_values = [], [], [] 
+    def sweep(self, qs):
+        S_values, H_values = [], []
         Pq_values = []
 
         for q in qs:
-            if hasattr(self.failure_model, "random_failure"):
-                Gq = self.failure_model.random_failure(self.graph_model.G, q)
-            elif hasattr(self.failure_model, "targeted_failure"):
-                Gq = self.failure_model.targeted_failure(self.graph_model.G, q)
-            else:
-                raise ValueError("Failure model must implement random_failure or targeted_failure.")
+            Gq = self.failure_model.apply(self.graph_model.G, q)
 
             S = Metrics.giant_component_fraction(Gq)
             H = Metrics.degree_entropy(Gq)
@@ -53,10 +39,8 @@ class Experiment:
 
             Pq = self.graph_model._degree_distribution(Gq)
             Pq_values.append(Pq)
-            DKL = Metrics.kl_divergence(Pq, self.graph_model.P0)
-            DKL_values.append(DKL)
 
-        return S_values, H_values, DKL_values, Pq_values
+        return S_values, H_values, Pq_values
 
     def successive_kl(self, Pq_values: list) -> np.ndarray:
         """
@@ -79,7 +63,6 @@ class Experiment:
         for i in range(1, len(signal)):
             out[i] = alpha * signal[i] + (1 - alpha) * out[i-1]
         return out
-
 
     def plot_successive_KL(
         self,

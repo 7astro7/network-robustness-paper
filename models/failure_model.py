@@ -1,53 +1,77 @@
 import numpy as np
+import networkx as nx
+from abc import ABC, abstractmethod
 
 
-class FailureModel:
-    """Implements node-removal processes (failures)."""
+class FailureModel(ABC):
+    """
+    Abstract base class for node-removal mechanisms.
 
-    def random_failure(self, G, q):
+    A failure model defines a mapping
+        (G, q) -> G_q
+    where a fraction q of nodes is removed from G.
+    """
+
+    @abstractmethod
+    def apply(self, G: nx.Graph, q: float) -> nx.Graph:
         """
-        Apply uniform random node removal.
+        Apply node removal to graph G.
 
         Parameters
         ----------
-        G : networkx.Graph
-            The graph to damage.
+        G : nx.Graph
+            Original (undamaged) graph.
         q : float
-            Fraction of nodes removed.
+            Fraction of nodes to remove, 0 <= q <= 1.
 
         Returns
         -------
-        networkx.Graph
-            Damaged graph.
+        nx.Graph
+            Damaged graph G_q.
         """
-        G2 = G.copy()
-        n_remove = int(q * G.number_of_nodes())
-        to_remove = np.random.choice(G.nodes(), size=n_remove, replace=False)
-        G2.remove_nodes_from(to_remove)
-        return G2
+        pass
 
-    def targeted_failure(self, G, q):
-        """
-        Remove the top q fraction of nodes ranked by degree (highest first).
 
-        Parameters
-        ----------
-        q : float
-            Fraction of nodes to remove.
+class RandomFailure(FailureModel):
+    """
+    Uniform random node removal.
+    """
 
-        Returns
-        -------
-        networkx.Graph
-            Damaged graph after targeted hub removal.
-        """
-        G2 = G.copy()
-        n_remove = int(q * G.number_of_nodes())
+    def apply(self, G: nx.Graph, q: float) -> nx.Graph:
+        n = G.number_of_nodes()
+        n_remove = int(q * n)
 
-        # sort nodes by degree descending
-        degrees = dict(G.degree())
-        sorted_nodes = sorted(degrees, key=degrees.get, reverse=True)
+        if n_remove == 0:
+            # Return a shallow copy to avoid mutation
+            return G.copy()
 
-        to_remove = sorted_nodes[:n_remove]
-        G2.remove_nodes_from(to_remove)
+        removed = set(
+            np.random.choice(list(G.nodes()), size=n_remove, replace=False)
+        )
 
-        return G2
+        # Induce subgraph on remaining nodes (much faster than copy+remove)
+        remaining = set(G.nodes()) - removed
+        return G.subgraph(remaining).copy()
+
+
+class TargetedFailure(FailureModel):
+    """
+    Degree-based (hub-first) node removal.
+    """
+
+    def apply(self, G: nx.Graph, q: float) -> nx.Graph:
+        n = G.number_of_nodes()
+        n_remove = int(q * n)
+
+        if n_remove == 0:
+            return G.copy()
+
+        # Sort nodes by degree (descending)
+        nodes_sorted = sorted(
+            G.degree, key=lambda x: x[1], reverse=True
+        )
+
+        removed = {node for node, _ in nodes_sorted[:n_remove]}
+        remaining = set(G.nodes()) - removed
+
+        return G.subgraph(remaining).copy()

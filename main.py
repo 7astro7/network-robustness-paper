@@ -1,10 +1,10 @@
-from runner.run_experiment import gamma_sweep_table
+from runner.gamma_sweep import GammaSweepExperiment
+from runner.export import export_gamma_table
 
 if __name__ == "__main__":
-    gammas = [2.1, 2.3, 2.5, 2.7, 2.9]
-    seeds = [0, 1, 2, 3, 4]
-
-    rows = gamma_sweep_table(gammas, seeds)
+    experiment = GammaSweepExperiment()
+    rows = experiment.run()
+    export_gamma_table(rows)
 
     print("γ | Random q_warn (mean ± std) | Targeted q_warn (mean ± std)")
     for g, mr, sr, mt, st in rows:
