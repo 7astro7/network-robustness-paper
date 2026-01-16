@@ -35,27 +35,23 @@ class Metrics:
         return -(P * np.log2(P)).sum()
 
     @staticmethod
-    def kl_divergence(Pq, P0):
+    def kl_divergence(P: np.ndarray, Q: np.ndarray) -> float:
         """
-        Compute KL divergence D_KL(Pq || P0) in bits.
+        Compute KL divergence D_KL(P || Q) in bits for discrete distributions.
 
-        Both Pq and P0 should be dicts mapping degree -> probability.
-
-        Returns
-        -------
-        float
-            KL divergence in bits.
+        P and Q must be 1D numpy arrays of the same length and sum to 1.
+        (Your epsilon smoothing guarantees Q > 0 everywhere, so this is stable.)
         """
-        # align supports
-        all_k = set(Pq.keys()) | set(P0.keys())
+        P = np.asarray(P, dtype=float)
+        Q = np.asarray(Q, dtype=float)
 
-        D = 0.0
-        for k in all_k:
-            p = Pq.get(k, 0.0)
-            q = P0.get(k, 0.0)
-            if p > 0 and q > 0:
-                D += p * np.log2(p / q)
-        return D
+        if P.shape != Q.shape:
+            raise ValueError(f"KL shape mismatch: P{P.shape} vs Q{Q.shape}")
+
+        # Only sum where P > 0. If you used eps, this includes everything.
+        mask = P > 0
+        return float(np.sum(P[mask] * np.log2(P[mask] / Q[mask])))
+
 
     @staticmethod
     def successive_kl(distributions):

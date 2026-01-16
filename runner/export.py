@@ -1,53 +1,69 @@
-import pandas as pd
+# runner/export.py
+from __future__ import annotations
+
+from pathlib import Path
 import numpy as np
+import pandas as pd
 
-def export_gamma_table(rows, path="paper/gamma_sweep.tex"):
+
+def export_gamma_table(rows, out_path: str = "paper/gamma_sweep.tex") -> None:
     """
-    rows: list of tuples
-          (gamma, mean_random, std_random, mean_targeted, std_targeted)
+    Export the gamma sweep table to LaTeX.
+
+    Expected row formats:
+      - old: (gamma, mr, sr, mt, st)
+      - new: (gamma, mr, sr, nr, mt, st, nt)
     """
-    df = pd.DataFrame(
-        rows,
-        columns=[
-            r"$\gamma$",
-            r"Random Failure $q_{\mathrm{warn}}$",
-            r"Random Std",
-            r"Targeted Failure $q_{\mathrm{warn}}$",
-            r"Targeted Std",
-        ]
-    )
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Format mean ± std as a single column
-    df[r"Random Failure $q_{\mathrm{warn}}$"] = (
-        df[r"Random Failure $q_{\mathrm{warn}}$"]
-        .map("{:.3f}".format)
-        + r" $\pm$ "
-        + df["Random Std"].map("{:.3f}".format)
-    )
+    if not rows:
+        raise ValueError("export_gamma_table: rows is empty")
 
-    df[r"Targeted Failure $q_{\mathrm{warn}}$"] = (
-        df[r"Targeted Failure $q_{\mathrm{warn}}$"]
-        .map("{:.3f}".format)
-        + r" $\pm$ "
-        + df["Targeted Std"].map("{:.3f}".format)
-    )
+    k = len(rows[0])
+    if k == 5:
+        cols = ["gamma", "random_mean", "random_std", "targeted_mean", "targeted_std"]
+        df = pd.DataFrame(rows, columns=cols)
+        df["random_n"] = np.nan
+        df["targeted_n"] = np.nan
+    elif k == 7:
+        cols = ["gamma", "random_mean", "random_std", "random_n",
+                "targeted_mean", "targeted_std", "targeted_n"]
+        df = pd.DataFrame(rows, columns=cols)
+    else:
+        raise ValueError(f"export_gamma_table: unsupported row length {k} (expected 5 or 7)")
 
-    df = df[[r"$\gamma$", 
-             r"Random Failure $q_{\mathrm{warn}}$", 
-             r"Targeted Failure $q_{\mathrm{warn}}$"]]
+    def fmt_cell(mean, std, n):
+        if pd.isna(mean) or pd.isna(std):
+            # if your detector returns NaN, show a dash
+            return r"--"
+        if pd.isna(n):
+            return f"{mean:.3f} $\\pm$ {std:.3f}"
+        return f"{mean:.3f} $\\pm$ {std:.3f} [{int(n)}]"
 
-    latex = df.to_latex(
-        index=False,
-        escape=False,
-        caption=(
-            "Mean and standard deviation of detected warning points "
-            "$q_{\\mathrm{warn}}$ across degree exponents $\\gamma$ "
-            "under random and targeted failure."
-        ),
-        label="tab:gamma_sweep",
-        column_format="c c c",
-    )
+    df["random_cell"] = [
+        fmt_cell(m, s, n) for m, s, n in zip(df["random_mean"], df["random_std"], df["random_n"])
+    ]
+    df["targeted_cell"] = [
+        fmt_cell(m, s, n) for m, s, n in zip(df["targeted_mean"], df["targeted_std"], df["targeted_n"])
+    ]
 
-    with open(path, "w") as f:
-        f.write(latex)
+    lines = []
+    lines.append(r"\begin{table}[H]")
+    lines.append(r"\centering")
+    lines.append(r"\caption{Mean and standard deviation of detected warning points $q_{\mathrm{warn}}$ across $\gamma$ under random and targeted removal.}")
+    lines.append(r"\label{tab:gamma_sweep}")
+    lines.append(r"\begin{tabular}{c c c}")
+    lines.append(r"\toprule")
+    lines.append(r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [n] & Targeted $q_{\mathrm{warn}}$ (mean $\pm$ std) [n] \\")
+    lines.append(r"\midrule")
 
+    for _, r in df.iterrows():
+        lines.append(f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_cell']} \\\\")
+
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    lines.append("")
+
+    out_path.write_text("\n".join(lines))

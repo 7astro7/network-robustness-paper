@@ -23,10 +23,13 @@ class Experiment:
         self.graph_model = graph_model
         self.failure_model = failure_model
 
-
     def sweep(self, qs):
         S_values, H_values = [], []
         Pq_values = []
+
+        # Fixed degree support across the entire sweep (based on the initial graph)
+        k_max0 = max(dict(self.graph_model.G.degree()).values())
+        eps = 1e-12
 
         for q in qs:
             Gq = self.failure_model.apply(self.graph_model.G, q)
@@ -37,10 +40,12 @@ class Experiment:
             S_values.append(S)
             H_values.append(H)
 
-            Pq = self.graph_model._degree_distribution(Gq)
+            # Fixed support + epsilon smoothing (requires updated GraphModel._degree_distribution)
+            Pq = self.graph_model._degree_distribution(Gq, k_max=k_max0, eps=eps)
             Pq_values.append(Pq)
 
         return S_values, H_values, Pq_values
+
 
     def successive_kl(self, Pq_values: list) -> np.ndarray:
         """

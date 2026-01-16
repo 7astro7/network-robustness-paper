@@ -1,6 +1,8 @@
 \documentclass[12pt]{article}
 \usepackage[a4paper, margin=1in]{geometry}
 \usepackage{amsmath, amssymb, amsfonts}
+\usepackage{float}
+\usepackage{placeins}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{hyperref}
@@ -201,7 +203,7 @@ scale-free networks with degree exponents in the range
 
 \section*{Metrics}
 
-To evaluate the hypotheses outlined in Section 3, we require a metric that captures
+To evaluate the hypotheses outlined previously we require a metric that captures
 how rapidly network structure changes as node removal progresses, rather than
 the absolute level of connectivity or heterogeneity at a fixed damage level. All
 metrics in this work are derived from the evolution of the degree distribution under
@@ -227,32 +229,51 @@ D_{\mathrm{KL}}\!\left(P_{q+\Delta q} \,\|\, P_q\right)
 \sum_k
 P_{q+\Delta q}(k)
 \log_2
-\frac{P_{q+\Delta q}(k)}{P_q(k)}.
+\frac{P_{q+\Delta q}(k)}{P_q(k)}, 
 \]
+where $\Delta q$ denotes the removal increment between successive damage levels (here $\Delta q = 0.9/99$ since we evaluate 100 evenly spaced values of $q \in [0,0.9]$).
 
 Unlike KL divergence relative to a fixed reference distribution, the successive form
 measures the instantaneous rate at which the network’s degree structure changes as
 damage increases. Large values indicate abrupt reorganization of connectivity patterns,
 while small values correspond to gradual or stationary structural evolution.
+For reference, we also define the degree entropy at damage level $q$ as
+\[
+H(q) = -\sum_k P_q(k)\log_2 P_q(k),
+\]
+which summarizes degree heterogeneity at a fixed structural state.
+
+While degree entropy $H(q)$ summarizes heterogeneity of the degree distribution at a fixed damage level,
+successive Kullback--Leibler divergence explicitly encodes \emph{change} between successive states of damage.
+Consequently, KL divergence can be sensitive to structural reorganization even in regimes where entropy evolves gradually, motivating its use as a complementary indicator for early warning.
+
+\paragraph{Support and numerical stability.}
+Because $P_q(k)$ is estimated empirically from a finite graph, some degree values may attain zero observed probability at intermediate damage levels. To ensure $D_{\mathrm{KL}}(P_{q+\Delta q}\,\|\,P_q)$ is well-defined across all $q$, we evaluate degree distributions on a fixed discrete support for each run and apply a small additive regularization $P_q(k)\leftarrow P_q(k)+\varepsilon$ before normalization, with $\varepsilon = 10^{-12}$.
 
 \subsection*{Signal Smoothing}
 
-The raw successive KL signal may exhibit high-frequency fluctuations due to finite-size
-effects and stochastic variability in node removal. To suppress noise while preserving
-trend information, we apply an exponentially weighted moving average (EWMA) to the
-successive KL sequence:
+The raw successive KL divergence may exhibit high-frequency fluctuations arising from
+finite-size effects and stochastic variability in node removal. To suppress such noise
+while preserving trend information, we apply an exponentially weighted moving average
+(EWMA) to the successive KL sequence:
 \[
 \tilde{D}_{\mathrm{KL}}(q_i)
 =
 \alpha D_{\mathrm{KL}}(q_i)
 +
-(1-\alpha)\tilde{D}_{\mathrm{KL}}(q_{i-1}),
+(1-\alpha)\tilde{D}_{\mathrm{KL}}(q_{i-1}).
 \]
-with smoothing parameter $\alpha = 0.2$ fixed across all experiments.
-No optimization over $\alpha$ is performed.
+
+The smoothing parameter is fixed at $\alpha = 0.2$ across all experiments. 
+A brief sensitivity check indicates that the detected warning point can shift with $\alpha$, particularly under targeted removal where the signal is nonstationary and the drift-based rule is sensitive to short-run fluctuations. Accordingly, we fix $\alpha=0.2$ as a moderate smoothing choice and report results using this single pre-specified value rather than selecting $\alpha$ post hoc.
+Although the update rule depends only on the previous smoothed value, the EWMA 
+assigns exponentially decaying weight to past observations, 
+corresponding to an effective window
+length of approximately $1/\alpha$. No optimization over $\alpha$ is performed.
 
 The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole early-warning observable used
-in this study.
+throughout this study.
+
 
 \subsection*{Early-Warning Decision Rules}
 
@@ -261,9 +282,9 @@ different failure regimes, early warning is identified using regime-appropriate 
 rules applied to $\tilde{D}_{\mathrm{KL}}(q)$.
 
 \paragraph{Random Failure.}
-Under random node removal, networks exhibit an initial regime in which
-$\tilde{D}_{\mathrm{KL}}(q)$ fluctuates weakly around a stable baseline. We define a
-baseline window $q \le 0.15$ and compute the baseline mean $\mu_0$ and standard deviation
+Under random node removal, early warning is identified by detecting the loss of an
+initial low-activity regime in which $\tilde{D}_{\mathrm{KL}}(q)$ fluctuates weakly around
+a baseline. We define a baseline window $q \le 0.15$ and compute the baseline mean $\mu_0$ and standard deviation
 $\sigma_0$ over this range. The warning point $q_{\mathrm{warn}}$ is defined as the
 smallest $q$ such that
 \[
@@ -271,33 +292,55 @@ smallest $q$ such that
 \]
 
 \paragraph{Targeted Failure.}
-Under targeted (hub-first) removal, structural change begins immediately and no
-stationary baseline exists. In this regime, early warning is defined as the smallest $q$
-at which $\tilde{D}_{\mathrm{KL}}(q)$ exhibits persistent positive drift, operationalized
-as monotonic increase over a fixed number of consecutive damage steps.
+Under targeted (hub-first) removal, structural change begins immediately and no stationary
+baseline exists. Because the successive KL signal compares adjacent damage levels, it is
+naturally indexed on the midpoint grid
+\[
+q_{i+\frac12}=\frac{q_i+q_{i+1}}{2}.
+\]
+We define the warning point $q_{\mathrm{warn}}$ as the smallest midpoint $q_{i+\frac12}$
+with $q_{i+\frac12}\ge q_0$ such that the smoothed successive KL divergence exhibits
+persistent positive drift over a window of $m$ increments. Operationally, we require a
+net increase over $m$ successive increments,
+\[
+\tilde D_{\mathrm{KL}}(q_{i+\frac12+m})-\tilde D_{\mathrm{KL}}(q_{i+\frac12})>0,
+\]
+while allowing up to a small number of local violations of strict monotonicity within the
+window to reduce sensitivity to single-step noise. Throughout this study we use
+$q_0=0.15$ and $m=3$.
 
 In both regimes, the warning logic operates solely on the successive KL signal; the
 difference lies only in the decision rule used to interpret that signal.
 
 \section*{Experimental Design}
 
-\subsection*{Graph Models}
-We study synthetic power-law structures generated via:
+Our experimental design isolates how information-theoretic change rates behave under
+progressive network damage across different structural regimes. We vary (i) the degree
+heterogeneity of the underlying network and (ii) the node-removal mechanism, while
+holding all detection logic fixed. For each configuration, we measure the separation
+between an information-theoretic warning point and the onset of macroscopic connectivity
+collapse.
 
-\begin{itemize}
-    \item Barabási--Albert (BA) preferential attachment.
-    \item Chung--Lu (CL) expected-degree graphs with specified $\gamma$.
-    \item Configuration Model (CM) with exact degree sequence control.
-\end{itemize}
+\subsection*{Graph Model}
 
-Sizes: $N \in \{5{,}000,10{,}000,50{,}000\}$ with average degree $\bar{k}\in\{4,8\}$.
+All networks studied in this work are generated using the Chung--Lu expected-degree
+model with power-law degree sequences. This choice isolates the role of degree
+heterogeneity while avoiding degree--degree correlations and growth effects inherent to
+other generative mechanisms.
 
-\subsection*{Failure Models}
+While other scale-free constructions such as preferential attachment or configuration
+models are widely used, we restrict attention here to the Chung--Lu ensemble to ensure
+that observed effects arise from distributional change rather than model-specific
+correlations.
 
-\begin{itemize}
-    \item Uniform failure: each node is removed with probability $q$.
-    \item Degree-biased failure: a node with degree $k$ fails with probability $q(k) \propto k^\alpha$, $\alpha \in \{-1,0,1\}$.
-\end{itemize}
+\subsection*{Failure Regimes}
+
+We consider two node-removal regimes: (i) random failure, in which nodes are removed
+uniformly at random, and (ii) targeted failure, in which nodes are removed in descending
+order of degree (hub-first removal). In both cases, node removal proceeds incrementally
+as a function of the removal fraction $q$, and all observables are evaluated on the
+resulting damaged graph $G_q$.
+
 
 \section*{Methods}
 
@@ -312,13 +355,13 @@ Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
 
 To examine sensitivity to degree heterogeneity, we sweep
 \[
-\gamma \in \{2.1, 2.3, 2.5, 2.7, 2.9\}.
+\gamma \in \{2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9\}.
 \]
 For each value of $\gamma$, results are averaged across multiple random seeds to account
 for stochastic variability in network realization and node removal.
 
 \subsection*{Failure Models}
-We consider two canonical node-removal mechanisms:
+The two failure regimes introduced in the Experimental Design section are implemented as follows.
 
 \begin{enumerate}
     \item Random failure: nodes are removed uniformly at random.
@@ -385,14 +428,22 @@ The early-warning point $q_{\mathrm{warn}}$ is defined as the smallest $q$ such 
 This criterion detects the loss of structural stationarity without reference to
 collapse thresholds or numerical derivatives.
 
-\subsubsection*{Targeted Failure: Slope-Based Rule}
+\subsubsection*{Targeted Failure: Drift Rule on Midpoint Support}
 Under targeted (hub-first) removal, structural change begins immediately and no
-stationary baseline exists. In this case, baseline deviation is ill-defined.
+stationary baseline exists. Because successive KL is computed between adjacent damage
+levels, we index the smoothed signal on midpoints
+\[
+q_{i+\frac12}=\frac{q_i+q_{i+1}}{2}.
+\]
+We define the warning point as the smallest midpoint $q_{i+\frac12}$ for which
+$\tilde{D}_{\mathrm{KL}}$ exhibits persistent positive drift over $m$ increments, i.e.,
+net increase over a window of length $m+1$ while allowing occasional small local
+violations due to stochastic noise.
 
-We therefore define $q_{\mathrm{warn}}$ as the smallest $q$ at which
-$\tilde{D}_{\mathrm{KL}}(q)$ increases monotonically for $m = 3$ consecutive damage steps.
-This rule detects persistent acceleration in the rate of structural change,
-signaling the onset of runaway degradation.
+
+\paragraph{Implementation detail.}
+Because $\tilde{D}_{\mathrm{KL}}$ is estimated from finite simulations, the drift criterion can be disrupted by occasional small downward fluctuations. In practice we therefore interpret ``persistent drift'' as requiring net increase over a window of $m$ increments, allowing at most a small number of local violations within that window, rather than demanding strict monotonicity at every step. This preserves the regime distinction (no stationary baseline under targeted removal) while reducing sensitivity to single-step noise.
+
 
 \subsection*{Collapse Identification}
 For reference only, we define the collapse point $q_{\mathrm{collapse}}$ as the smallest
@@ -454,8 +505,6 @@ detectable prior to macroscopic fragmentation.
 These results confirm that the same information-theoretic signal captures early warning
 under both failure regimes, despite qualitatively different structural dynamics.
 
-plot or table
-
 \subsection*{Warning Lead Time}
 
 To quantify early-warning performance, we compare the detected warning point
@@ -475,33 +524,25 @@ plot or table
 \subsection*{Dependence on Degree Exponent}
 
 We evaluate the robustness of early-warning behavior across scale-free networks with
-degree exponents $2 < \gamma < 3$. For each value of $\gamma$, we compute the mean and
-standard deviation of $q_{\mathrm{warn}}$ across repeated runs under both random and
-targeted removal.
+degree exponent $2 < \gamma < 3$. For each value of $\gamma$, we compute the mean and
+standard deviation of the detected warning point $q_{\mathrm{warn}}$ across repeated
+runs under both random and targeted removal.
 
-Table~\ref{tab:gamma_sweep} summarizes the results. Across all values of $\gamma$, early
-warning is consistently detected prior to collapse, and the qualitative differences
-between random and targeted failure persist. While the precise location of
-$q_{\mathrm{warn}}$ varies with $\gamma$, the existence of a detectable early-warning
-regime is robust to changes in degree heterogeneity.
+Table~\ref{tab:gamma_sweep} summarizes the results. Across all values of $\gamma$,
+early warning is consistently detected prior to collapse, and the qualitative
+differences between random and targeted failure persist. While the location of
+$q_{\mathrm{warn}}$ shifts with $\gamma$, the presence of a detectable early-warning
+regime is robust across the heavy-tailed range.
 
-\begin{table}[h]
-\centering
-\caption{Mean and standard deviation of detected warning points $q_{\mathrm{warn}}$
-across degree exponents $\gamma$ under random and targeted failure.}
-\label{tab:gamma_sweep}
-\begin{tabular}{c c c}
-\hline
-$\gamma$ & Random Failure $q_{\mathrm{warn}}$ & Targeted Failure $q_{\mathrm{warn}}$ \\
-\hline
-2.1 & $0.362 \pm 0.085$ & $0.502 \pm 0.079$ \\
-2.3 & $0.431 \pm 0.123$ & $0.456 \pm 0.088$ \\
-2.5 & $0.315 \pm 0.071$ & $0.575 \pm 0.160$ \\
-2.7 & $0.329 \pm 0.037$ & $0.387 \pm 0.092$ \\
-2.9 & $0.335 \pm 0.060$ & $0.460 \pm 0.016$ \\
-\hline
-\end{tabular}
-\end{table}
+
+The weak dependence of $q_{\mathrm{warn}}$ on $\gamma$ under random failure suggests
+that successive KL divergence detects structural reorganization rather than slow drift
+in low-order degree moments. Although networks with different $\gamma$ exhibit markedly
+different $\langle k \rangle$ and $\langle k^2 \rangle$, the warning signal remains
+stable throughout the heavy-tailed regime. This distinguishes successive KL from
+robustness indicators tied directly to degree moments or percolation thresholds.
+
+
 
 \subsection*{Analytical Contributions}
 
@@ -555,7 +596,11 @@ approaches its percolation threshold. Given the central role that edges play
 in real infrastructure networks, this direction promises both theoretical
 richness and practical relevance.
 
-\section*{References}
+\clearpage
+\section*{Appendix: Supplementary Tables}
+
+\input{paper/gamma_sweep.tex}
+
 
 \bibliographystyle{unsrt}
 \bibliography{references}

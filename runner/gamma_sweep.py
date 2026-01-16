@@ -22,9 +22,18 @@ class GammaSweepExperiment:
         self.qs = qs if qs is not None else np.linspace(0, 0.9, 100)
         self.seeds = seeds if seeds is not None else [0, 1, 2, 3, 4]
 
+
     def run(self):
         """
         Execute the full γ sweep and return summary statistics.
+
+        Returns
+        -------
+        list[tuple]
+            (gamma,
+            random_mean, random_std,
+            targeted_mean, targeted_std,
+            n_random_detected, n_targeted_detected)
         """
         rows = []
 
@@ -33,30 +42,53 @@ class GammaSweepExperiment:
             q_warn_targeted = []
 
             for seed in self.seeds:
-                print(f"  seed {seed}...", flush=True)
+                print(f"  gamma={gamma:.1f} seed {seed}...", flush=True)
                 np.random.seed(seed)
 
                 graph = GraphModel(n=self.n, gamma=gamma)
 
                 # --- random failure ---
                 exp_r = Experiment(graph, RandomFailure())
-                _, _, Pq = exp_r.sweep(self.qs)
-                dkl = exp_r.ewma(exp_r.successive_kl(Pq))
-                q_warn_random.append(self._detect_baseline_break(self.qs, dkl))
+                _, _, Pq_r = exp_r.sweep(self.qs)
+                raw_r = exp_r.successive_kl(Pq_r)
+
+                if not np.all(np.isfinite(raw_r)):
+                    raise ValueError(
+                        f"[gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
+                    )
+
+                dkl_r = exp_r.ewma(raw_r)
+                q_warn_random.append(self._detect_baseline_break(self.qs, dkl_r))
 
                 # --- targeted failure ---
                 exp_t = Experiment(graph, TargetedFailure())
-                _, _, Pq = exp_t.sweep(self.qs)
-                dkl = exp_t.ewma(exp_t.successive_kl(Pq))
-                q_warn_targeted.append(self._detect_positive_drift(self.qs, dkl))
+                _, _, Pq_t = exp_t.sweep(self.qs)
+                raw_t = exp_t.successive_kl(Pq_t)
+
+                if not np.all(np.isfinite(raw_t)):
+                    raise ValueError(
+                        f"[gamma={gamma:.1f}, seed={seed}, targeted] non-finite raw successive KL"
+                    )
+
+                dkl_t = exp_t.ewma(raw_t)
+                q_warn_targeted.append(self._detect_positive_drift(self.qs, dkl_t))
+
+            # ---- aggregate (nan-safe) ----
+            q_warn_random = np.asarray(q_warn_random, dtype=float)
+            q_warn_targeted = np.asarray(q_warn_targeted, dtype=float)
+
+            n_r = int(np.isfinite(q_warn_random).sum())
+            n_t = int(np.isfinite(q_warn_targeted).sum())
 
             rows.append((
-                gamma,
-                np.mean(q_warn_random), np.std(q_warn_random),
-                np.mean(q_warn_targeted), np.std(q_warn_targeted),
+                float(gamma),
+                float(np.nanmean(q_warn_random)), float(np.nanstd(q_warn_random)),
+                float(np.nanmean(q_warn_targeted)), float(np.nanstd(q_warn_targeted)),
+                n_r, n_t,
             ))
 
         return rows
+
 
     def _detect_baseline_break(self, qs, dkl, q0=0.15, z=2.0):
         """
@@ -102,9 +134,42 @@ class GammaSweepExperiment:
 
         return qs_mid[idx[0]]
 
+    def _detect_positive_drift(
+        self,
+        qs,
+        signal,
+        m=3,
+        q0=0.15,
+        tol=1e-12,
+        max_violations=1,
+        min_net_increase=0.0,
+    ):
+        """
+        Targeted early warning on midpoint grid.
 
-    def _detect_positive_drift(self, qs, signal, m=3):
-        for i in range(len(signal) - m):
-            if np.all(np.diff(signal[i:i+m]) > 0):
-                return qs[i]
+        We search for the first midpoint q >= q0 where the signal shows persistent drift:
+        - net increase over a window of length (m+1)
+        - allow up to `max_violations` local non-increases (noise)
+        - optionally require a minimum net increase (min_net_increase)
+        """
+        qs = np.asarray(qs)
+        signal = np.asarray(signal)
+
+        qs_mid = 0.5 * (qs[:-1] + qs[1:])
+        if len(signal) != len(qs_mid):
+            raise ValueError(f"signal length {len(signal)} must equal len(qs_mid) {len(qs_mid)}")
+
+        # start index enforcing q0 on midpoints
+        start = int(np.searchsorted(qs_mid, q0, side="left"))
+
+        for i in range(start, len(signal) - m):
+            window = signal[i : i + m + 1]
+            diffs = np.diff(window)
+
+            violations = np.sum(diffs <= tol)
+            net = window[-1] - window[0]
+
+            if (violations <= max_violations) and (net > max(tol, min_net_increase)):
+                return qs_mid[i]
+
         return np.nan
