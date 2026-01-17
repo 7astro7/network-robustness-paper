@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from experiment.experiment import Experiment
 from models.graph_model import GraphModel
 from models.failure_model import RandomFailure, TargetedFailure
@@ -9,7 +10,6 @@ class GammaSweepExperiment:
     This defines a central axis of analysis in the paper.
     """
 
-    # 👇 THIS is now canonical and paper-aligned
     GAMMAS = np.arange(2.1, 3.0, .1)
 
     def __init__(
@@ -31,19 +31,26 @@ class GammaSweepExperiment:
         -------
         list[tuple]
             (gamma,
-            random_mean, random_std,
-            targeted_mean, targeted_std,
-            n_random_detected, n_targeted_detected)
+            random_mean, random_std, n_random_detected,
+            targeted_early_n, targeted_n_total, targeted_early_rate,
+            targeted_trigger_mean, targeted_trigger_std, targeted_trigger_n,
+            targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
+            targeted_delta_mean, targeted_delta_std, targeted_delta_n)
         """
         rows = []
 
         for gamma in self.GAMMAS:
             q_warn_random = []
-            q_warn_targeted = []
+            q_trigger_targeted = []
+            is_early_targeted = []
+            q_collapse_targeted = []
+            delta_targeted = []
 
             for seed in self.seeds:
                 print(f"  gamma={gamma:.1f} seed {seed}...", flush=True)
+                # Deterministic graph + failure realization
                 np.random.seed(seed)
+                random.seed(seed)
 
                 graph = GraphModel(n=self.n, gamma=gamma)
 
@@ -62,7 +69,7 @@ class GammaSweepExperiment:
 
                 # --- targeted failure ---
                 exp_t = Experiment(graph, TargetedFailure())
-                _, _, Pq_t = exp_t.sweep(self.qs)
+                S_t, _, Pq_t = exp_t.sweep(self.qs)
                 raw_t = exp_t.successive_kl(Pq_t)
 
                 if not np.all(np.isfinite(raw_t)):
@@ -71,20 +78,65 @@ class GammaSweepExperiment:
                     )
 
                 dkl_t = exp_t.ewma(raw_t)
-                q_warn_targeted.append(self._detect_positive_drift(self.qs, dkl_t))
+
+                # Targeted: drift-rule trigger point (may be pre- or post-collapse)
+                q_trigger = self._detect_positive_drift(self.qs, dkl_t, q0=0.0)
+                if q_trigger is None:
+                    q_trigger = np.nan
+
+                # collapse (reference only): first q where S(q) < 0.1
+                q_collapse_t = next(
+                    (float(q) for q, s in zip(self.qs, S_t) if s < 0.1),
+                    None,
+                )
+
+                is_early = (
+                    np.isfinite(q_trigger)
+                    and (q_collapse_t is not None)
+                    and (float(q_trigger) < float(q_collapse_t))
+                )
+                q_trigger_targeted.append(float(q_trigger) if np.isfinite(q_trigger) else np.nan)
+                is_early_targeted.append(bool(is_early))
+
+                q_collapse_targeted.append(float(q_collapse_t) if q_collapse_t is not None else np.nan)
+                if np.isfinite(q_trigger) and q_collapse_t is not None:
+                    delta_targeted.append(float(q_collapse_t) - float(q_trigger))
+                else:
+                    delta_targeted.append(np.nan)
 
             # ---- aggregate (nan-safe) ----
             q_warn_random = np.asarray(q_warn_random, dtype=float)
-            q_warn_targeted = np.asarray(q_warn_targeted, dtype=float)
+            q_trigger_targeted = np.asarray(q_trigger_targeted, dtype=float)
+            is_early_targeted = np.asarray(is_early_targeted, dtype=bool)
+            q_collapse_targeted = np.asarray(q_collapse_targeted, dtype=float)
+            delta_targeted = np.asarray(delta_targeted, dtype=float)
 
-            n_r = int(np.isfinite(q_warn_random).sum())
-            n_t = int(np.isfinite(q_warn_targeted).sum())
+            n_r = int(np.count_nonzero(~np.isnan(q_warn_random)))
+            n_total = int(len(self.seeds))
+            early_n = int(np.count_nonzero(is_early_targeted))
+            early_rate = float(early_n / n_total) if n_total > 0 else float("nan")
+
+            mean_r = float(np.nanmean(q_warn_random)) if n_r > 0 else float("nan")
+            n_trigger = int(np.count_nonzero(~np.isnan(q_trigger_targeted)))
+            mean_trigger = float(np.nanmean(q_trigger_targeted)) if n_trigger > 0 else float("nan")
+            n_collapse = int(np.count_nonzero(~np.isnan(q_collapse_targeted)))
+            mean_collapse = float(np.nanmean(q_collapse_targeted)) if n_collapse > 0 else float("nan")
+            n_delta = int(np.count_nonzero(~np.isnan(delta_targeted)))
+            mean_delta = float(np.nanmean(delta_targeted)) if n_delta > 0 else float("nan")
+
+            # ddof=1; if <2 detected, report std=0.0 (or could use np.nan)
+            std_r = float(np.nanstd(q_warn_random, ddof=1)) if n_r > 1 else 0.0
+            std_trigger = float(np.nanstd(q_trigger_targeted, ddof=1)) if n_trigger > 1 else 0.0
+            std_collapse = float(np.nanstd(q_collapse_targeted, ddof=1)) if n_collapse > 1 else 0.0
+            std_delta = float(np.nanstd(delta_targeted, ddof=1)) if n_delta > 1 else 0.0
 
             rows.append((
                 float(gamma),
-                float(np.nanmean(q_warn_random)), float(np.nanstd(q_warn_random)),
-                float(np.nanmean(q_warn_targeted)), float(np.nanstd(q_warn_targeted)),
-                n_r, n_t,
+                mean_r, std_r, n_r,
+                early_n, n_total, early_rate,
+                mean_trigger, std_trigger, n_trigger,
+                mean_collapse, std_collapse, n_collapse,
+                mean_delta, std_delta, n_delta,
             ))
 
         return rows

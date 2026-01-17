@@ -12,7 +12,7 @@
 \usepackage{enumitem}
 
 \title{Entropy-Based Indicators of Critical Transitions in 
-Power-Law Networks Under Stochastic Node Removal}
+Power-Law Networks Under Progressive Node Removal}
 \author{Zachary Kraehling}
 \date{2026}
 
@@ -56,12 +56,22 @@ heavy-tailed degree distributions~\cite{newman2003structure}.
 
 For graphs $G=(V,E)$ with degree counts $\{k_i\}$, one often observes
 \[
-P(k) \propto k^{-\gamma}, \qquad \gamma \in [2,3],
+P(k) \propto k^{-\gamma}, \qquad \gamma \in (2,3),
 \]
 reflecting extreme heterogeneity and the presence of high-degree hubs.
-Network robustness is traditionally evaluated using the giant connected component (GCC) fraction $S(q)$ under random or targeted node removal. However, this connectivity-based perspective provides limited insight into how topological structure degrades prior to global fragmentation. As emphasized in recent reviews, robustness transitions in complex networks often occur abruptly and may exhibit little to no reliable early-warning signals when assessed using classical indicators such as the GCC \cite{radicchi2024robustness}. This lack of anticipatory indicators poses significant challenges for monitoring the stability of real-world networks.
+Network robustness is traditionally evaluated using the giant connected component (GCC) fraction $S(q)$ under random or targeted node removal. However, this connectivity-based perspective provides limited insight into how topological structure degrades prior to global fragmentation. As emphasized in recent reviews, robustness transitions in complex networks often occur abruptly and may exhibit little to no reliable early-warning signals when assessed using classical indicators such as the GCC \cite{radicchi2024robustness}. This lack of anticipatory indicators poses significant challenges for monitoring the stability of real-world networks. A complementary line of work studies early-warning signals in dynamical processes
+on networks, where instability is approached through changes in node-state statistics
+rather than through structural damage. For example, Suweis and D'Odorico~\cite{suweis2014earlywarning}
+analyze multivariate stochastic dynamics on interaction networks and show that rising
+variance and cross-correlation can anticipate loss of stability in the underlying
+networked system. Our setting differs in that we consider progressive structural
+degradation under node removal, where no node-state time series is assumed; we therefore
+seek early warning directly from topological reorganization, using successive KL
+divergence between degree distributions as a purely structural signal.
 
-Information-theoretic approaches offer a complementary perspective by quantifying distributional change rather than static connectivity. In particular, the Kullback--Leibler (KL) divergence between degree distributions at successive damage levels captures rates of structural reorganization and may reveal early signs of impending network collapse. The central question of this work is:
+
+Information-theoretic approaches offer a complementary perspective to connectivity-based robustness measures by quantifying distributional change rather than component-level size.
+In particular, the Kullback--Leibler (KL) divergence between degree distributions at successive damage levels captures rates of structural reorganization and may reveal early signs of impending network collapse. The central question of this work is:
 
 \begin{quote}
 Can information-theoretic rates of structural change in the degree distribution provide early-warning signals of impending connectivity collapse in power-law networks under node removal?
@@ -459,7 +469,7 @@ All experiments use 100 evenly spaced values of $q \in [0, 0.9]$.
 Each configuration is repeated across five random seeds.
 
 For each value of $\gamma$ and each failure mode, we report the mean and standard
-deviation of $q_{\mathrm{warn}}$ across seeds.
+deviation of $q_{\mathrm{warn}}$ or $q_{\mathrm{trigger}}$ across seeds.
 
 \section*{Analysis and Results}
 
@@ -470,9 +480,14 @@ seeds, summarized using the mean and standard deviation of detected warning poin
 
 \subsection*{Random Failure}
 
-[Figure Placeholder:] Smoothed successive KL divergence
-$\tilde{D}_{\mathrm{KL}}(q)$ under random node removal, with the detected early-warning
-point $q_{\mathrm{warn}}$ and collapse point $q_{\mathrm{collapse}}$ indicated.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{paper/figures/fig1_random_gamma2.5_seed0_alpha0.20.pdf}
+\caption{Random failure ($\gamma=2.5$, seed 0, $\alpha=0.20$). The GCC fraction $S(q)$ (left axis) declines gradually while the smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) departs from its baseline well before collapse. 
+The baseline window $q \le 0.15$ is shaded.
+Vertical lines indicate $q_{\mathrm{warn}}=0.277$ and $q_{\mathrm{collapse}}=0.827$ (defined by $S(q)<0.1$).}
+\label{fig:random_rep}
+\end{figure}
 
 \medskip
 
@@ -497,27 +512,32 @@ Under targeted (hub-first) node removal, the successive KL signal increases imme
 reflecting continuous and accelerating structural disruption. Unlike the random failure
 case, no stationary baseline is observed at low damage levels.
 
-Using a slope-based detection rule, early warning is identified through sustained
-positive drift in $\tilde{D}_{\mathrm{KL}}(q)$. While warning points under targeted attack
-occur closer to collapse and exhibit greater variability across seeds, they remain
-detectable prior to macroscopic fragmentation.
+Under targeted (hub-first) removal, collapse can occur before the drift-based trigger
+in $\tilde{D}_{\mathrm{KL}}(q)$ is reached. We therefore report (i) the fraction of seeds
+for which the drift trigger occurs \emph{before} collapse ($q_{\mathrm{trigger}} < q_{\mathrm{collapse}}$),
+and (ii) the trigger timing $q_{\mathrm{trigger}}$ as a measure of disruption intensity.
 
-These results confirm that the same information-theoretic signal captures early warning
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
+\caption{Targeted (hub-first) failure (same representative $\gamma=2.5$, seed=0, $\alpha=0.20$). Collapse is abrupt under targeted removal: $q_{\mathrm{collapse}}=0.091$ (defined by $S(q)<0.1$). The smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ still quantifies disruption intensity even when an early warning trigger is not observed before collapse for a given seed.}
+\label{fig:targeted_rep}
+\end{figure}
+
+These results confirm that the same information-theoretic signal remains informative
 under both failure regimes, despite qualitatively different structural dynamics.
 
 \subsection*{Warning Lead Time}
 
-To quantify early-warning performance, we compare the detected warning point
-$q_{\mathrm{warn}}$ to the collapse point $q_{\mathrm{collapse}}$ across repeated runs.
-In both random and targeted failure scenarios, we observe
-\[
-q_{\mathrm{warn}} < q_{\mathrm{collapse}},
-\]
-indicating that the successive KL signal provides advance notice of impending collapse.
+To quantify early-warning performance, we compare warning/trigger points to the collapse
+point $q_{\mathrm{collapse}}$ across repeated runs. Under random failure, warning points
+are consistently detected with $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$, indicating that
+the successive KL signal provides advance notice of impending collapse.
 
-The magnitude of the warning lead time is larger under random failure, consistent with
-the presence of an extended tolerance regime, and smaller under targeted failure, where
-structural degradation is more abrupt.
+Under targeted failure, collapse can occur before the drift trigger, producing negative
+lead times $\Delta = q_{\mathrm{collapse}} - q_{\mathrm{trigger}}$ under the same collapse
+criterion; in this regime, the drift trigger is best interpreted as a measure of
+disruption intensity rather than a reliable early-warning point.
 
 plot or table
 
@@ -528,11 +548,14 @@ degree exponent $2 < \gamma < 3$. For each value of $\gamma$, we compute the mea
 standard deviation of the detected warning point $q_{\mathrm{warn}}$ across repeated
 runs under both random and targeted removal.
 
-Table~\ref{tab:gamma_sweep} summarizes the results. Across all values of $\gamma$,
-early warning is consistently detected prior to collapse, and the qualitative
-differences between random and targeted failure persist. While the location of
-$q_{\mathrm{warn}}$ shifts with $\gamma$, the presence of a detectable early-warning
-regime is robust across the heavy-tailed range.
+Tables~\ref{tab:gamma_sweep} (random) and \ref{tab:gamma_sweep_targeted} (targeted) summarize the results. Under random failure, $q_{\mathrm{warn}}$
+is consistently detected prior to collapse. Under targeted removal, we summarize the
+early-trigger detection rate and the trigger timing to quantify how often disruption
+intensity yields an early trigger before macroscopic fragmentation.
+
+\FloatBarrier
+\input{paper/gamma_sweep.tex}
+\FloatBarrier
 
 
 The weak dependence of $q_{\mathrm{warn}}$ on $\gamma$ under random failure suggests
@@ -597,9 +620,11 @@ in real infrastructure networks, this direction promises both theoretical
 richness and practical relevance.
 
 \clearpage
-\section*{Appendix: Supplementary Tables}
+\section*{Appendix: Supplementary Material}
 
-\input{paper/gamma_sweep.tex}
+\subsection*{Additional figures and sensitivity analyses}
+Additional seed overlays (seeds 1--4), sensitivity to EWMA parameter $\alpha$, drift window $m$, 
+and alternative collapse thresholds are provided in supplementary materials (not shown in the main Results).
 
 
 \bibliographystyle{unsrt}
