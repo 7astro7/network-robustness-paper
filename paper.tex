@@ -10,6 +10,9 @@
 \usepackage{siunitx}
 \usepackage{lmodern}
 \usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 
 \title{Entropy-Based Indicators of Critical Transitions in 
 Power-Law Networks Under Progressive Node Removal}
@@ -471,6 +474,9 @@ Each configuration is repeated across five random seeds.
 For each value of $\gamma$ and each failure mode, we report the mean and standard
 deviation of $q_{\mathrm{warn}}$ or $q_{\mathrm{trigger}}$ across seeds.
 
+\subsection*{Empirical network: CAIDA AS graph (2026-01-01)}
+We parse \texttt{AS1|AS2|rel|source}, drop comment lines, and form an undirected simple graph from unique AS pairs.
+
 \section*{Analysis and Results}
 
 We analyze the behavior of the successive KL divergence under progressive node removal
@@ -504,6 +510,57 @@ of $q$ at which the giant connected component falls below a fixed threshold.
 Across repeated simulations with different random seeds, the detected warning point
 exhibits moderate variability but consistently precedes network collapse, yielding a
 nontrivial lead time between early warning and fragmentation.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    name=caidaS,
+    width=0.95\linewidth,
+    height=6cm,
+    xmin=0, xmax=0.99,
+    ymin=0, ymax=1,
+    xlabel={$q$},
+    ylabel={$S(q)$},
+    yticklabel style={text=black},
+    y label style={text=black},
+    grid=both,
+    grid style={opacity=0.2},
+    legend to name=caidaLegend,
+]
+% Baseline window q <= 0.15 (shaded)
+\addplot [draw=none, fill=black, fill opacity=0.12, forget plot] coordinates {(0,0) (0.15,0) (0.15,1) (0,1)} \closedcycle;
+\addplot [black, very thick] table[x=q, y=S] {paper/figures/caida_random_S_20260101_seed0.dat};
+\addlegendentry{$S(q)$}
+% Warning marker
+\addplot [orange, dashed, thick, forget plot] coordinates {(0.689020,0) (0.689020,1)};
+% Collapse marker
+\addplot [black, dotted, thick, forget plot] coordinates {(0.985025,0) (0.985025,1)};
+\end{axis}
+
+\begin{axis}[
+    width=0.95\linewidth,
+    height=6cm,
+    xmin=0, xmax=0.99,
+    axis x line=none,
+    axis y line*=right,
+    ylabel={$\tilde{D}_{\mathrm{KL}}(q)$},
+    yticklabel style={color=purple},
+    y label style={color=purple},
+    at={(caidaS.south west)},
+    anchor=south west,
+    legend to name=caidaLegend,
+]
+\addplot [purple, very thick] table[x=q_mid, y=dkl_smooth] {paper/figures/caida_random_dkl_20260101_seed0_alpha0.20.dat};
+\addlegendentry{$\tilde{D}_{\mathrm{KL}}(q)$}
+\end{axis}
+\node[anchor=south] at (caidaS.north) {\pgfplotslegendfromname[legend columns=2, draw=none, /tikz/column sep=1.6ex]{caidaLegend}};
+\end{tikzpicture}
+\caption{Empirical CAIDA AS graph (2026-01-01), random failure (seed 0, $\alpha=0.20$). The GCC fraction $S(q)$ (left axis) and smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) for progressive random node removal. The baseline window $q \le 0.15$ is shaded. The baseline deviation rule identifies a \emph{departure from baseline} (onset of nonstationarity) at $q_{\mathrm{warn}}\approx 0.689$. Collapse is observed at $q_{\mathrm{collapse}}\approx 0.985$ (defined by $S(q)<0.1$) within the plotted range $q \le 0.99$.}
+\label{fig:caida_random}
+\end{figure}
+
+The CAIDA AS graph contains $N=78{,}673$ nodes and $M=724{,}429$ undirected edges, with maximum degree $k_{\max}=9{,}932$. Full dataset statistics are deferred to the Appendix.
 
 
 \subsection*{Targeted Failure}
