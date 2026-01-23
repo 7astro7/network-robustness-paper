@@ -1,5 +1,6 @@
 import numpy as np
 from pathlib import Path
+import argparse
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -174,6 +175,125 @@ def make_fig1_random(
     }
 
 
+def make_fig1_random_baselines(
+    gamma: float = 2.5,
+    seed: int = 0,
+    outdir: str = "paper/figures",
+    alpha: float = 0.2,
+    n: int = 10_000,
+):
+    """
+    Random failure baseline comparison (single representative gamma/seed).
+
+    Plots:
+      - left axis: S(q)
+      - right axis (midpoint support): EWMA-smoothed rate signals in bits:
+          * successive KL  \\tilde D_KL(q)
+          * successive JS  \\tilde JS(q)
+          * smoothed |ΔH|(q) where ΔH_i = H_{i+1} - H_i (entropy in bits)
+
+    Warning rule (all three signals; random failure):
+      baseline window q <= 0.15 on midpoint grid; warn is first q>0.15 where
+      signal(q) > mu0 + 2 sigma0 (computed on the baseline window).
+
+    Saves PNG + PDF.
+    """
+    np.random.seed(seed)
+    random.seed(seed)
+
+    graph = GraphModel(n=n, gamma=gamma)
+    experiment = Experiment(graph, RandomFailure())
+
+    qs = np.linspace(0, 0.9, 100)
+    S_values, H_values, Pq_values = experiment.sweep(qs)
+
+    qs_mid = 0.5 * (qs[:-1] + qs[1:])
+    baseline_mask = qs_mid <= 0.15
+
+    def _warn_q(signal_mid: np.ndarray) -> float | None:
+        signal_mid = np.asarray(signal_mid, dtype=float)
+        if baseline_mask.sum() < 2:
+            return None
+        mu0 = float(np.mean(signal_mid[baseline_mask]))
+        sigma0 = float(np.std(signal_mid[baseline_mask]))
+        thr = mu0 + 2.0 * sigma0
+        idx = np.where((qs_mid > 0.15) & (signal_mid > thr))[0]
+        return float(qs_mid[idx[0]]) if len(idx) else None
+
+    # successive KL (midpoints)
+    dkl = experiment.ewma(experiment.successive_kl(Pq_values), alpha=alpha)
+    # successive JS (midpoints)
+    js = experiment.ewma(Metrics.successive_js(Pq_values), alpha=alpha)
+    # entropy change magnitude (midpoints)
+    dH = np.abs(np.diff(np.asarray(H_values, dtype=float)))
+    dH = experiment.ewma(dH, alpha=alpha)
+
+    assert len(dkl) == len(qs_mid) == len(js) == len(dH)
+
+    q_warn_dkl = _warn_q(dkl)
+    q_warn_js = _warn_q(js)
+    q_warn_dh = _warn_q(dH)
+
+    q_collapse = next((float(q) for q, s in zip(qs, S_values) if s < 0.1), None)
+
+    # --- plot ---
+    fig, ax1 = plt.subplots(constrained_layout=True, figsize=(7.0, 4.0), dpi=300)
+    ax1.axvspan(0.0, 0.15, color="0.5", alpha=0.12, zorder=0)
+    ax1.axvline(0.15, color="0.5", lw=1.0, alpha=0.30, zorder=0, label="_nolegend_")
+
+    (line_s,) = ax1.plot(qs, S_values, color="tab:blue", lw=2.5, label=r"$S(q)$")
+    ax1.set_xlabel(r"$q$")
+    ax1.set_ylabel(r"$S(q)$", color="tab:blue")
+    ax1.tick_params(axis="y", labelcolor="tab:blue")
+    ax1.set_xlim(float(qs.min()), float(qs.max()))
+    ax1.grid(True, alpha=0.2)
+
+    ax2 = ax1.twinx()
+    (line_dkl,) = ax2.plot(qs_mid, dkl, color="tab:purple", lw=2.0, label=r"$\tilde{D}_{\mathrm{KL}}(q)$")
+    (line_js,) = ax2.plot(qs_mid, js, color="tab:green", lw=1.8, label=r"$\widetilde{\mathrm{JS}}(q)$")
+    (line_dh,) = ax2.plot(qs_mid, dH, color="tab:red", lw=1.8, label=r"$\widetilde{|\Delta H|}(q)$")
+    ax2.set_ylabel(r"smoothed rate signal (bits)", color="black")
+
+    # warning markers (color-matched to signal)
+    if q_warn_dkl is not None:
+        ax1.axvline(q_warn_dkl, color="tab:purple", linestyle="--", lw=1.2, alpha=0.7)
+    if q_warn_js is not None:
+        ax1.axvline(q_warn_js, color="tab:green", linestyle="--", lw=1.2, alpha=0.7)
+    if q_warn_dh is not None:
+        ax1.axvline(q_warn_dh, color="tab:red", linestyle="--", lw=1.2, alpha=0.7)
+    if q_collapse is not None:
+        ax1.axvline(q_collapse, color="black", linestyle=":", lw=1.5, alpha=0.9)
+
+    ax1.legend(
+        handles=[line_s, line_dkl, line_js, line_dh],
+        labels=[line_s.get_label(), line_dkl.get_label(), line_js.get_label(), line_dh.get_label()],
+        loc="upper center",
+        ncol=2,
+        frameon=False,
+        fontsize=8,
+        handlelength=2.0,
+        columnspacing=1.4,
+    )
+
+    out_path = Path(outdir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    stem = f"fig_random_baselines_gamma{gamma:.1f}_seed{seed}_alpha{alpha:.2f}"
+    png_path = out_path / f"{stem}.png"
+    pdf_path = out_path / f"{stem}.pdf"
+    fig.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=0.02)
+    fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+    return {
+        "q_warn_dkl": q_warn_dkl,
+        "q_warn_js": q_warn_js,
+        "q_warn_dh": q_warn_dh,
+        "q_collapse": q_collapse,
+        "png": str(png_path),
+        "pdf": str(pdf_path),
+    }
+
+
 def make_fig2_targeted(
     gamma: float = 2.5,
     seed: int = 0,
@@ -275,6 +395,20 @@ def make_fig2_targeted(
 
     if q_collapse is not None:
         ax1.axvline(q_collapse, color="black", linestyle=":", lw=1.5)
+        # Label collapse line horizontally (avoid rotated/sideways text in the exported figure).
+        y0, y1 = ax1.get_ylim()
+        y_span = (y1 - y0) if (y1 > y0) else 1.0
+        ax1.text(
+            q_collapse,
+            y0 + 0.50 * y_span,
+            r"$q_{\mathrm{collapse}}$",
+            rotation=0,
+            ha="center",
+            va="center",
+            color="black",
+            fontsize=9,
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1.5),
+        )
 
     # Same styling as Fig1: no internal title; legend inside axes.
     ax1.legend(
@@ -390,6 +524,31 @@ def gamma_sweep_table(gammas, seeds):
 
 
 if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description="Run experiments and/or export paper figures.")
+    ap.add_argument(
+        "--make-fig2-targeted",
+        action="store_true",
+        help="Generate the targeted (hub-first) representative figure (Fig 2) into --outdir.",
+    )
+    ap.add_argument("--gamma", type=float, default=2.5)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--alpha", type=float, default=0.2)
+    ap.add_argument("--n", type=int, default=10_000)
+    ap.add_argument("--outdir", type=str, default="paper/figures")
+    args = ap.parse_args()
+
+    if args.make_fig2_targeted:
+        res = make_fig2_targeted(
+            gamma=float(args.gamma),
+            seed=int(args.seed),
+            outdir=str(args.outdir),
+            alpha=float(args.alpha),
+            n=int(args.n),
+        )
+        print(res)
+        raise SystemExit(0)
+
+    # Default: quick console summary used during development
     seeds = [0, 1, 2, 3, 4]
 
     mean_r, std_r, n_r = summarize_warnings(run_default, seeds)

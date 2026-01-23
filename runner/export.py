@@ -27,6 +27,22 @@ def export_gamma_table(
             targeted_trigger_mean, targeted_trigger_std, targeted_trigger_n,
             targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
             targeted_delta_mean, targeted_delta_std, targeted_delta_n)
+      - newest+ (random lead-time + targeted split + collapse + lead): (gamma,
+            random_warn_mean, random_warn_std, random_warn_n,
+            random_delta_mean, random_delta_std, random_delta_n,
+            targeted_early_n, targeted_n_total, targeted_early_rate,
+            targeted_trigger_mean, targeted_trigger_std, targeted_trigger_n,
+            targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
+            targeted_delta_mean, targeted_delta_std, targeted_delta_n)
+      - newest++ (random lead-time + random baselines + targeted split + collapse + lead): (gamma,
+            random_warn_mean, random_warn_std, random_warn_n,
+            random_delta_mean, random_delta_std, random_delta_n,
+            random_js_warn_mean, random_js_warn_std, random_js_warn_n,
+            random_dh_warn_mean, random_dh_warn_std, random_dh_warn_n,
+            targeted_early_n, targeted_n_total, targeted_early_rate,
+            targeted_trigger_mean, targeted_trigger_std, targeted_trigger_n,
+            targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
+            targeted_delta_mean, targeted_delta_std, targeted_delta_n)
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -62,8 +78,32 @@ def export_gamma_table(
             "targeted_delta_mean", "targeted_delta_std", "targeted_delta_n",
         ]
         df = pd.DataFrame(rows, columns=cols)
+    elif k == 19:
+        cols = [
+            "gamma",
+            "random_warn_mean", "random_warn_std", "random_warn_n",
+            "random_delta_mean", "random_delta_std", "random_delta_n",
+            "targeted_early_n", "targeted_n_total", "targeted_early_rate",
+            "targeted_trigger_mean", "targeted_trigger_std", "targeted_trigger_n",
+            "targeted_collapse_mean", "targeted_collapse_std", "targeted_collapse_n",
+            "targeted_delta_mean", "targeted_delta_std", "targeted_delta_n",
+        ]
+        df = pd.DataFrame(rows, columns=cols)
+    elif k == 25:
+        cols = [
+            "gamma",
+            "random_warn_mean", "random_warn_std", "random_warn_n",
+            "random_delta_mean", "random_delta_std", "random_delta_n",
+            "random_js_warn_mean", "random_js_warn_std", "random_js_warn_n",
+            "random_dh_warn_mean", "random_dh_warn_std", "random_dh_warn_n",
+            "targeted_early_n", "targeted_n_total", "targeted_early_rate",
+            "targeted_trigger_mean", "targeted_trigger_std", "targeted_trigger_n",
+            "targeted_collapse_mean", "targeted_collapse_std", "targeted_collapse_n",
+            "targeted_delta_mean", "targeted_delta_std", "targeted_delta_n",
+        ]
+        df = pd.DataFrame(rows, columns=cols)
     else:
-        raise ValueError(f"export_gamma_table: unsupported row length {k} (expected 5, 7, 10, or 16)")
+        raise ValueError(f"export_gamma_table: unsupported row length {k} (expected 5, 7, 10, 16, 19, or 25)")
 
     if n_total is None:
         # best-effort default (matches GammaSweepExperiment default seeds)
@@ -98,8 +138,14 @@ def export_gamma_table(
             return r"--"
         return f"{int(n_early)}/{int(n_total_local)}"
 
+    # Normalize random column names across schemas
+    if "random_mean" in df.columns:
+        df["random_warn_mean"] = df["random_mean"]
+        df["random_warn_std"] = df["random_std"]
+        df["random_warn_n"] = df["random_n"]
+
     df["random_cell"] = [
-        fmt_cell(m, s, n) for m, s, n in zip(df["random_mean"], df["random_std"], df["random_n"])
+        fmt_cell(m, s, n) for m, s, n in zip(df["random_warn_mean"], df["random_warn_std"], df["random_warn_n"])
     ]
     if "targeted_mean" in df.columns:
         df["targeted_cell"] = [
@@ -129,8 +175,14 @@ def export_gamma_table(
     # --- widest schema: split into two stacked tables for readability ---
     if "targeted_collapse_mean" in df.columns and "targeted_delta_mean" in df.columns:
         # Table A (Random)
-        df["random_meanstd"] = [fmt_mean_std(m, s) for m, s in zip(df["random_mean"], df["random_std"])]
-        df["random_count"] = [f"{int(n)}/{n_total}" for n in df["random_n"]]
+        df["random_meanstd"] = [fmt_mean_std(m, s) for m, s in zip(df["random_warn_mean"], df["random_warn_std"])]
+        df["random_count"] = [f"{int(n)}/{n_total}" for n in df["random_warn_n"]]
+
+        if "random_delta_mean" in df.columns:
+            df["random_delta_meanstd"] = [
+                fmt_mean_std(m, s) for m, s in zip(df["random_delta_mean"], df["random_delta_std"])
+            ]
+            df["random_delta_count"] = [f"{int(n)}/{n_total}" for n in df["random_delta_n"]]
 
         # Table B (Targeted)
         df["targeted_trigger_meanstd"] = [
@@ -138,6 +190,9 @@ def export_gamma_table(
         ]
         df["targeted_collapse_meanstd"] = [
             fmt_mean_std(m, s) for m, s in zip(df["targeted_collapse_mean"], df["targeted_collapse_std"])
+        ]
+        df["targeted_delta_meanstd"] = [
+            fmt_mean_std(m, s) for m, s in zip(df["targeted_delta_mean"], df["targeted_delta_std"])
         ]
 
         # If early-rate is constant (e.g. 0/5 for all γ), report it once in caption.
@@ -161,22 +216,33 @@ def export_gamma_table(
             # --- Table A: Random removal ---
             lines.append(r"\begin{table}[H]")
             lines.append(r"\centering")
-            lines.append(r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation.}")
+            lines.append(r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation, and lead time $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ (collapse defined by $S(q)<0.1$).}")
             # Keep the original label name so existing references don't break.
             lines.append(r"\label{tab:gamma_sweep}")
-            lines.append(r"\begin{tabular}{c c c}")
+            if "random_delta_mean" in df.columns:
+                lines.append(r"\begin{tabular}{c c c c c}")
+            else:
+                lines.append(r"\begin{tabular}{c c c}")
             lines.append(r"\toprule")
-            lines.append(r"$\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\mathrm{det}}/n$] \\")
+            if "random_delta_mean" in df.columns:
+                lines.append(r"$\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\mathrm{det}}/n$] & $\Delta_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\Delta}/n$] \\")
+            else:
+                lines.append(r"$\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\mathrm{det}}/n$] \\")
             lines.append(r"\midrule")
             for _, r in df.iterrows():
-                lines.append(f"{r['gamma']:.1f} & {r['random_meanstd']} & {r['random_count']} \\\\")
+                if "random_delta_mean" in df.columns:
+                    lines.append(
+                        f"{r['gamma']:.1f} & {r['random_meanstd']} & {r['random_count']} & {r['random_delta_meanstd']} & {r['random_delta_count']} \\\\"
+                    )
+                else:
+                    lines.append(f"{r['gamma']:.1f} & {r['random_meanstd']} & {r['random_count']} \\\\")
             lines.append(r"\bottomrule")
             lines.append(r"\end{tabular}")
             lines.append(r"\end{table}")
             lines.append("")
 
             # --- Table B: Targeted removal (narrow) ---
-            caption_note = rf"Early-trigger rate is {early_rate_str} for all $\gamma$, hence $\Delta=q_{{\mathrm{{collapse}}}}-q_{{\mathrm{{trigger}}}}<0$ throughout."
+            caption_note = rf"Early-trigger rate is {early_rate_str} for all $\gamma$, hence $\Delta_{{\mathrm{{trigger}}}}=q_{{\mathrm{{collapse}}}}-q_{{\mathrm{{trigger}}}}<0$ throughout."
             if trig_full:
                 caption_note += r" Drift triggers exist in all seeds ($n_{\mathrm{trig}}=n$)."
 
@@ -186,16 +252,46 @@ def export_gamma_table(
                 rf"\caption{{Targeted (hub-first) removal: collapse timing $q_{{\mathrm{{collapse}}}}$ and drift-trigger timing $q_{{\mathrm{{trigger}}}}$. {caption_note}}}"
             )
             lines.append(r"\label{tab:gamma_sweep_targeted}")
-            lines.append(r"\begin{tabular}{c c c}")
+            lines.append(r"\begin{tabular}{c c c c}")
             lines.append(r"\toprule")
-            lines.append(r"$\gamma$ & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $q_{\mathrm{trigger}}$ (mean $\pm$ std) \\")
+            lines.append(r"$\gamma$ & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $q_{\mathrm{trigger}}$ (mean $\pm$ std) & $\Delta_{\mathrm{trigger}}$ (mean $\pm$ std) \\")
             lines.append(r"\midrule")
             for _, r in df.iterrows():
-                lines.append(f"{r['gamma']:.1f} & {r['targeted_collapse_meanstd']} & {r['targeted_trigger_meanstd']} \\\\")
+                lines.append(
+                    f"{r['gamma']:.1f} & {r['targeted_collapse_meanstd']} & {r['targeted_trigger_meanstd']} & {r['targeted_delta_meanstd']} \\\\"
+                )
             lines.append(r"\bottomrule")
             lines.append(r"\end{tabular}")
             lines.append(r"\end{table}")
             lines.append("")
+
+            # --- Table C: Random failure baseline comparison (optional) ---
+            if "random_js_warn_mean" in df.columns and "random_dh_warn_mean" in df.columns:
+                df["random_js_warn_meanstd"] = [
+                    fmt_mean_std(m, s) for m, s in zip(df["random_js_warn_mean"], df["random_js_warn_std"])
+                ]
+                df["random_dh_warn_meanstd"] = [
+                    fmt_mean_std(m, s) for m, s in zip(df["random_dh_warn_mean"], df["random_dh_warn_std"])
+                ]
+
+                lines.append(r"\begin{table}[H]")
+                lines.append(r"\centering")
+                lines.append(
+                    r"\caption{Random failure baseline comparison: warning timing $q_{\mathrm{warn}}$ using the same baseline-deviation rule (Sec.~\hyperref[sec:early_warning_criteria]{Early-Warning Criteria}) applied to three rate-of-change signals on midpoint support: successive KL ($\tilde{D}_{\mathrm{KL}}$), successive JS ($\widetilde{\mathrm{JS}}$), and entropy-change magnitude ($\widetilde{|\Delta H|}$).}"
+                )
+                lines.append(r"\label{tab:gamma_sweep_random_baselines}")
+                lines.append(r"\begin{tabular}{c c c c}")
+                lines.append(r"\toprule")
+                lines.append(r"$\gamma$ & $q_{\mathrm{warn}}^{\mathrm{KL}}$ (mean $\pm$ std) & $q_{\mathrm{warn}}^{\mathrm{JS}}$ (mean $\pm$ std) & $q_{\mathrm{warn}}^{|\Delta H|}$ (mean $\pm$ std) \\")
+                lines.append(r"\midrule")
+                for _, r in df.iterrows():
+                    lines.append(
+                        f"{r['gamma']:.1f} & {fmt_mean_std(r['random_warn_mean'], r['random_warn_std'])} & {r['random_js_warn_meanstd']} & {r['random_dh_warn_meanstd']} \\\\"
+                    )
+                lines.append(r"\bottomrule")
+                lines.append(r"\end{tabular}")
+                lines.append(r"\end{table}")
+                lines.append("")
 
             out_path.write_text("\n".join(lines))
             return
@@ -229,7 +325,7 @@ def export_gamma_table(
         lines.append(r"\begin{tabular}{c c c c c}")
         lines.append(r"\toprule")
         lines.append(
-            r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] \\"
+            r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] \\"
         )
         lines.append(r"\midrule")
         for _, r in df.iterrows():
