@@ -75,26 +75,27 @@ Can information-theoretic rates of structural change in the degree distribution 
 \end{quote}
 
 Although information-theoretic quantities have been used to characterize static graph structure, their behavior under progressive damage remains largely unexplored. Dehmer~(2008)~\cite{dehmer2008information} introduced Shannon-entropy measures to quantify graph complexity, and subsequent work has examined entropy-based summaries of degree heterogeneity or structural diversity. However, these studies focus on fixed network topologies and do not connect entropy to dynamical processes such as node failures, percolation transitions, or GCC collapse.
-Likewise, the extensive literature on network robustness—ranging from classical results on error and attack tolerance in scale-free graphs \cite{albert2000error,cohen2000resilience} to modern treatments of resilience \cite{radicchi2024robustness}—relies primarily on quantities such as degree moments, spectral radius, or percolation thresholds. Very little attention is given to information-theoretic indicators that might change before observable topological collapse.
+Likewise, the extensive literature on network robustness (ranging from classical results on error and attack tolerance in scale-free graphs \cite{albert2000error,cohen2000resilience} to modern treatments of resilience \cite{radicchi2024robustness}) relies primarily on quantities such as degree moments, spectral radius, or percolation thresholds. Very little attention is given to information-theoretic indicators that might change before observable topological collapse.
 
-Unlike entropy, which summarizes a distribution at a fixed damage level, KL divergence enables comparison of successive states and is therefore sensitive to rates of structural change. The KL divergence $D_{\mathrm{KL}}(P \| Q)$ quantifies the information-theoretic distance between two probability distributions, measuring how much additional information is required to encode samples from $P$ using a code optimized for $Q$. When applied to successive degree distributions $P_{q+\Delta q}$ and $P_q$, this quantity captures the instantaneous rate at which the network's structural organization is changing as damage accumulates. Unlike moment-based statistics such as mean degree or degree variance, KL divergence is sensitive to the full shape of the distribution and can detect subtle shifts in connectivity patterns before they manifest as macroscopic changes. The asymmetric nature of KL divergence provides a temporal signal that naturally captures directional changes in structural degradation.
+Unlike entropy, which summarizes a distribution at a fixed damage level, KL divergence enables comparison of successive states and is therefore sensitive to rates of structural change. The KL divergence $D_{\mathrm{KL}}(P \| Q)$ quantifies the information-theoretic distance between two probability distributions, measuring how much additional information is required to encode samples from $P$ using a code optimized for $Q$. When applied to successive degree distributions $P_{q+\Delta q}$ and $P_q$, this quantity provides a local proxy for the rate of structural reorganization per removal increment $\Delta q$ as damage accumulates. Unlike moment-based statistics such as mean degree or degree variance, KL divergence is sensitive to the full shape of the distribution and can detect subtle shifts in connectivity patterns before they manifest as macroscopic changes. The asymmetric nature of KL divergence provides a temporal signal that naturally captures directional changes in structural degradation.
 
 To our knowledge, no prior work has systematically tracked the KL divergence of the degree distribution as a function of node-removal probability, nor evaluated whether KL divergence exhibits predictive signatures prior to critical fragmentation points. This gap motivates our investigation of $D_{\mathrm{KL}}$ as a potential early-warning signal of structural failure in power-law networks.
 
 \section*{Problem Definition}
 
-Let $G_0$ denote an undamaged network with degree distribution $P_0(k)$. Consider independent node failures with probability $q$, producing a damaged graph $G_q$ with observed distribution $P_q(k)$. Define the successive Kullback--Leibler divergence between degree distributions at adjacent damage levels:
+Let $G_0$ denote an undamaged network with degree distribution $P_0(k)$. Consider independent node failures with probability $q$, producing a damaged graph $G_q$ with observed distribution $P_q(k)$. 
+We define the successive Kullback--Leibler divergence between degree distributions at adjacent damage levels:
 \[
 D_{\mathrm{KL}}(P_{q+\Delta q} \| P_q) = \sum_k P_{q+\Delta q}(k) \log_2 \frac{P_{q+\Delta q}(k)}{P_q(k)}.
 \]
 
-We seek to characterize the functional relationship between $D_{\mathrm{KL}}$ and:
+We use $D_{\mathrm{KL}}$ as a local proxy for structural reorganization per removal increment $\Delta q$, and evaluate how its behavior relates to:
 
 \begin{itemize}[itemsep=2pt]
-    \item the GCC fraction $S(q)$,
-    \item the critical failure probability $q_c$,
-    \item the shape and abruptness of the $S(q)$ transition,
-    \item robustness under random vs.\ degree-biased attacks.
+    \item the GCC fraction $S(q)$ and the collapse proxy $q_{\mathrm{collapse}}$ (defined by $S(q)<0.1$),
+    \item warning/trigger timing $\big(q_{\mathrm{warn}},\, q_{\mathrm{trigger}}\big)$ under random vs.\ targeted removal,
+    \item lead time/lag relative to collapse $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ (random) and $\Delta_{\mathrm{trigger}}=q_{\mathrm{collapse}}-q_{\mathrm{trigger}}$ (targeted),
+    \item robustness of these timings across the $\gamma$ sweep.
 \end{itemize}
 
 Our goal is not to modify the network locally, but to evaluate how global, information-theoretic measures of distributional change reflect the onset of fragmentation.
