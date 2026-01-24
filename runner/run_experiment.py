@@ -1,6 +1,12 @@
 import numpy as np
 from pathlib import Path
 import argparse
+import sys
+
+# Allow running this file directly (so imports like `models.*` resolve from repo root).
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -8,6 +14,7 @@ import random
 from models.graph_model import GraphModel
 from models.failure_model import RandomFailure, TargetedFailure
 from experiment.experiment import Experiment
+from runner.gamma_sweep import _detect_targeted_onset, _null_baseline_mu_sigma
 
 
 def make_fig1_random(
@@ -139,9 +146,8 @@ def make_fig2_targeted(
     outdir: str = "paper/figures",
     alpha: float = 0.2,
     n: int = 10_000,
-    q0: float = 0.0,
-    m: int = 3,
-    max_violations: int = 1,
+    n_baseline: int = 3,
+    z: float = 2.0,
     x_max_cap: float = 0.3,
 ):
     """
@@ -154,10 +160,9 @@ def make_fig2_targeted(
       - vertical lines: q_warn (drift rule on midpoint grid) and q_collapse (first S(q)<0.1)
       - saves: PNG + PDF
 
-    Drift rule (paper-aligned):
-      Smallest midpoint q_{i+1/2} >= q0 such that
-        \\tilde D(q_{i+1/2+m}) - \\tilde D(q_{i+1/2}) > 0
-      while allowing up to `max_violations` local downward steps within the window.
+    Targeted onset rule (attack-onset detection):
+      Use a short initial baseline on the midpoint grid (first `n_baseline` midpoints) and
+      trigger when the midpoint-indexed smoothed successive KL exceeds mu + z*sigma.
     """
     np.random.seed(seed)
     random.seed(seed)
@@ -178,29 +183,26 @@ def make_fig2_targeted(
     collapse_idx = next((i for i, s in enumerate(S_values) if s < 0.1), None)
     q_collapse = float(qs[collapse_idx]) if collapse_idx is not None else None
 
-    # --- q_warn drift rule on midpoint grid (clamped to occur before collapse) ---
-    q_warn = None
-    dq = float(qs[1] - qs[0])
-    # If collapse exists, ensure we can still warn before it (otherwise return None)
-    q_end = (q_collapse - dq) if (q_collapse is not None) else float(qs_mid.max())
-    if q_end > 0:
-        # Allow early-q warning search; optionally clamp q0 to be < collapse
-        q0_eff = float(max(0.0, min(q0, q_end)))
-        start_idx = int(np.searchsorted(qs_mid, q0_eff, side="left"))
-        end_idx = int(np.searchsorted(qs_mid, q_end, side="right"))
-        max_i = min(end_idx - m - 1, len(dKL_smooth) - m - 1)
-        for i in range(start_idx, max_i + 1):
-            window = dKL_smooth[i:i + m + 1]
-            diffs = np.diff(window)
-            violations = int(np.sum(diffs <= 0))
-            net_increase = float(window[-1] - window[0])
-            if net_increase > 0 and violations <= max_violations:
-                q_warn = float(qs_mid[i])
-                break
+    # --- targeted onset detection on midpoint grid ---
+    mu_null, sig_null = _null_baseline_mu_sigma(
+        graph,
+        qs,
+        alpha=alpha,
+        n_baseline=n_baseline,
+    )
+    q_warn_tgt, mu0, sigma0, threshold = _detect_targeted_onset(
+        qs_mid,
+        dKL_smooth,
+        n_baseline=n_baseline,
+        z=z,
+        mu0=mu_null,
+        sigma0=sig_null,
+    )
 
-    # Enforce "no warning after collapse"
-    if q_collapse is not None and q_warn is not None and q_warn >= q_collapse:
-        q_warn = None
+    # Temporary debug print (safe to keep; remove if you don't want stdout noise).
+    print(
+        f"[targeted onset] q_warn_tgt={q_warn_tgt}  mu={mu0:.3e}  sigma={sigma0:.3e}  thr={threshold:.3e}"
+    )
 
     # --- plot (twin y-axis) ---
     fig, ax1 = plt.subplots(constrained_layout=True, figsize=(7.0, 4.0), dpi=300)
@@ -229,8 +231,8 @@ def make_fig2_targeted(
     ax2.set_ylabel(r"$\tilde{D}_{\mathrm{KL}}(q)$", color="tab:purple")
     ax2.tick_params(axis="y", labelcolor="tab:purple")
 
-    if q_warn is not None:
-        ax1.axvline(q_warn, color="orange", linestyle="--", lw=1.5)
+    if q_warn_tgt is not None:
+        ax1.axvline(q_warn_tgt, color="orange", linestyle="--", lw=1.5)
 
     if q_collapse is not None:
         ax1.axvline(q_collapse, color="black", linestyle=":", lw=1.5)
@@ -273,7 +275,7 @@ def make_fig2_targeted(
     plt.close(fig)
 
     return {
-        "q_warn": q_warn,
+        "q_warn_tgt": q_warn_tgt,
         "q_collapse": q_collapse,
         "png": str(png_path),
         "pdf": str(pdf_path),

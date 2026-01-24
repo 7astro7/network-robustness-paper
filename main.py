@@ -11,7 +11,7 @@ if __name__ == "__main__":
     export_gamma_long_csv(random_runs, out_path="paper/data/gamma_sweep_random_long.csv")
 
     n_total = len(experiment.seeds)
-    print("γ | Random q_warn(KL) (mean ± std) [n/n] | Random q_warn(JS) (mean ± std) [n/n] | Random q_warn(|ΔH|) (mean ± std) [n/n] | Random Δ_warn (mean ± std) [n/n] | Targeted early-rate [n/n] | Targeted q_trigger (mean ± std) [n/n] | Targeted q_collapse (mean ± std) [n/n] | Targeted Δ_trigger (mean ± std) [n/n]")
+    print("γ | Random q_warn(KL) (mean ± std) [n/n] | Random q_warn(JS) (mean ± std) [n/n] | Random q_warn(|ΔH|) (mean ± std) [n/n] | Random Δ_warn (mean ± std) [n/n] | Targeted early-rate [n/n] | Targeted q_warn_tgt (mean ± std) [n/n] | Targeted q_collapse (mean ± std) [n/n] | Targeted Δ_warn_tgt (mean ± std) [n/n]")
     for (
         g,
         mr, sr, nr,
@@ -19,7 +19,7 @@ if __name__ == "__main__":
         mjs, sjs, njs,
         mdh, sdh, ndh,
         ne, nt, er,
-        mt, st, ntrig,
+        mt, st, nw,
         mc, sc, nc,
         md, sd, nd,
     ) in rows:
@@ -27,11 +27,11 @@ if __name__ == "__main__":
         js_cell = "--" if njs == 0 or mjs != mjs else f"{mjs:.3f} ± {sjs:.3f}"
         dh_cell = "--" if ndh == 0 or mdh != mdh else f"{mdh:.3f} ± {sdh:.3f}"
         dr_cell = "--" if ndr == 0 or mdr != mdr else f"{mdr:.3f} ± {sdr:.3f}"
-        trig_cell = "--" if ntrig == 0 or mt != mt else f"{mt:.3f} ± {st:.3f}"
+        trig_cell = "--" if nw == 0 or mt != mt else f"{mt:.3f} ± {st:.3f}"
         collapse_cell = "--" if nc == 0 or mc != mc else f"{mc:.3f} ± {sc:.3f}"
         delta_cell = "--" if nd == 0 or md != md else f"{md:.3f} ± {sd:.3f}"
         print(
             f"{g:.1f} | {r_cell} [{nr}/{n_total}] | {js_cell} [{int(njs)}/{n_total}] | {dh_cell} [{int(ndh)}/{n_total}] | "
-            f"{dr_cell} [{int(ndr)}/{n_total}] | {int(ne)}/{int(nt)} | {trig_cell} [{int(ntrig)}/{n_total}] | "
+            f"{dr_cell} [{int(ndr)}/{n_total}] | {int(ne)}/{int(nt)} | {trig_cell} [{int(nw)}/{n_total}] | "
             f"{collapse_cell} [{int(nc)}/{n_total}] | {delta_cell} [{int(nd)}/{n_total}]"
         )

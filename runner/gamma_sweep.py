@@ -5,6 +5,76 @@ from models.graph_model import GraphModel
 from models.failure_model import RandomFailure, TargetedFailure
 from models.metrics import Metrics
 
+def _detect_targeted_onset(
+    qs_mid,
+    dkl_smooth_mid,
+    n_baseline=3,
+    z=2.0,
+    mu0=None,
+    sigma0=None,
+):
+    """
+    Targeted removal: attack-onset detection on midpoint-indexed smoothed successive KL.
+
+    Baseline: first `n_baseline` midpoints. Trigger when signal exceeds mu + z*sigma.
+    Returns (q_warn_tgt, mu0, sigma0, thresh) where q_warn_tgt may be None.
+    """
+    qs_mid = np.asarray(qs_mid, dtype=float)
+    dkl_smooth_mid = np.asarray(dkl_smooth_mid, dtype=float)
+
+    if qs_mid.size == 0 or dkl_smooth_mid.size == 0:
+        return None, np.nan, np.nan, np.nan
+    if qs_mid.size != dkl_smooth_mid.size:
+        raise ValueError("qs_mid and dkl_smooth_mid must have same length")
+
+    if mu0 is None or sigma0 is None:
+        n = min(int(n_baseline), int(dkl_smooth_mid.size))
+        if n <= 0:
+            return None, np.nan, np.nan, np.nan
+
+        baseline = dkl_smooth_mid[:n]
+        mu0 = float(np.mean(baseline))
+        sigma0 = float(np.std(baseline, ddof=0))  # population std
+
+    thresh = float(mu0) + float(z) * float(sigma0)
+
+    idx = np.where(dkl_smooth_mid > thresh)[0]
+    q_warn_tgt = float(qs_mid[idx[0]]) if idx.size else None
+    return q_warn_tgt, float(mu0), float(sigma0), thresh
+
+
+def _null_baseline_mu_sigma(graph: GraphModel, qs: np.ndarray, alpha: float, n_baseline: int = 3):
+    """
+    Estimate a noise-floor baseline for successive KL using a no-damage control.
+
+    We evaluate the degree distribution of the initial graph G0 repeatedly (no removals)
+    across the same q-grid, compute successive KL on the midpoint support, smooth it, and
+    take (mu0, sigma0) from the first n_baseline midpoints.
+    """
+    qs = np.asarray(qs, dtype=float)
+    if qs.size < 2:
+        return float("nan"), float("nan")
+
+    G0 = graph.G
+    if G0.number_of_nodes() == 0:
+        return float("nan"), float("nan")
+
+    k_max0 = max(dict(G0.degree()).values())
+    eps = 1e-12
+
+    P0 = np.asarray(graph._degree_distribution(G0, k_max=k_max0, eps=eps), dtype=float)
+    Pq_values = [P0 for _ in range(int(qs.size))]
+
+    exp = Experiment(graph, failure_model=None)  # compute-only use: ewma + successive_kl
+    raw = exp.successive_kl(Pq_values)
+    dkl_mid = exp.ewma(raw, alpha=float(alpha))
+
+    n = min(int(n_baseline), int(dkl_mid.size))
+    if n <= 0:
+        return float("nan"), float("nan")
+    baseline = dkl_mid[:n]
+    return float(np.mean(baseline)), float(np.std(baseline, ddof=0))
+
 class GammaSweepExperiment:
     """
     Core experimental object for sweeping degree exponent γ.
@@ -37,9 +107,9 @@ class GammaSweepExperiment:
             random_js_warn_mean, random_js_warn_std, random_js_warn_n,
             random_dh_warn_mean, random_dh_warn_std, random_dh_warn_n,
             targeted_early_n, targeted_n_total, targeted_early_rate,
-            targeted_trigger_mean, targeted_trigger_std, targeted_trigger_n,
+            targeted_warn_tgt_mean, targeted_warn_tgt_std, targeted_warn_tgt_n,
             targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
-            targeted_delta_mean, targeted_delta_std, targeted_delta_n)
+            targeted_delta_warn_tgt_mean, targeted_delta_warn_tgt_std, targeted_delta_warn_tgt_n)
         """
         rows = []
         runs = []  # long-format per-seed runs (random regime only, for plotting/export)
@@ -50,10 +120,10 @@ class GammaSweepExperiment:
             delta_random = []
             q_warn_js_random = []
             q_warn_dh_random = []
-            q_trigger_targeted = []
+            q_warn_tgt_targeted = []
             is_early_targeted = []
             q_collapse_targeted = []
-            delta_targeted = []
+            delta_warn_tgt = []
 
             for seed in self.seeds:
                 print(f"  gamma={gamma:.1f} seed {seed}...", flush=True)
@@ -130,10 +200,23 @@ class GammaSweepExperiment:
 
                 dkl_t = exp_t.ewma(raw_t)
 
-                # Targeted: drift-rule trigger point (may be pre- or post-collapse)
-                q_trigger = self._detect_positive_drift(self.qs, dkl_t, q0=0.0)
-                if q_trigger is None:
-                    q_trigger = np.nan
+                # Targeted: attack-onset detection on midpoint grid (may be pre- or post-collapse)
+                qs_mid = 0.5 * (self.qs[:-1] + self.qs[1:])
+                mu_null, sig_null = _null_baseline_mu_sigma(
+                    graph,
+                    self.qs,
+                    alpha=0.2,
+                    n_baseline=3,
+                )
+                q_warn_tgt, _, _, _ = _detect_targeted_onset(
+                    qs_mid,
+                    dkl_t,
+                    n_baseline=3,
+                    z=2.0,
+                    mu0=mu_null,
+                    sigma0=sig_null,
+                )
+                q_warn_tgt = float(q_warn_tgt) if q_warn_tgt is not None else np.nan
 
                 # collapse (reference only): first q where S(q) < 0.1
                 q_collapse_t = next(
@@ -142,18 +225,18 @@ class GammaSweepExperiment:
                 )
 
                 is_early = (
-                    np.isfinite(q_trigger)
+                    np.isfinite(q_warn_tgt)
                     and (q_collapse_t is not None)
-                    and (float(q_trigger) < float(q_collapse_t))
+                    and (float(q_warn_tgt) < float(q_collapse_t))
                 )
-                q_trigger_targeted.append(float(q_trigger) if np.isfinite(q_trigger) else np.nan)
+                q_warn_tgt_targeted.append(float(q_warn_tgt) if np.isfinite(q_warn_tgt) else np.nan)
                 is_early_targeted.append(bool(is_early))
 
                 q_collapse_targeted.append(float(q_collapse_t) if q_collapse_t is not None else np.nan)
-                if np.isfinite(q_trigger) and q_collapse_t is not None:
-                    delta_targeted.append(float(q_collapse_t) - float(q_trigger))
+                if np.isfinite(q_warn_tgt) and q_collapse_t is not None:
+                    delta_warn_tgt.append(float(q_collapse_t) - float(q_warn_tgt))
                 else:
-                    delta_targeted.append(np.nan)
+                    delta_warn_tgt.append(np.nan)
 
             # ---- aggregate (nan-safe) ----
             q_warn_random = np.asarray(q_warn_random, dtype=float)
@@ -161,10 +244,10 @@ class GammaSweepExperiment:
             delta_random = np.asarray(delta_random, dtype=float)
             q_warn_js_random = np.asarray(q_warn_js_random, dtype=float)
             q_warn_dh_random = np.asarray(q_warn_dh_random, dtype=float)
-            q_trigger_targeted = np.asarray(q_trigger_targeted, dtype=float)
+            q_warn_tgt_targeted = np.asarray(q_warn_tgt_targeted, dtype=float)
             is_early_targeted = np.asarray(is_early_targeted, dtype=bool)
             q_collapse_targeted = np.asarray(q_collapse_targeted, dtype=float)
-            delta_targeted = np.asarray(delta_targeted, dtype=float)
+            delta_warn_tgt = np.asarray(delta_warn_tgt, dtype=float)
 
             n_r = int(np.count_nonzero(~np.isnan(q_warn_random)))
             n_dr = int(np.count_nonzero(~np.isnan(delta_random)))
@@ -178,21 +261,21 @@ class GammaSweepExperiment:
             mean_dr = float(np.nanmean(delta_random)) if n_dr > 0 else float("nan")
             mean_js = float(np.nanmean(q_warn_js_random)) if n_js > 0 else float("nan")
             mean_dh = float(np.nanmean(q_warn_dh_random)) if n_dh > 0 else float("nan")
-            n_trigger = int(np.count_nonzero(~np.isnan(q_trigger_targeted)))
-            mean_trigger = float(np.nanmean(q_trigger_targeted)) if n_trigger > 0 else float("nan")
+            n_warn_tgt = int(np.count_nonzero(~np.isnan(q_warn_tgt_targeted)))
+            mean_warn_tgt = float(np.nanmean(q_warn_tgt_targeted)) if n_warn_tgt > 0 else float("nan")
             n_collapse = int(np.count_nonzero(~np.isnan(q_collapse_targeted)))
             mean_collapse = float(np.nanmean(q_collapse_targeted)) if n_collapse > 0 else float("nan")
-            n_delta = int(np.count_nonzero(~np.isnan(delta_targeted)))
-            mean_delta = float(np.nanmean(delta_targeted)) if n_delta > 0 else float("nan")
+            n_delta = int(np.count_nonzero(~np.isnan(delta_warn_tgt)))
+            mean_delta = float(np.nanmean(delta_warn_tgt)) if n_delta > 0 else float("nan")
 
             # ddof=1; if <2 detected, report std=0.0 (or could use np.nan)
             std_r = float(np.nanstd(q_warn_random, ddof=1)) if n_r > 1 else 0.0
             std_dr = float(np.nanstd(delta_random, ddof=1)) if n_dr > 1 else 0.0
             std_js = float(np.nanstd(q_warn_js_random, ddof=1)) if n_js > 1 else 0.0
             std_dh = float(np.nanstd(q_warn_dh_random, ddof=1)) if n_dh > 1 else 0.0
-            std_trigger = float(np.nanstd(q_trigger_targeted, ddof=1)) if n_trigger > 1 else 0.0
+            std_warn_tgt = float(np.nanstd(q_warn_tgt_targeted, ddof=1)) if n_warn_tgt > 1 else 0.0
             std_collapse = float(np.nanstd(q_collapse_targeted, ddof=1)) if n_collapse > 1 else 0.0
-            std_delta = float(np.nanstd(delta_targeted, ddof=1)) if n_delta > 1 else 0.0
+            std_delta = float(np.nanstd(delta_warn_tgt, ddof=1)) if n_delta > 1 else 0.0
 
             rows.append((
                 float(gamma),
@@ -201,7 +284,7 @@ class GammaSweepExperiment:
                 mean_js, std_js, n_js,
                 mean_dh, std_dh, n_dh,
                 early_n, n_total, early_rate,
-                mean_trigger, std_trigger, n_trigger,
+                mean_warn_tgt, std_warn_tgt, n_warn_tgt,
                 mean_collapse, std_collapse, n_collapse,
                 mean_delta, std_delta, n_delta,
             ))

@@ -41,9 +41,9 @@ def export_gamma_table(
             random_js_warn_mean, random_js_warn_std, random_js_warn_n,
             random_dh_warn_mean, random_dh_warn_std, random_dh_warn_n,
             targeted_early_n, targeted_n_total, targeted_early_rate,
-            targeted_trigger_mean, targeted_trigger_std, targeted_trigger_n,
+            targeted_warn_tgt_mean, targeted_warn_tgt_std, targeted_warn_tgt_n,
             targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
-            targeted_delta_mean, targeted_delta_std, targeted_delta_n)
+            targeted_delta_warn_tgt_mean, targeted_delta_warn_tgt_std, targeted_delta_warn_tgt_n)
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -98,9 +98,9 @@ def export_gamma_table(
             "random_js_warn_mean", "random_js_warn_std", "random_js_warn_n",
             "random_dh_warn_mean", "random_dh_warn_std", "random_dh_warn_n",
             "targeted_early_n", "targeted_n_total", "targeted_early_rate",
-            "targeted_trigger_mean", "targeted_trigger_std", "targeted_trigger_n",
+            "targeted_warn_tgt_mean", "targeted_warn_tgt_std", "targeted_warn_tgt_n",
             "targeted_collapse_mean", "targeted_collapse_std", "targeted_collapse_n",
-            "targeted_delta_mean", "targeted_delta_std", "targeted_delta_n",
+            "targeted_delta_warn_tgt_mean", "targeted_delta_warn_tgt_std", "targeted_delta_warn_tgt_n",
         ]
         df = pd.DataFrame(rows, columns=cols)
     else:
@@ -156,9 +156,9 @@ def export_gamma_table(
         df["targeted_rate_cell"] = [
             fmt_rate_cell(ne, nt) for ne, nt in zip(df["targeted_early_n"], df["targeted_n_total"])
         ]
-        df["targeted_trigger_cell"] = [
+        df["targeted_warn_tgt_cell"] = [
             fmt_cell(m, s, n) for m, s, n in zip(
-                df["targeted_trigger_mean"], df["targeted_trigger_std"], df["targeted_trigger_n"]
+                df["targeted_warn_tgt_mean"], df["targeted_warn_tgt_std"], df["targeted_warn_tgt_n"]
             )
         ]
         if "targeted_collapse_mean" in df.columns:
@@ -167,9 +167,11 @@ def export_gamma_table(
                     df["targeted_collapse_mean"], df["targeted_collapse_std"], df["targeted_collapse_n"]
                 )
             ]
-            df["targeted_delta_cell"] = [
+            df["targeted_delta_warn_tgt_cell"] = [
                 fmt_cell(m, s, n) for m, s, n in zip(
-                    df["targeted_delta_mean"], df["targeted_delta_std"], df["targeted_delta_n"]
+                    df["targeted_delta_warn_tgt_mean"],
+                    df["targeted_delta_warn_tgt_std"],
+                    df["targeted_delta_warn_tgt_n"],
                 )
             ]
 
@@ -186,14 +188,16 @@ def export_gamma_table(
             df["random_delta_count"] = [f"{int(n)}/{n_total}" for n in df["random_delta_n"]]
 
         # Table B (Targeted)
-        df["targeted_trigger_meanstd"] = [
-            fmt_mean_std(m, s) for m, s in zip(df["targeted_trigger_mean"], df["targeted_trigger_std"])
+        df["targeted_warn_tgt_meanstd"] = [
+            fmt_mean_std(m, s) for m, s in zip(df["targeted_warn_tgt_mean"], df["targeted_warn_tgt_std"])
         ]
         df["targeted_collapse_meanstd"] = [
             fmt_mean_std(m, s) for m, s in zip(df["targeted_collapse_mean"], df["targeted_collapse_std"])
         ]
-        df["targeted_delta_meanstd"] = [
-            fmt_mean_std(m, s) for m, s in zip(df["targeted_delta_mean"], df["targeted_delta_std"])
+        df["targeted_delta_warn_tgt_meanstd"] = [
+            fmt_mean_std(m, s) for m, s in zip(
+                df["targeted_delta_warn_tgt_mean"], df["targeted_delta_warn_tgt_std"]
+            )
         ]
 
         # If early-rate is constant (e.g. 0/5 for all γ), report it once in caption.
@@ -201,7 +205,7 @@ def export_gamma_table(
         try:
             early_counts = (df["targeted_early_n"].astype(int).astype(str) + "/" + df["targeted_n_total"].astype(int).astype(str))
             early_unique = set(early_counts.tolist())
-            trig_full = bool((df["targeted_trigger_n"].astype(int) == df["targeted_n_total"].astype(int)).all())
+            trig_full = bool((df["targeted_warn_tgt_n"].astype(int) == df["targeted_n_total"].astype(int)).all())
         except Exception:
             early_unique = set()
             trig_full = False
@@ -243,26 +247,26 @@ def export_gamma_table(
             lines.append("")
 
             # --- Table B: Targeted removal (narrow, but explicit early-rate column) ---
-            caption_note = rf"Early-trigger rate is {early_rate_str} for all $\gamma$, hence $\Delta_{{\mathrm{{trigger}}}}=q_{{\mathrm{{collapse}}}}-q_{{\mathrm{{trigger}}}}<0$ throughout."
+            caption_note = rf"Early-rate is {early_rate_str} for all $\gamma$, hence $\Delta_{{\mathrm{{warn}}}}^{{\mathrm{{tgt}}}}=q_{{\mathrm{{collapse}}}}-q_{{\mathrm{{warn}}}}^{{\mathrm{{tgt}}}}$ throughout."
             if trig_full:
-                caption_note += r" Drift triggers exist in all seeds ($n_{\mathrm{trig}}=n$)."
+                caption_note += r" Onset warnings exist in all seeds ($n_{\mathrm{warn}}=n$)."
 
             lines.append(r"\begin{table}[H]")
             lines.append(r"\centering")
             lines.append(
-                rf"\caption{{Targeted (hub-first) removal: collapse timing $q_{{\mathrm{{collapse}}}}$ and drift-trigger timing $q_{{\mathrm{{trigger}}}}$. {caption_note}}}"
+                rf"\caption{{Targeted (hub-first) removal: collapse timing $q_{{\mathrm{{collapse}}}}$ and attack-onset warning timing $q_{{\mathrm{{warn}}}}^{{\mathrm{{tgt}}}}$. {caption_note}}}"
             )
             lines.append(r"\label{tab:gamma_sweep_targeted}")
             lines.append(r"\begin{tabular}{c c c c c}")
             lines.append(r"\toprule")
             lines.append(
-                r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $q_{\mathrm{trigger}}$ (mean $\pm$ std) & $\Delta_{\mathrm{trigger}}$ (mean $\pm$ std) \\"
+                r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) & $\Delta_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) \\"
             )
             lines.append(r"\midrule")
             for _, r in df.iterrows():
                 early_cell = f"{int(r['targeted_early_n'])}/{int(r['targeted_n_total'])}"
                 lines.append(
-                    f"{r['gamma']:.1f} & {early_cell} & {r['targeted_collapse_meanstd']} & {r['targeted_trigger_meanstd']} & {r['targeted_delta_meanstd']} \\\\"
+                    f"{r['gamma']:.1f} & {early_cell} & {r['targeted_collapse_meanstd']} & {r['targeted_warn_tgt_meanstd']} & {r['targeted_delta_warn_tgt_meanstd']} \\\\"
                 )
             lines.append(r"\bottomrule")
             lines.append(r"\end{tabular}")
@@ -323,18 +327,18 @@ def export_gamma_table(
         lines.append(r"\begin{table}[H]")
         lines.append(r"\centering")
         lines.append(
-            r"\caption{Targeted (hub-first) removal: drift trigger timing $q_{\mathrm{trigger}}$ and early-trigger rate ($q_{\mathrm{trigger}}<q_{\mathrm{collapse}}$), with collapse defined by $S(q)<0.1$.}"
+            r"\caption{Targeted (hub-first) removal: attack-onset warning timing $q_{\mathrm{warn}}^{\mathrm{tgt}}$ and early-rate ($q_{\mathrm{warn}}^{\mathrm{tgt}}<q_{\mathrm{collapse}}$), with collapse defined by $S(q)<0.1$.}"
         )
         lines.append(r"\label{tab:gamma_sweep_targeted}")
         lines.append(r"\begin{tabular}{c c c c c}")
         lines.append(r"\toprule")
         lines.append(
-            r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] \\"
+            r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] \\"
         )
         lines.append(r"\midrule")
         for _, r in df.iterrows():
             lines.append(
-                f"{r['gamma']:.1f} & {r['targeted_rate_cell']} & {r['targeted_trigger_cell']} & {r['targeted_collapse_meanstd']} & {r['targeted_delta_cell']} \\\\"
+                f"{r['gamma']:.1f} & {r['targeted_rate_cell']} & {r['targeted_warn_tgt_cell']} & {r['targeted_collapse_meanstd']} & {r['targeted_delta_warn_tgt_cell']} \\\\"
             )
         lines.append(r"\bottomrule")
         lines.append(r"\end{tabular}")
@@ -351,7 +355,7 @@ def export_gamma_table(
         lines.append(r"\caption{Mean and standard deviation of detected warning points $q_{\mathrm{warn}}$ across $\gamma$ under random and targeted removal.}")
     else:
         lines.append(
-            r"\caption{Random removal reports the warning point $q_{\mathrm{warn}}$. Targeted removal reports the fraction of seeds with an \emph{early} drift trigger ($q_{\mathrm{trigger}}<q_{\mathrm{collapse}}$) and the drift trigger timing $q_{\mathrm{trigger}}$.}"
+            r"\caption{Random removal reports the warning point $q_{\mathrm{warn}}$. Targeted removal reports the fraction of seeds with an \emph{early} onset warning ($q_{\mathrm{warn}}^{\mathrm{tgt}}<q_{\mathrm{collapse}}$) and the onset warning timing $q_{\mathrm{warn}}^{\mathrm{tgt}}$.}"
         )
     lines.append(r"\label{tab:gamma_sweep}")
     if "targeted_mean" in df.columns:
@@ -365,11 +369,11 @@ def export_gamma_table(
         lines.append(r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] \\")
     elif "targeted_collapse_mean" in df.columns:
         lines.append(
-            r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted early-rate [$n_{\mathrm{early}}/n$] & Targeted $q_{\mathrm{trigger}}$ (drift) (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] & Targeted $q_{\mathrm{collapse}}$ (mean $\pm$ std) [$n/n$] & Targeted $\Delta=q_{\mathrm{collapse}}-q_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] \\"
+            r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted early-rate [$n_{\mathrm{early}}/n$] & Targeted $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] & Targeted $q_{\mathrm{collapse}}$ (mean $\pm$ std) [$n/n$] & Targeted $\Delta=q_{\mathrm{collapse}}-q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] \\"
         )
     else:
         lines.append(
-            r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted early-rate [$n_{\mathrm{early}}/n$] & Targeted $q_{\mathrm{trigger}}$ (mean $\pm$ std) [$n_{\mathrm{trig}}/n$] \\"
+            r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted early-rate [$n_{\mathrm{early}}/n$] & Targeted $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] \\"
         )
     lines.append(r"\midrule")
 
@@ -378,11 +382,11 @@ def export_gamma_table(
             lines.append(f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_cell']} \\\\")
         elif "targeted_collapse_mean" in df.columns:
             lines.append(
-                f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_trigger_cell']} & {r['targeted_collapse_cell']} & {r['targeted_delta_cell']} \\\\"
+                f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_warn_tgt_cell']} & {r['targeted_collapse_cell']} & {r['targeted_delta_warn_tgt_cell']} \\\\"
             )
         else:
             lines.append(
-                f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_trigger_cell']} \\\\"
+                f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_warn_tgt_cell']} \\\\"
             )
 
     lines.append(r"\bottomrule")

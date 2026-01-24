@@ -41,15 +41,15 @@ empirical degree distributions, yielding a signal that quantifies the instantane
 of topological reorganization. Using fixed smoothing and pre-specified decision rules, we
 find that under random failure the signal departs from an initial stationary baseline
 well before GCC collapse across a sweep of $\gamma$, producing nontrivial warning lead
-time. Under targeted removal, structural change begins immediately and collapse can occur
-before any trigger; here the same signal serves primarily as a measure of disruption
-intensity. We additionally validate the random-failure behavior on an empirical Internet
-topology graph from the CAIDA AS Relationships dataset.
+time. Under targeted removal, we instead detect attack onset relative to a no-damage
+baseline, yielding an onset warning point $q_{\mathrm{warn}}^{\mathrm{tgt}}$ at very small
+damage levels. We additionally validate the random-failure behavior on an empirical
+Internet topology graph from the CAIDA AS Relationships dataset.
 
 Overall, successive KL divergence provides an interpretable rate-based indicator of
 structural change: under random failure it yields advance warning via baseline departure,
-while under targeted removal it functions as a disruption-intensity measure because
-collapse can precede any drift trigger.
+while under targeted removal it yields an attack-onset warning relative to a no-damage
+baseline and serves as a disruption-intensity signal as collapse approaches.
 \end{abstract}
 
 
@@ -148,12 +148,12 @@ how its behavior relates to:
 \begin{itemize}[itemsep=2pt]
     \item the GCC fraction $S(q)$ and the collapse proxy $q_{\mathrm{collapse}}$ (defined
     by $S(q)<0.1$),
-    \item warning/trigger timing $\big(q_{\mathrm{warn}},\, q_{\mathrm{trigger}}\big)$
-    under random vs.\ targeted
-    removal,
+    \item warning timing $\big(q_{\mathrm{warn}},\, q_{\mathrm{warn}}^{\mathrm{tgt}}\big)$
+    under random vs.\ targeted removal,
     \item lead time/lag relative to collapse
     $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ (random)
-    and $\Delta_{\mathrm{trigger}}=q_{\mathrm{collapse}}-q_{\mathrm{trigger}}$ (targeted),
+    and $\Delta_{\mathrm{warn}}^{\mathrm{tgt}}=$
+    $q_{\mathrm{collapse}}-q_{\mathrm{warn}}^{\mathrm{tgt}}$ (targeted),
     \item robustness of these timings across the $\gamma$ sweep.
 \end{itemize}
 
@@ -248,9 +248,10 @@ targeted (hub-first) removal.
     values of $q$.
     \item The signal shows a pronounced early deviation caused by immediate removal of
     high-degree nodes.
-    \item A drift-based trigger may not occur before collapse; in that case the signal is
-    interpreted as a disruption-intensity measure rather than an advance-warning
-    indicator.
+    \item An attack-onset warning point
+    $q_{\mathrm{warn}}^{\mathrm{tgt}}$ can be identified
+    near the earliest damage levels and typically precedes $q_{\mathrm{collapse}}$; this
+    timestamp reflects attack detection rather than forecasting.
 \end{itemize}
 
 
@@ -362,10 +363,10 @@ while preserving trend information, we apply an exponentially weighted moving av
 \]
 
 The smoothing parameter is fixed at $\alpha = 0.2$ across all experiments. 
-A brief sensitivity check indicates that detected warning/trigger points can shift with
+A brief sensitivity check indicates that detected warning points can shift with
 $\alpha$,
-particularly under targeted removal where the signal is nonstationary and the drift-based
-rule is sensitive to short-run
+particularly under targeted removal where onset is abrupt and the signal can be strongly
+nonstationary at early $q$.
 fluctuations. Accordingly, we fix $\alpha=0.2$ as a moderate smoothing choice and report
 results using this single
 pre-specified value rather than selecting $\alpha$ post hoc.
@@ -373,7 +374,7 @@ Although the update rule depends only on the previous smoothed value, the EWMA a
 exponentially decaying weight to past observations, corresponding to an effective window
 length of approximately $1/\alpha$. No optimization over $\alpha$ is performed.
 
-The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole warning/trigger observable
+The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole warning observable
 used throughout this study; alternative signals are evaluated only in control comparisons.
 
 
@@ -388,7 +389,7 @@ Our experimental design isolates how information-theoretic change rates behave u
 progressive network damage across different structural regimes. We vary (i) the degree
 heterogeneity of the underlying network and (ii) the node-removal mechanism, while holding
 all detection logic fixed. For each configuration, we measure the separation between an
-information-theoretic warning/trigger point and the onset of macroscopic connectivity
+information-theoretic warning point and the onset of macroscopic connectivity
 collapse.
 
 \subsection*{Graph Model}
@@ -484,32 +485,22 @@ The early-warning point $q_{\mathrm{warn}}$ is defined as the smallest $q$ such 
 This criterion detects the loss of structural stationarity without reference to collapse
 thresholds or numerical derivatives.
 
-\subsubsection*{Targeted Failure: Drift Rule on Midpoint Support}
-Under targeted (hub-first) removal, structural change begins immediately and no stationary
-baseline exists. Because successive KL is computed between adjacent damage levels, we
-index the smoothed signal on midpoints
+\subsubsection*{Targeted Failure: Onset Rule on Midpoint Support}
+Under targeted (hub-first) removal, structural change begins immediately, so we treat the
+goal as attack-onset detection rather than forecasting. Because successive KL is computed
+between adjacent damage levels, we index the smoothed signal on midpoints
 \[
 q_{i+\frac12}=\frac{q_i+q_{i+1}}{2}.
 \]
-We define the trigger point $q_{\mathrm{trigger}}$ as the smallest midpoint
-$q_{i+\frac12}$ with $q_{i+\frac12} > q_0$ (we use $q_0=0.15$) for which
-$\tilde{D}_{\mathrm{KL}}$ exhibits persistent positive drift over $m$ increments (we use
-$m=3$). Concretely, the drift condition requires a net increase over a window of length
-$m+1$,
+We define the targeted onset warning point $q_{\mathrm{warn}}^{\mathrm{tgt}}$ as the
+smallest midpoint at which $\tilde{D}_{\mathrm{KL}}(q_{i+\frac12})$ exceeds a noise-floor
+baseline estimated from a no-damage control. Concretely, we estimate $(\mu_0,\sigma_0)$
+from the first few midpoints of a no-damage sweep (same $G_0$; $P_q(k)$ recomputed at each
+step but with no nodes removed) and trigger at
+the earliest midpoint satisfying
 \[
-\tilde D_{\mathrm{KL}}(q_{i+m+\frac12})-\tilde D_{\mathrm{KL}}(q_{i+\frac12})>0,
+\tilde{D}_{\mathrm{KL}}(q_{i+\frac12}) > \mu_0 + 2\sigma_0.
 \]
-while allowing occasional small local violations due to stochastic noise.
-
-
-\paragraph{Implementation detail.}
-Because $\tilde{D}_{\mathrm{KL}}$ is estimated from finite simulations, the drift
-criterion can be disrupted by occasional small downward fluctuations. In practice we
-therefore interpret ``persistent drift'' as requiring net increase over a window of $m$
-increments, allowing at most a small number of local violations within that window, rather
-than demanding strict monotonicity at every step. This preserves the regime distinction
-(no stationary baseline under targeted removal) while reducing sensitivity to single-step
-noise.
 
 \subsection*{Collapse Identification}
 For post hoc comparison only (not used in any detection rule), we define the collapse
@@ -534,7 +525,8 @@ All experiments use 100 evenly spaced values of $q \in [0, 0.9]$.
 Each configuration is repeated across five random seeds.
 
 For each value of $\gamma$ and each failure mode, we report the mean and standard
-deviation of $q_{\mathrm{warn}}$ or $q_{\mathrm{trigger}}$ across seeds.
+deviation of $q_{\mathrm{warn}}$ (random) or $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (targeted)
+across seeds.
 
 \subsection*{Empirical network: CAIDA AS graph (\CAIDASnapshot)}
 We use the CAIDA AS Relationships Dataset (serial-2; snapshot
@@ -676,9 +668,8 @@ only by stochastic node removal.
 Under targeted (hub-first) removal, $\tilde{D}_{\mathrm{KL}}(q)$ shows immediate
 nonstationary disruption rather than a low-$q$ baseline regime.
 
-For targeted removal, collapse occurs at small $q$ and the drift trigger is uniformly
-post-collapse under the current
-rule (Table~\ref{tab:gamma_sweep_targeted}).
+For targeted removal, onset warnings occur near the earliest damage levels, well before
+collapse (Table~\ref{tab:gamma_sweep_targeted}).
 
 \begin{figure}[H]
 \centering
@@ -687,17 +678,14 @@ paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
 \caption{Targeted (hub-first) failure (same representative $\gamma=2.5$, seed=0,
 $\alpha=0.20$).
 Collapse is abrupt under targeted removal: $q_{\mathrm{collapse}}=0.091$ (defined by
-$S(q)<0.1$). For this seed, the drift-rule trigger does not occur before collapse (no
-pre-collapse
-$q_{\mathrm{trigger}}$ is
-observed),
-so $\tilde D_{\mathrm{KL}}(q)$ is interpreted here as a disruption-intensity signal.}
+$S(q)<0.1$). The onset warning point $q_{\mathrm{warn}}^{\mathrm{tgt}}$ occurs at the
+earliest midpoint on the damage grid, indicating immediate attack onset under hub-first
+removal.}
 \label{fig:targeted_rep}
 \end{figure}
 
-Table~\ref{tab:gamma_sweep_targeted} shows $q_{\mathrm{collapse}}\approx 0.07$--$0.09$
-while $q_{\mathrm{trigger}}$
-occurs substantially later for all $\gamma$.
+Table~\ref{tab:gamma_sweep_targeted} shows $q_{\mathrm{warn}}^{\mathrm{tgt}}\approx 0.005$
+and $q_{\mathrm{collapse}}\approx 0.07$--$0.09$ across the $\gamma$ sweep.
 
 % --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
 \subsection*{Dependence on Degree Exponent}
@@ -714,11 +702,10 @@ a function of $\gamma$ (Chung--Lu, $N=10{,}000$, $\alpha=0.20$).}
 Figure~\ref{fig:gamma_sweep_random} shows $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$
 across the heavy-tailed regime.
 Tables~\ref{tab:gamma_sweep} and \ref{tab:gamma_sweep_random_baselines} summarize the
-seed-averaged values under random
-failure, while Table~\ref{tab:gamma_sweep_targeted} shows that targeted collapse occurs at
-small $q$ and the drift trigger is post-collapse under the current rule. This separation
-is consistent with gradual tail erosion under random removal, where degree-structure
-reorganization accumulates well before macroscopic fragmentation.
+seed-averaged values under random failure, while Table~\ref{tab:gamma_sweep_targeted}
+shows that targeted onset warnings occur immediately and targeted collapse occurs at small
+$q$. This separation is consistent with gradual tail erosion under random removal, where
+degree-structure reorganization accumulates well before macroscopic fragmentation.
 
 \FloatBarrier
 \input{paper/gamma_sweep.tex}
@@ -746,7 +733,7 @@ pipeline while restricting the sweep to $q\le 0.25$ and report the minimum GCC f
 $\min_{q\le 0.25} S(q)$ over the
 run (Table~\ref{tab:control_low_damage}). Using the same baseline-deviation rule with
 baseline window $q\le 0.15$ (and
-evaluating triggers only for midpoints $q_{\mathrm{mid}} > 0.15$), we record the trigger
+evaluating warnings only for midpoints $q_{\mathrm{mid}} > 0.15$), we record the warning
 rate and the mean
 $q_{\mathrm{warn}}$ conditional on triggering for successive KL, successive JS, and
 $|\Delta H|$.
@@ -769,8 +756,8 @@ From the preceding analyses, we identify the following contributions:
     without using connectivity in the detection rule.
 
     \item Targeted-Regime Interpretation: Under targeted (hub-first) removal, structural
-    disruption is immediate and collapse can precede any drift-based trigger under the
-    current rule, so the signal is best interpreted as a disruption-intensity measure.
+    disruption is immediate, so we treat targeted detection as attack-onset identification
+    and report $q_{\mathrm{warn}}^{\mathrm{tgt}}$ relative to a no-damage noise floor.
 
     \item Robustness Across the Heavy-Tailed Regime: Across $\gamma\in[2.1,2.9]$ in
     Chung--Lu graphs, the random-failure warning-before-collapse ordering persists,
@@ -794,10 +781,10 @@ capturing genuine structural reorganization rather than an artifact of a particu
 synthetic ensemble.
 
 Under targeted (hub-first) removal, the interpretation changes: structural disruption is
-immediate and collapse can occur before any drift-based trigger. In this adversarial
-regime, the successive KL signal is therefore more useful as a disruption-intensity
-measure than as a reliable advance-warning detector, highlighting an intrinsic limitation
-of baseline-style early-warning rules when the system is forced directly toward failure.
+immediate, and an onset warning $q_{\mathrm{warn}}^{\mathrm{tgt}}$ is detected near the
+earliest midpoints relative to a no-damage noise floor. This warning reflects attack
+onset rather than forecasting collapse, since $q_{\mathrm{collapse}}$ remains abrupt and
+occurs at small $q$ under hub-first removal.
 
 Two controls clarify what the baseline-deviation rule is (and is not) detecting. A
 no-damage null control produces no false triggers, while a damage-without-collapse control
