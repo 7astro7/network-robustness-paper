@@ -43,8 +43,7 @@ any trigger; here the same signal serves primarily as a measure of disruption in
 We additionally validate the random-failure behavior on an empirical Internet topology
 graph from the CAIDA AS Relationships dataset.
 
-Overall, successive KL divergence provides a robust and interpretable rate-based indicator
-of structural degradation that complements classical percolation-based robustness analysis.
+Overall, successive KL divergence provides an interpretable rate-based indicator of structural change: under random failure it yields advance warning via baseline departure, while under targeted removal it functions as a disruption-intensity measure because collapse can precede any drift trigger.
 \end{abstract}
 
 
@@ -153,7 +152,7 @@ predictions.
 
 Under random node removal, scale-free networks exhibit an initial regime in which
 structural changes are small and approximately stationary. We hypothesize that, at low
-damage levels, the rate of change in the degree distribution fluctuates weakly around a
+damage levels, the successive KL change-rate signal fluctuates weakly around a
 stable baseline, reflecting the network’s tolerance to random failure.
 
 As damage accumulates, this stationarity is eventually lost prior to macroscopic
@@ -163,7 +162,7 @@ fragmentation.
 \begin{itemize}
     \item The successive KL divergence remains approximately constant for small values
     of $q$, forming a well-defined baseline.
-    \item A statistically detectable deviation from this baseline occurs at a damage
+    \item A detectable deviation from this baseline occurs at a damage
     level $q_{\mathrm{warn}}$ strictly less than the collapse point
     $q_{\mathrm{collapse}}$.
     \item The warning point $q_{\mathrm{warn}}$ exhibits moderate variability across
@@ -174,17 +173,15 @@ fragmentation.
 
 Under targeted (hub-first) node removal, structural degradation begins immediately.
 Because high-degree nodes are removed first, the degree distribution is altered
-substantially even at small damage fractions. We hypothesize that, in this regime, no
-initial stationary baseline exists for the rate of structural change.
+substantially even at small damage fractions. We hypothesize that, in this regime, the successive KL change-rate signal has no initial stationary baseline.
 
-Instead, structural degradation is characterized by immediate nonstationarity in the rate
-of change, with large early deviations that may not evolve monotonically.
+Instead, the successive KL change-rate signal is immediately nonstationary, with large early deviations that may not evolve monotonically.
 
 \paragraph{Predictions.}
 \begin{itemize}
     \item The successive KL divergence does not exhibit a stationary baseline at low values of $q$.
     \item The signal shows a pronounced early deviation caused by immediate removal of high-degree nodes.
-    \item A drift-based trigger may not occur before collapse; in this case the signal is interpreted as a disruption-intensity measure rather than an advance-warning point.
+    \item A drift-based trigger may not occur before collapse; in that case the signal is interpreted as a disruption-intensity measure rather than an advance-warning indicator.
 \end{itemize}
 
 
@@ -198,11 +195,11 @@ scale-free networks with degree exponents in the range
 
 \paragraph{Predictions.}
 \begin{itemize}
-    \item For all values of $\gamma$ in this range, an early-warning point
-    $q_{\mathrm{warn}}$ can be identified using the same information-theoretic signal.
-    \item The relative ordering $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$ holds
+    \item Under random failure and for all values of $\gamma$ in this range, an early-warning point
+    $q_{\mathrm{warn}}$ can be identified using the same successive KL signal.
+    \item Under random failure, the relative ordering $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$ holds
     consistently across $\gamma$.
-    \item While the mean value of $q_{\mathrm{warn}}$ may vary with $\gamma$, the
+    \item Under random failure, while the mean value of $q_{\mathrm{warn}}$ may vary with $\gamma$, the
     existence of an early-warning regime is robust to changes in degree heterogeneity.
 \end{itemize}
 
@@ -250,7 +247,7 @@ H(q) = -\sum_k P_q(k)\log_2 P_q(k),
 which summarizes degree heterogeneity at a fixed structural state.
 
 While degree entropy $H(q)$ summarizes heterogeneity of the degree distribution at a fixed damage level,
-successive Kullback--Leibler divergence explicitly encodes \emph{change} between successive states of damage.
+successive Kullback--Leibler divergence explicitly encodes change between successive states of damage.
 Consequently, KL divergence can be sensitive to structural reorganization even in regimes where entropy evolves gradually, motivating its use as a complementary indicator for early warning.
 
 \paragraph{Support and numerical stability.}
@@ -271,20 +268,20 @@ while preserving trend information, we apply an exponentially weighted moving av
 \]
 
 The smoothing parameter is fixed at $\alpha = 0.2$ across all experiments. 
-A brief sensitivity check indicates that the detected warning point can shift with $\alpha$, particularly under targeted removal where the signal is nonstationary and the drift-based rule is sensitive to short-run fluctuations. Accordingly, we fix $\alpha=0.2$ as a moderate smoothing choice and report results using this single pre-specified value rather than selecting $\alpha$ post hoc.
+A brief sensitivity check indicates that detected warning/trigger points can shift with $\alpha$, particularly under targeted removal where the signal is nonstationary and the drift-based rule is sensitive to short-run fluctuations. Accordingly, we fix $\alpha=0.2$ as a moderate smoothing choice and report results using this single pre-specified value rather than selecting $\alpha$ post hoc.
 Although the update rule depends only on the previous smoothed value, the EWMA 
 assigns exponentially decaying weight to past observations, 
 corresponding to an effective window
 length of approximately $1/\alpha$. No optimization over $\alpha$ is performed.
 
-The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole early-warning observable used
+The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole warning/trigger observable used
 throughout this study.
 
 
 \subsection*{Early-Warning Decision Rules}
 
 Because the same structural signal may exhibit qualitatively different behavior under
-different failure regimes, early warning is identified using regime-appropriate decision
+different failure regimes, it is interpreted using regime-appropriate decision
 rules applied to $\tilde{D}_{\mathrm{KL}}(q)$.
 
 \paragraph{Random Failure.}
@@ -304,7 +301,7 @@ naturally indexed on the midpoint grid
 \[
 q_{i+\frac12}=\frac{q_i+q_{i+1}}{2}.
 \]
-We define the warning point $q_{\mathrm{warn}}$ as the smallest midpoint $q_{i+\frac12}$
+We define the trigger point $q_{\mathrm{trigger}}$ as the smallest midpoint $q_{i+\frac12}$
 with $q_{i+\frac12}\ge q_0$ such that the smoothed successive KL divergence exhibits
 persistent positive drift over a window of $m$ increments. Operationally, we require a
 net increase over $m$ successive increments,
@@ -315,7 +312,7 @@ while allowing up to a small number of local violations of strict monotonicity w
 window to reduce sensitivity to single-step noise. Throughout this study we use
 $q_0=0.15$ and $m=3$.
 
-In both regimes, the warning logic operates solely on the successive KL signal; the
+In both regimes, detection operates solely on the successive KL signal; the
 difference lies only in the decision rule used to interpret that signal.
 
 \section*{Experimental Design}
@@ -324,7 +321,7 @@ Our experimental design isolates how information-theoretic change rates behave u
 progressive network damage across different structural regimes. We vary (i) the degree
 heterogeneity of the underlying network and (ii) the node-removal mechanism, while
 holding all detection logic fixed. For each configuration, we measure the separation
-between an information-theoretic warning point and the onset of macroscopic connectivity
+between an information-theoretic warning/trigger point and the onset of macroscopic connectivity
 collapse.
 
 \subsection*{Graph Model}
@@ -388,7 +385,7 @@ At each damage level $q$, we compute:
     \item The empirical degree distribution $P_q(k)$ of $G_q$.
 \end{itemize}
 
-No connectivity-based quantity is used in the early-warning logic.
+No connectivity-based quantity is used in the detection logic.
 
 \subsection*{Successive KL Divergence}
 To quantify incremental structural change, we compute the successive
@@ -411,7 +408,7 @@ The smoothed signal,
 \[
 \tilde{D}_{\mathrm{KL}}(q),
 \]
-is the sole early-warning observable used throughout the study.
+is the sole warning/trigger observable used throughout the study.
 
 \subsection*{Early-Warning Criteria}
 \label{sec:early_warning_criteria}
@@ -442,7 +439,7 @@ levels, we index the smoothed signal on midpoints
 \[
 q_{i+\frac12}=\frac{q_i+q_{i+1}}{2}.
 \]
-We define the warning point as the smallest midpoint $q_{i+\frac12}$ for which
+We define the trigger point $q_{\mathrm{trigger}}$ as the smallest midpoint $q_{i+\frac12}$ for which
 $\tilde{D}_{\mathrm{KL}}$ exhibits persistent positive drift over $m$ increments, i.e.,
 net increase over a window of length $m+1$ while allowing occasional small local
 violations due to stochastic noise.
@@ -457,7 +454,7 @@ $q$ such that
 \[
 S(q) < 0.1.
 \]
-This threshold is not used in the warning logic and serves solely to contextualize
+This threshold is not used in the detection logic and serves solely to contextualize
 warning lead times.
 
 \paragraph{CAIDA operational collapse proxy (majority-loss).}
@@ -485,26 +482,15 @@ This study reports results on two network classes:
     \item \textbf{Empirical network (validation):} the CAIDA AS Relationships graph (snapshot 2026-01-01). This serves as an out-of-sample realism check of the random-failure behavior observed in the synthetic setting.
 \end{itemize}
 
-Unless explicitly labeled as \emph{CAIDA}, all figures and tables in the Results section refer to the synthetic Chung--Lu experiments.
+Unless explicitly labeled as CAIDA, all figures and tables in the Results section refer to the synthetic Chung--Lu experiments.
 
 \section*{Analysis and Results}
 
-We begin with a representative Chung--Lu example under random failure to illustrate the behavior
-of $S(q)$ and the successive KL signal. We then present a random-failure case study on the CAIDA
-AS graph as an empirical validation. Next, we report a representative targeted (hub-first) example
-on synthetic Chung--Lu graphs to contrast behavior under adversarial damage. Finally, we summarize
-the full $\gamma$ sweep by reporting tables of mean and standard deviation of warning/trigger and
-collapse timings across seeds for both random and targeted removal.
-
-We analyze the successive KL divergence under progressive node removal and evaluate its
-effectiveness as an early-warning signal for structural collapse. For synthetic Chung--Lu
-experiments, results are averaged across random seeds controlling both graph realization
-and node removal. For CAIDA, the underlying graph is fixed and variability arises only from
-the stochastic node-removal process; we report means and standard deviations across removal
-seeds.
+We present results in the order: (i) a representative synthetic Chung--Lu run under random failure to illustrate the signal relative to $S(q)$, (ii) an empirical CAIDA AS graph random-failure case study as an out-of-sample validation, (iii) a representative synthetic targeted (hub-first) run to contrast adversarial damage, and (iv) $\gamma$-sweep summaries via a plot and tables across seeds. We then report two controls (no-damage and damage-without-collapse) to evaluate false-trigger behavior under the same baseline-deviation rule.
 
 \subsection*{Synthetic (Chung--Lu) networks: Random Failure}
 
+% --- Block A: Synthetic random representative (Fig. 1) ---
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{paper/figures/fig1_random_gamma2.5_seed0_alpha0.20.pdf}
@@ -516,22 +502,11 @@ Vertical lines indicate $q_{\mathrm{warn}}=0.277$ and $q_{\mathrm{collapse}}=0.8
 
 \medskip
 
-Under random node removal, the smoothed successive KL signal
-$\tilde{D}_{\mathrm{KL}}(q)$ exhibits an extended low-activity regime characterized by
-small, noisy fluctuations, followed by a sustained increase as damage accumulates.
-This initial regime corresponds to a structurally stable phase in which random failures
-do not induce significant reorganization of the degree distribution.
+Figure~\ref{fig:random_rep} shows an initial baseline regime followed by a sustained departure that occurs well before collapse. Applying the baseline-deviation rule (Sec.~\ref{sec:early_warning_criteria}) yields $q_{\mathrm{warn}}<q_{\mathrm{collapse}}$ across seeds, producing nontrivial lead time.
 
-Applying the baseline deviation rule defined in Sec.~\hyperref[sec:early_warning_criteria]{Early-Warning Criteria}, we identify an early-warning
-point $q_{\mathrm{warn}}$ marking the onset of persistent structural change.
-The collapse point $q_{\mathrm{collapse}}$ is defined independently as the first value
-of $q$ at which the giant connected component falls below a fixed threshold.
-Across repeated simulations with different random seeds, the detected warning point
-exhibits moderate variability but consistently precedes network collapse, yielding a
-nontrivial lead time between early warning and fragmentation.
-
+% --- Block B: Empirical CAIDA random failure (Fig. 3) ---
 \subsection*{Empirical network (CAIDA AS graph): Random Failure}
-We evaluate random node removal on CAIDA as an empirical validation of the synthetic random-failure behavior. Targeted removal on CAIDA is left to future work.
+We evaluate random node removal on CAIDA as an empirical validation of the synthetic random-failure behavior.
 
 \begin{figure}[H]
 \centering
@@ -585,24 +560,14 @@ We evaluate random node removal on CAIDA as an empirical validation of the synth
 \caption{Empirical CAIDA AS graph (2026-01-01), random failure (seed 0, $\alpha=0.20$). The GCC fraction $S(q)$ (left axis) and smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) for progressive random node removal. The baseline window $q \le 0.15$ is shaded. The baseline deviation rule identifies a departure from baseline (onset of nonstationarity) at $q_{\mathrm{warn}}\approx 0.689$. Collapse is observed at $q_{\mathrm{collapse}}\approx 0.985$ (defined by $S(q)<0.1$) within the plotted range $q \le 0.99$.}
 \label{fig:caida_random}
 \end{figure}
+CAIDA shows the same qualitative baseline-then-departure pattern, with variability driven only by stochastic node removal.
 
-The CAIDA AS graph contains $N=78{,}673$ nodes and $M=724{,}429$ undirected edges, with maximum degree $k_{\max}=9{,}932$. Full dataset statistics are deferred to the Appendix.
-
+% --- Block C: Synthetic targeted representative (Fig. 2) ---
 \subsection*{Synthetic (Chung--Lu) networks: Targeted Failure}
 
-Under targeted (hub-first) removal, the successive KL signal departs immediately from any low-$q$ baseline-like regime observed under random failure.
-The successive KL signal reflects immediate, nonstationary structural disruption, and its trend need not be monotone. 
+Under targeted (hub-first) removal, $\tilde{D}_{\mathrm{KL}}(q)$ shows immediate nonstationary disruption rather than a low-$q$ baseline regime.
 
-\paragraph{Trigger reporting.}
-For targeted removal, we apply the drift rule (Sec.~\hyperref[sec:early_warning_criteria]{Early-Warning Criteria}) and define
-$q_{\mathrm{trigger}}$ as the earliest midpoint at which the net-increase condition is satisfied.
-If collapse occurs first ($q_{\mathrm{collapse}}<q_{\mathrm{trigger}}$), we report no pre-collapse trigger for that run.
-We therefore report (i) the fraction of seeds
-for which the drift trigger occurs before collapse ($q_{\mathrm{trigger}} < q_{\mathrm{collapse}}$),
-and (ii) the trigger timing $q_{\mathrm{trigger}}$ as a measure of disruption intensity.
-
-For the representative run in Fig.~\ref{fig:targeted_rep}, no pre-collapse trigger is observed
-(i.e., $q_{\mathrm{collapse}} < q_{\mathrm{trigger}}$).
+For targeted removal, collapse occurs at small $q$ and the drift trigger is uniformly post-collapse under the current rule (Table~\ref{tab:gamma_sweep_targeted}).
 
 \begin{figure}[H]
 \centering
@@ -614,51 +579,35 @@ so $\tilde D_{\mathrm{KL}}(q)$ is interpreted here as a disruption-intensity sig
 \label{fig:targeted_rep}
 \end{figure}
 
-% Make the entire "Table 2" phrase clickable (larger target than a bare \ref).
-\hyperref[tab:gamma_sweep_targeted]{Table~\ref*{tab:gamma_sweep_targeted}} shows that for targeted removal the collapse point occurs at very small damage fractions
-($q_{\mathrm{collapse}}\approx 0.07$--$0.09$ across $\gamma$), while the drift trigger occurs substantially later.
-Consequently, the early-trigger rate is 0/5 for all $\gamma$, indicating that in this regime the drift rule is not an advance-warning detector but a post-collapse disruption-intensity marker.
+Table~\ref{tab:gamma_sweep_targeted} shows $q_{\mathrm{collapse}}\approx 0.07$--$0.09$ while $q_{\mathrm{trigger}}$ occurs substantially later for all $\gamma$.
 
-\subsection*{Warning Lead Time}
-
-To quantify early-warning performance, we compare warning/trigger points to the collapse
-point $q_{\mathrm{collapse}}$ across repeated runs and summarize the resulting lead times
-$\Delta_{\mathrm{warn}} = q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ (random failure) and
-$\Delta_{\mathrm{trigger}} = q_{\mathrm{collapse}} - q_{\mathrm{trigger}}$ (targeted removal).
-
+% --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
 \subsection*{Dependence on Degree Exponent}
 
-We evaluate the robustness of early-warning behavior across scale-free networks with
-degree exponent $2 < \gamma < 3$. For each value of $\gamma$, we compute the mean and
-standard deviation of the detected warning point $q_{\mathrm{warn}}$ across repeated
-runs under both random and targeted removal.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{paper/figures/fig_gamma_sweep_random.pdf}
+\caption{Random failure: mean and standard deviation of $q_{\mathrm{warn}}$ and $q_{\mathrm{collapse}}$ across seeds as a function of $\gamma$ (Chung--Lu, $N=10{,}000$, $\alpha=0.20$).}
+\label{fig:gamma_sweep_random}
+\end{figure}
 
-Tables~\ref{tab:gamma_sweep} (random) and \hyperref[tab:gamma_sweep_targeted]{Table~\ref*{tab:gamma_sweep_targeted}} (targeted) 
-summarize the results. Under random failure, $q_{\mathrm{warn}}$
-is consistently detected prior to collapse. Under targeted removal, we summarize the
-early-trigger detection rate and the trigger timing to quantify how often disruption
-intensity yields an early trigger before macroscopic fragmentation.
+Figure~\ref{fig:gamma_sweep_random} shows $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across the heavy-tailed regime. Tables~\ref{tab:gamma_sweep} and \ref{tab:gamma_sweep_random_baselines} summarize the seed-averaged values under random failure, while Table~\ref{tab:gamma_sweep_targeted} shows that targeted collapse occurs at small $q$ and the drift trigger is post-collapse under the current rule.
+This separation is consistent with gradual tail erosion under random removal, where degree-structure reorganization accumulates well before macroscopic fragmentation.
 
 \FloatBarrier
 \input{paper/gamma_sweep.tex}
 \FloatBarrier
 
-The weak dependence of $q_{\mathrm{warn}}$ on $\gamma$ under random failure suggests
-that successive KL divergence detects structural reorganization rather than slow drift
-in low-order degree moments. Although networks with different $\gamma$ exhibit markedly
-different $\langle k \rangle$ and $\langle k^2 \rangle$, the warning signal remains
-stable throughout the heavy-tailed regime. This distinguishes successive KL from
-robustness indicators tied directly to degree moments or percolation thresholds.
-
-\input{paper/null_control_random_failure_gamma2.5_alpha0.20.tex}
-
+\subsection*{Controls}
+% --- Block F: Controls (null + damage-without-collapse) ---
 \paragraph{Null control.}
 To verify that baseline-deviation warnings are not artifacts of recomputing degree distributions alone, 
 we repeat the full random-failure detection pipeline under a no-damage control ($G_q \equiv G_0$ for all $q$) 
 while still recomputing $P_q(k)$ and $H(q)$ at each step. As summarized in 
 Table~\ref{tab:null_control_random_failure}, none of the three rate-of-change signals 
-(successive KL, successive JS, or $|\Delta H|$) produce false triggers (0/5 seeds for all three metrics). 
-The only variability arises from recomputing the empirical degree distribution on the fixed graph. This supports interpreting departures in the damaged runs as genuine structural change rather than numerical or sampling noise.
+(successive KL, successive JS, or $|\Delta H|$) produce false triggers (0/5 seeds for all three metrics).
+
+\input{paper/null_control_random_failure_gamma2.5_alpha0.20.tex}
 
 \paragraph{Damage-without-collapse control.}
 \input{paper/tables/control_low_damage_gamma2.5_alpha0.20.tex}
@@ -670,52 +619,52 @@ In this regime ($\min_{q\le 0.25} S(q)=0.643$), successive KL produces no trigge
 From the preceding analyses, we identify the following contributions:
 
 \begin{itemize}
-    \item Rate-Based Early Warning: We demonstrate that the successive Kullback--Leibler divergence between degree distributions functions as an effective early-warning signal by capturing the rate of structural change, rather than relying on absolute connectivity or heterogeneity measures.
+    \item Rate-Based Indicator: We use successive Kullback--Leibler divergence between adjacent degree distributions to quantify the rate of structural reorganization under progressive node removal.
 
-    \item Single Signal, Regime-Aware Interpretation: We show that the same information-theoretic signal can detect early warning under both random and targeted node removal, provided it is interpreted with regime-appropriate decision rules. This avoids the need for multiple ad hoc metrics while respecting fundamentally different failure dynamics.
+    \item Random-Failure Early Warning: Under random removal, baseline departure of the successive KL signal occurs well before GCC collapse, yielding nontrivial lead time without using connectivity in the detection rule.
 
-    \item Robustness Across the Power-Law Regime: Through a sweep of degree exponents $2 < \gamma < 3$, we establish that early-warning behavior persists across heterogeneous scale-free networks, indicating that the signal is not an artifact of a specific network realization.
+    \item Targeted-Regime Interpretation: Under targeted (hub-first) removal, structural disruption is immediate and collapse can precede any drift-based trigger under the current rule, so the signal is best interpreted as a disruption-intensity measure.
 
-    \item Quantified Warning Lead Time: We empirically measure the separation between detected warning points and macroscopic collapse, showing that information-theoretic change rates provide nontrivial advance notice without reference to percolation thresholds.
+    \item Robustness Across the Heavy-Tailed Regime: Across $\gamma\in[2.1,2.9]$ in Chung--Lu graphs, the random-failure warning-before-collapse ordering persists, indicating the behavior is not specific to a single realization.
 \end{itemize}
-
 
 \section*{Conclusion}
 
-The present study focuses on node-based perturbations and the resulting
-information-theoretic signatures of structural degradation in power-law
-networks. While node removal is the classical setting for percolation
-theory and robustness analysis, many real-world systems are equally, if
-not more, vulnerable to the loss or corruption of edges rather
-than nodes. Examples include communication links in the Internet backbone,
-transmission lines in power grids, high-frequency transportation corridors,
-and weighted or metadata-rich edges in social and biological networks.
+We asked whether a purely structural, information-theoretic change-rate signal can
+provide advance notice of connectivity collapse in heavy-tailed networks under progressive
+node removal. Across Chung--Lu scale-free graphs with $2<\gamma<3$, we tracked the smoothed
+successive KL divergence between adjacent empirical degree distributions and applied
+fixed, pre-specified detection rules without using connectivity in the warning logic.
 
-Recent literature has noted that targeted dismantling of edges is far less
-developed mathematically than node-based attacks, in part because the
-importance of an edge depends jointly on the structural properties of the
-two endpoints (Radicchi~et al.~2024). This creates a higher-dimensional
-relationship that is not captured by node-centric percolation models. Given
-that many empirical networks are weighted or possess edge-level attributes,
-extending robustness analysis to the link domain remains an important open
-direction.
+Under random failure, the successive KL signal displays an initial low-activity regime
+followed by a sustained departure from baseline that consistently precedes GCC collapse,
+yielding substantial warning lead time across the $\gamma$ sweep. The same qualitative
+pattern appears in a case study on the CAIDA AS graph, suggesting that the signal is
+capturing genuine structural reorganization rather than an artifact of a particular
+synthetic ensemble.
 
-A natural extension of the information-theoretic framework developed in this
-work is to analyze how the edge distribution - and more generally the
-joint distribution of endpoint features - changes under random and targeted
-link removal. Analogues of the entropy $H(q)$ and KL divergence
-$D_{KL}(D_q \,\|\, D_0)$ could be defined for edge-weight distributions,
-edge-degree pairs $(k_i, k_j)$, or other edge-level metadata. Such
-quantities may reveal early-warning signals of structural fragility that are
-invisible to node-only analyses.
+Under targeted (hub-first) removal, the interpretation changes: structural disruption is
+immediate and collapse can occur before any drift-based trigger. In this adversarial
+regime, the successive KL signal is therefore more useful as a disruption-intensity
+measure than as a reliable advance-warning detector, highlighting an intrinsic limitation
+of baseline-style early-warning rules when the system is forced directly toward failure.
 
-In future work, we plan to extend this information-theoretic methodology to
-edge-based percolation and link attacks. This will require formalizing the
-probability distributions over edge features and developing divergence-based
-metrics that quantify how link-level structure degrades as the network
-approaches its percolation threshold. Given the central role that edges play
-in real infrastructure networks, this direction promises both theoretical
-richness and practical relevance.
+Two controls clarify what the baseline-deviation rule is (and is not) detecting. A
+no-damage null control produces no false triggers, while a damage-without-collapse control
+shows that entropy-change-based signals can trigger frequently even when the GCC remains
+far from collapse, whereas successive KL remains specific under the same rule. Taken
+together, these results support successive KL divergence as a simple and interpretable
+rate-based indicator that complements connectivity-based robustness analysis by
+highlighting the onset of structural change before macroscopic fragmentation.
+
+A key limitation is that we track only degree-distribution change; richer structural summaries may 
+sharpen or alter the warning behavior, especially under adversarial removal.
+
+Future work can move beyond degree-based summaries by tracking change in richer structural
+features (e.g., joint degree statistics, edge-level mixing patterns, or small motifs), and
+by evaluating whether analogous change-rate signals remain informative under link removal
+and under correlated, adaptive, or temporally clustered failure processes.
+
 
 \clearpage
 \section*{Appendix: Supplementary Material}

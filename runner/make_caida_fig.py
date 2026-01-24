@@ -12,6 +12,8 @@ import math
 import random
 from collections import Counter, deque
 
+from runner.export import export_caida_summary
+
 
 def _linspace(n: int, q_max: float) -> list[float]:
     if n < 2:
@@ -536,6 +538,8 @@ def main() -> None:
         num_q = int(args.num_q)
         alpha = float(args.alpha)
         print(f"CAIDA random-failure (full) 5-seed run: q_max={q_max}, num_q={num_q}, alpha={alpha}")
+        q_warns: list[float] = []
+        q_collapses: list[float] = []
         for seed in range(5):
             res = run_caida_random_failure_one_seed(
                 edge_list_path=args.edges,
@@ -550,6 +554,16 @@ def main() -> None:
             qw = res["q_warn"]
             qw_str = f"{qw:.6f}" if isinstance(qw, float) else "None"
             print(f"  seed {seed}: q_warn={qw_str}, q_collapse={qc_str}, S(q_max)={res['S_qmax']:.4f}")
+            q_warns.append(float(qw) if isinstance(qw, float) else float("nan"))
+            q_collapses.append(float(qc) if isinstance(qc, float) else float("nan"))
+
+        export_caida_summary(
+            out_path="paper/tables/caida_summary.tex",
+            q_warns=q_warns,
+            q_collapses=q_collapses,
+            n_total=5,
+        )
+        print("Wrote: paper/tables/caida_summary.tex")
         return
 
     res = generate_caida_random_failure_data(

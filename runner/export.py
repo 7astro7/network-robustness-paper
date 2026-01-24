@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import csv
 
 
 def export_gamma_table(
@@ -241,7 +242,7 @@ def export_gamma_table(
             lines.append(r"\end{table}")
             lines.append("")
 
-            # --- Table B: Targeted removal (narrow) ---
+            # --- Table B: Targeted removal (narrow, but explicit early-rate column) ---
             caption_note = rf"Early-trigger rate is {early_rate_str} for all $\gamma$, hence $\Delta_{{\mathrm{{trigger}}}}=q_{{\mathrm{{collapse}}}}-q_{{\mathrm{{trigger}}}}<0$ throughout."
             if trig_full:
                 caption_note += r" Drift triggers exist in all seeds ($n_{\mathrm{trig}}=n$)."
@@ -252,13 +253,16 @@ def export_gamma_table(
                 rf"\caption{{Targeted (hub-first) removal: collapse timing $q_{{\mathrm{{collapse}}}}$ and drift-trigger timing $q_{{\mathrm{{trigger}}}}$. {caption_note}}}"
             )
             lines.append(r"\label{tab:gamma_sweep_targeted}")
-            lines.append(r"\begin{tabular}{c c c c}")
+            lines.append(r"\begin{tabular}{c c c c c}")
             lines.append(r"\toprule")
-            lines.append(r"$\gamma$ & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $q_{\mathrm{trigger}}$ (mean $\pm$ std) & $\Delta_{\mathrm{trigger}}$ (mean $\pm$ std) \\")
+            lines.append(
+                r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $q_{\mathrm{trigger}}$ (mean $\pm$ std) & $\Delta_{\mathrm{trigger}}$ (mean $\pm$ std) \\"
+            )
             lines.append(r"\midrule")
             for _, r in df.iterrows():
+                early_cell = f"{int(r['targeted_early_n'])}/{int(r['targeted_n_total'])}"
                 lines.append(
-                    f"{r['gamma']:.1f} & {r['targeted_collapse_meanstd']} & {r['targeted_trigger_meanstd']} & {r['targeted_delta_meanstd']} \\\\"
+                    f"{r['gamma']:.1f} & {early_cell} & {r['targeted_collapse_meanstd']} & {r['targeted_trigger_meanstd']} & {r['targeted_delta_meanstd']} \\\\"
                 )
             lines.append(r"\bottomrule")
             lines.append(r"\end{tabular}")
@@ -381,6 +385,106 @@ def export_gamma_table(
                 f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_trigger_cell']} \\\\"
             )
 
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    lines.append("")
+
+    out_path.write_text("\n".join(lines))
+
+
+def export_gamma_long_csv(runs, out_path: str) -> None:
+    """
+    Export long-format per-seed runs to CSV.
+
+    Expected schema per run (dict-like):
+      - regime: str
+      - gamma: float
+      - seed: int
+      - q_warn: float (or NaN)
+      - q_collapse: float (or NaN)
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = ["regime", "gamma", "seed", "q_warn", "q_collapse"]
+    with out_path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for r in runs:
+            if r is None:
+                continue
+            # Only write rows that contain the fields we need
+            if not all(k in r for k in fieldnames):
+                continue
+            w.writerow({
+                "regime": r["regime"],
+                "gamma": r["gamma"],
+                "seed": r["seed"],
+                "q_warn": r["q_warn"],
+                "q_collapse": r["q_collapse"],
+            })
+
+
+def export_caida_summary(
+    *,
+    out_path: str = "paper/tables/caida_summary.tex",
+    q_warns: list[float],
+    q_collapses: list[float],
+    n_total: int | None = None,
+) -> None:
+    """
+    Write a 1-row CAIDA random-failure summary table:
+      - q_warn (mean ± std)
+      - q_collapse (mean ± std)
+      - Δ_warn = q_collapse - q_warn (mean ± std), computed per seed then aggregated
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    qw = np.asarray(q_warns, dtype=float)
+    qc = np.asarray(q_collapses, dtype=float)
+    if qw.shape != qc.shape:
+        raise ValueError(f"q_warns and q_collapses must have same shape: {qw.shape} vs {qc.shape}")
+
+    if n_total is None:
+        n_total = int(len(qw))
+    n_total = int(n_total)
+
+    # detections
+    mask_qw = np.isfinite(qw)
+    mask_qc = np.isfinite(qc)
+    mask_delta = mask_qw & mask_qc
+    deltas = np.where(mask_delta, qc - qw, np.nan)
+
+    def mean_std(arr: np.ndarray) -> tuple[float, float, int]:
+        arr = np.asarray(arr, dtype=float)
+        n = int(np.count_nonzero(np.isfinite(arr)))
+        if n == 0:
+            return float("nan"), float("nan"), 0
+        mean = float(np.nanmean(arr))
+        std = float(np.nanstd(arr, ddof=1)) if n > 1 else 0.0
+        return mean, std, n
+
+    qw_m, qw_s, qw_n = mean_std(qw)
+    qc_m, qc_s, qc_n = mean_std(qc)
+    d_m, d_s, d_n = mean_std(deltas)
+
+    def fmt(mean: float, std: float, n: int) -> str:
+        if n == 0 or not np.isfinite(mean):
+            return r"--"
+        return f"{mean:.3f} $\\pm$ {std:.3f}"
+
+    lines: list[str] = []
+    lines.append(r"\begin{table}[H]")
+    lines.append(r"\centering")
+    lines.append(r"\caption{CAIDA AS graph (2026-01-01), random failure: warning and collapse timing across 5 seeds ($\alpha=0.20$). Lead time is $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}")
+    lines.append(r"\label{tab:caida_summary}")
+    lines.append(r"\begin{tabular}{c c c}")
+    lines.append(r"\toprule")
+    lines.append(r"$q_{\mathrm{warn}}$ (mean $\pm$ std) & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta_{\mathrm{warn}}$ (mean $\pm$ std) \\")
+    lines.append(r"\midrule")
+    lines.append(f"{fmt(qw_m, qw_s, qw_n)} & {fmt(qc_m, qc_s, qc_n)} & {fmt(d_m, d_s, d_n)} \\\\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")

@@ -1,10 +1,14 @@
 from runner.gamma_sweep import GammaSweepExperiment
-from runner.export import export_gamma_table
+from runner.export import export_gamma_table, export_gamma_long_csv
 
 if __name__ == "__main__":
     experiment = GammaSweepExperiment()
-    rows = experiment.run()
+    rows, runs = experiment.run()
     export_gamma_table(rows, n_total=len(experiment.seeds))
+
+    # Per-seed long CSV (random regime only)
+    random_runs = [r for r in runs if r.get("regime") == "random"]
+    export_gamma_long_csv(random_runs, out_path="paper/data/gamma_sweep_random_long.csv")
 
     n_total = len(experiment.seeds)
     print("γ | Random q_warn(KL) (mean ± std) [n/n] | Random q_warn(JS) (mean ± std) [n/n] | Random q_warn(|ΔH|) (mean ± std) [n/n] | Random Δ_warn (mean ± std) [n/n] | Targeted early-rate [n/n] | Targeted q_trigger (mean ± std) [n/n] | Targeted q_collapse (mean ± std) [n/n] | Targeted Δ_trigger (mean ± std) [n/n]")

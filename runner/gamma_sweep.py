@@ -30,7 +30,7 @@ class GammaSweepExperiment:
 
         Returns
         -------
-        list[tuple]
+        tuple[list[tuple], list[dict]]
             (gamma,
             random_warn_mean, random_warn_std, random_warn_n,
             random_delta_mean, random_delta_std, random_delta_n,
@@ -42,6 +42,7 @@ class GammaSweepExperiment:
             targeted_delta_mean, targeted_delta_std, targeted_delta_n)
         """
         rows = []
+        runs = []  # long-format per-seed runs (random regime only, for plotting/export)
 
         for gamma in self.GAMMAS:
             q_warn_random = []
@@ -107,6 +108,15 @@ class GammaSweepExperiment:
                     delta_random.append(float(q_collapse_r) - float(q_warn_r))
                 else:
                     delta_random.append(np.nan)
+
+                # long-format record (random regime) for downstream CSV + plotting
+                runs.append({
+                    "regime": "random",
+                    "gamma": float(gamma),
+                    "seed": int(seed),
+                    "q_warn": float(q_warn_r) if np.isfinite(q_warn_r) else float("nan"),
+                    "q_collapse": float(q_collapse_r) if q_collapse_r is not None else float("nan"),
+                })
 
                 # --- targeted failure ---
                 exp_t = Experiment(graph, TargetedFailure())
@@ -196,7 +206,7 @@ class GammaSweepExperiment:
                 mean_delta, std_delta, n_delta,
             ))
 
-        return rows
+        return rows, runs
 
 
     def _detect_baseline_break(self, qs, dkl, q0=0.15, z=2.0):
