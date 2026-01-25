@@ -304,49 +304,113 @@ def export_gamma_table(
             out_path.write_text("\n".join(lines))
             return
 
-        lines = []
 
-        # --- Table A: Random removal ---
-        lines.append(r"\begin{table}[H]")
-        lines.append(r"\centering")
-        lines.append(r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation.}")
-        # Keep the original label name so existing references don't break.
-        lines.append(r"\label{tab:gamma_sweep}")
-        lines.append(r"\begin{tabular}{c c c}")
-        lines.append(r"\toprule")
-        lines.append(r"$\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\mathrm{det}}/n$] \\")
-        lines.append(r"\midrule")
-        for _, r in df.iterrows():
-            lines.append(f"{r['gamma']:.1f} & {r['random_meanstd']} & {r['random_count']} \\\\")
-        lines.append(r"\bottomrule")
-        lines.append(r"\end{tabular}")
-        lines.append(r"\end{table}")
-        lines.append("")
+def export_sensitivity_csv(rows, out_path: str) -> None:
+    """
+    Export alpha×z sensitivity results to CSV.
 
-        # --- Table B: Targeted removal ---
-        lines.append(r"\begin{table}[H]")
-        lines.append(r"\centering")
+    Expected rows: list[dict] with keys:
+      - alpha, z, gamma
+      - random_warn_mean, random_warn_std, random_warn_n
+      - random_delta_mean, random_delta_std, random_delta_n
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "alpha",
+        "z",
+        "gamma",
+        "random_warn_mean",
+        "random_warn_std",
+        "random_warn_n",
+        "random_delta_mean",
+        "random_delta_std",
+        "random_delta_n",
+    ]
+    with out_path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k) for k in fieldnames})
+
+
+def export_sensitivity_table(
+    rows,
+    out_path: str = "paper/tables/sensitivity_alpha_z.tex",
+    n_total: int | None = None,
+) -> None:
+    """
+    Export a compact alpha×z sensitivity table (random-failure warning + lead time).
+
+    Table rows are (alpha, z, gamma).
+    """
+    if n_total is None:
+        n_total = 5
+    n_total = int(n_total)
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        raise ValueError("export_sensitivity_table: rows is empty")
+
+    for c in [
+        "alpha",
+        "z",
+        "gamma",
+        "random_warn_mean",
+        "random_warn_std",
+        "random_warn_n",
+        "random_delta_mean",
+        "random_delta_std",
+        "random_delta_n",
+    ]:
+        if c not in df.columns:
+            raise ValueError(f"export_sensitivity_table: missing column {c!r}")
+
+    df = df.sort_values(["alpha", "z", "gamma"]).reset_index(drop=True)
+
+    def fmt_mean_std(mean, std) -> str:
+        if pd.isna(mean) or pd.isna(std):
+            return r"--"
+        return f"{float(mean):.3f} $\\pm$ {float(std):.3f}"
+
+    def fmt_count(n_detected) -> str:
+        if pd.isna(n_detected):
+            return r"--"
+        return f"{int(n_detected)}/{n_total}"
+
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    lines: list[str] = []
+    lines.append(r"\begin{table}[H]")
+    lines.append(r"\centering")
+    lines.append(
+        r"\caption{Sensitivity of random-failure warning timing to EWMA smoothing $\alpha$ "
+        r"and baseline threshold $z$ in the rule $\tilde{D}_{\mathrm{KL}}>\mu_0+z\sigma_0$. "
+        r"Values report mean $\pm$ std across seeds (with $n_{\mathrm{det}}/n$ counts).}"
+    )
+    lines.append(r"\label{tab:sensitivity_alpha_z}")
+    lines.append(r"\begin{tabular}{c c c c c}")
+    lines.append(r"\toprule")
+    lines.append(
+        r"$\alpha$ & $z$ & $\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) "
+        r"[$n_{\mathrm{det}}/n$] & $\Delta_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\Delta}/n$] \\"
+    )
+    lines.append(r"\midrule")
+    for _, r in df.iterrows():
         lines.append(
-            r"\caption{Targeted (hub-first) removal: attack-onset warning timing $q_{\mathrm{warn}}^{\mathrm{tgt}}$ and early-rate ($q_{\mathrm{warn}}^{\mathrm{tgt}}<q_{\mathrm{collapse}}$), with collapse defined by $S(q)<0.1$.}"
+            f"{float(r['alpha']):.2f} & {float(r['z']):.1f} & {float(r['gamma']):.1f} & "
+            f"{fmt_mean_std(r['random_warn_mean'], r['random_warn_std'])} "
+            f"[{fmt_count(r['random_warn_n'])}] & "
+            f"{fmt_mean_std(r['random_delta_mean'], r['random_delta_std'])} "
+            f"[{fmt_count(r['random_delta_n'])}] \\\\"
         )
-        lines.append(r"\label{tab:gamma_sweep_targeted}")
-        lines.append(r"\begin{tabular}{c c c c c}")
-        lines.append(r"\toprule")
-        lines.append(
-            r"$\gamma$ & early-rate [$n_{\mathrm{early}}/n$] & $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] \\"
-        )
-        lines.append(r"\midrule")
-        for _, r in df.iterrows():
-            lines.append(
-                f"{r['gamma']:.1f} & {r['targeted_rate_cell']} & {r['targeted_warn_tgt_cell']} & {r['targeted_collapse_meanstd']} & {r['targeted_delta_warn_tgt_cell']} \\\\"
-            )
-        lines.append(r"\bottomrule")
-        lines.append(r"\end{tabular}")
-        lines.append(r"\end{table}")
-        lines.append("")
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    lines.append("")
 
-        out_path.write_text("\n".join(lines))
-        return
+    out_path.write_text("\n".join(lines))
 
     lines = []
     lines.append(r"\begin{table}[H]")
@@ -391,6 +455,194 @@ def export_gamma_table(
 
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    lines.append("")
+
+    out_path.write_text("\n".join(lines))
+
+
+def export_gamma_table_random(
+    rows,
+    *,
+    n_total: int | None = None,
+    out_path: str = "paper/tables/gamma_sweep_random.tex",
+) -> None:
+    """
+    Write the random-removal γ-sweep table as its own file (generated, not hand-edited).
+
+    Supports the 19-col, 25-col, and 27-col row schemas produced by GammaSweepExperiment.
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not rows:
+        raise ValueError("export_gamma_table_random: rows is empty")
+
+    if n_total is None:
+        n_total = 5
+    n_total = int(n_total)
+
+    k = len(rows[0])
+    if k == 19:
+        cols = [
+            "gamma",
+            "random_warn_mean", "random_warn_std", "random_warn_n",
+            "random_delta_mean", "random_delta_std", "random_delta_n",
+            "targeted_early_n", "targeted_n_total", "targeted_early_rate",
+            "targeted_trigger_mean", "targeted_trigger_std", "targeted_trigger_n",
+            "targeted_collapse_mean", "targeted_collapse_std", "targeted_collapse_n",
+            "targeted_delta_mean", "targeted_delta_std", "targeted_delta_n",
+        ]
+        df = pd.DataFrame(rows, columns=cols)
+    elif k in (25, 27):
+        cols = [
+            "gamma",
+            "random_warn_mean", "random_warn_std", "random_warn_n",
+            "random_delta_mean", "random_delta_std", "random_delta_n",
+            "random_js_warn_mean", "random_js_warn_std", "random_js_warn_n",
+            "random_dh_warn_mean", "random_dh_warn_std", "random_dh_warn_n",
+            "targeted_early_n", "targeted_n_total", "targeted_early_rate",
+            "targeted_warn_tgt_mean", "targeted_warn_tgt_std", "targeted_warn_tgt_n",
+            "targeted_collapse_mean", "targeted_collapse_std", "targeted_collapse_n",
+            "targeted_delta_warn_tgt_mean", "targeted_delta_warn_tgt_std",
+            "targeted_delta_warn_tgt_n",
+            "targeted_intensity_mean", "targeted_intensity_std",
+        ]
+        df = pd.DataFrame(rows, columns=cols[:k])
+    else:
+        raise ValueError(
+            "export_gamma_table_random: unsupported row length "
+            f"{k} (expected 19, 25, or 27)"
+        )
+
+    def fmt_mean_std(mean, std) -> str:
+        if pd.isna(mean) or pd.isna(std):
+            return r"--"
+        return f"{float(mean):.3f} $\\pm$ {float(std):.3f}"
+
+    def fmt_count(n_detected) -> str:
+        if pd.isna(n_detected):
+            return r"--"
+        return f"{int(n_detected)}/{n_total}"
+
+    df = df.sort_values("gamma").reset_index(drop=True)
+
+    lines: list[str] = []
+    lines.append(r"\begin{table}[H]")
+    lines.append(r"\centering")
+    lines.append(
+        r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation "
+        r"and lead time $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ "
+        r"(collapse defined by $S(q)<0.1$). Values report mean $\pm$ std across seeds with "
+        r"detection counts $[n_{\mathrm{det}}/n]$.}"
+    )
+    lines.append(r"\label{tab:gamma_sweep_random}")
+    lines.append(r"\begin{tabular}{c c c c c}")
+    lines.append(r"\toprule")
+    lines.append(
+        r"$\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\mathrm{det}}/n$] & "
+        r"$\Delta_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\Delta}/n$] \\"
+    )
+    lines.append(r"\midrule")
+    for _, r in df.iterrows():
+        lines.append(
+            f"{float(r['gamma']):.1f} & "
+            f"{fmt_mean_std(r['random_warn_mean'], r['random_warn_std'])} & "
+            f"[{fmt_count(r['random_warn_n'])}] & "
+            f"{fmt_mean_std(r['random_delta_mean'], r['random_delta_std'])} & "
+            f"[{fmt_count(r['random_delta_n'])}] \\\\"
+        )
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    lines.append("")
+
+    out_path.write_text("\n".join(lines))
+
+
+def export_gamma_table_targeted(
+    rows,
+    *,
+    n_total: int | None = None,
+    out_path: str = "paper/tables/gamma_sweep_targeted.tex",
+) -> None:
+    """
+    Write the targeted (hub-first) γ-sweep table as its own file (generated, not hand-edited).
+
+    Supports the 27-col row schema produced by GammaSweepExperiment (with onset warnings + intensity).
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not rows:
+        raise ValueError("export_gamma_table_targeted: rows is empty")
+
+    if n_total is None:
+        n_total = 5
+    n_total = int(n_total)
+
+    k = len(rows[0])
+    if k != 27:
+        raise ValueError(
+            "export_gamma_table_targeted: unsupported row length "
+            f"{k} (expected 27)"
+        )
+
+    cols = [
+        "gamma",
+        "random_warn_mean", "random_warn_std", "random_warn_n",
+        "random_delta_mean", "random_delta_std", "random_delta_n",
+        "random_js_warn_mean", "random_js_warn_std", "random_js_warn_n",
+        "random_dh_warn_mean", "random_dh_warn_std", "random_dh_warn_n",
+        "targeted_early_n", "targeted_n_total", "targeted_early_rate",
+        "targeted_warn_tgt_mean", "targeted_warn_tgt_std", "targeted_warn_tgt_n",
+        "targeted_collapse_mean", "targeted_collapse_std", "targeted_collapse_n",
+        "targeted_delta_warn_tgt_mean", "targeted_delta_warn_tgt_std",
+        "targeted_delta_warn_tgt_n",
+        "targeted_intensity_mean", "targeted_intensity_std",
+    ]
+    df = pd.DataFrame(rows, columns=cols)
+    df = df.sort_values("gamma").reset_index(drop=True)
+
+    def fmt_mean_std(mean, std) -> str:
+        if pd.isna(mean) or pd.isna(std):
+            return r"--"
+        return f"{float(mean):.3f} $\\pm$ {float(std):.3f}"
+
+    def fmt_warn_cell(mean, std, n_warn) -> str:
+        if pd.isna(n_warn):
+            return fmt_mean_std(mean, std)
+        n_warn = int(n_warn)
+        if n_warn == 0:
+            return rf"-- [{n_warn}/{n_total}]"
+        return f"{fmt_mean_std(mean, std)} [{n_warn}/{n_total}]"
+
+    lines: list[str] = []
+    lines.append(r"\begin{table}[H]")
+    lines.append(r"\centering")
+    lines.append(
+        r"\caption{Targeted (hub-first) removal: collapse timing $q_{\mathrm{collapse}}$ and "
+        r"initial disruption intensity $I_{\mathrm{tgt}}:=\tilde D_{\mathrm{KL}}(q_{1/2})$ "
+        r"across the $\gamma$ sweep (mean $\pm$ std across seeds).}"
+    )
+    lines.append(r"\label{tab:gamma_sweep_targeted}")
+    lines.append(r"\resizebox{\linewidth}{!}{%")
+    lines.append(r"\begin{tabular}{c c c}")
+    lines.append(r"\toprule")
+    lines.append(
+        r"$\gamma$ & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & "
+        r"$I_{\mathrm{tgt}}$ (mean $\pm$ std) \\"
+    )
+    lines.append(r"\midrule")
+    for _, r in df.iterrows():
+        lines.append(
+            f"{float(r['gamma']):.1f} & "
+            f"{fmt_mean_std(r['targeted_collapse_mean'], r['targeted_collapse_std'])} & "
+            f"{fmt_mean_std(r['targeted_intensity_mean'], r['targeted_intensity_std'])} \\\\"
+        )
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"}")
     lines.append(r"\end{table}")
     lines.append("")
 

@@ -88,10 +88,16 @@ class GammaSweepExperiment:
         n: int = 10_000,
         qs: np.ndarray | None = None,
         seeds: list[int] | None = None,
+        gammas: np.ndarray | list[float] | None = None,
+        alpha: float = 0.2,
+        z: float = 2.0,
     ):
         self.n = n
         self.qs = qs if qs is not None else np.linspace(0, 0.9, 100)
         self.seeds = seeds if seeds is not None else [0, 1, 2, 3, 4]
+        self.gammas = np.asarray(gammas, dtype=float) if gammas is not None else self.GAMMAS
+        self.alpha = float(alpha)
+        self.z = float(z)
 
 
     def run(self):
@@ -109,12 +115,13 @@ class GammaSweepExperiment:
             targeted_early_n, targeted_n_total, targeted_early_rate,
             targeted_warn_tgt_mean, targeted_warn_tgt_std, targeted_warn_tgt_n,
             targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
-            targeted_delta_warn_tgt_mean, targeted_delta_warn_tgt_std, targeted_delta_warn_tgt_n)
+            targeted_delta_warn_tgt_mean, targeted_delta_warn_tgt_std, targeted_delta_warn_tgt_n,
+            targeted_intensity_mean, targeted_intensity_std)
         """
         rows = []
         runs = []  # long-format per-seed runs (random regime only, for plotting/export)
 
-        for gamma in self.GAMMAS:
+        for gamma in self.gammas:
             q_warn_random = []
             q_collapse_random = []
             delta_random = []
@@ -124,6 +131,7 @@ class GammaSweepExperiment:
             is_early_targeted = []
             q_collapse_targeted = []
             delta_warn_tgt = []
+            intensity_targeted = []
 
             for seed in self.seeds:
                 print(f"  gamma={gamma:.1f} seed {seed}...", flush=True)
@@ -143,18 +151,18 @@ class GammaSweepExperiment:
                         f"[gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
                     )
 
-                dkl_r = exp_r.ewma(raw_r)
-                q_warn_r = self._detect_baseline_break(self.qs, dkl_r)
+                dkl_r = exp_r.ewma(raw_r, alpha=self.alpha)
+                q_warn_r = self._detect_baseline_break(self.qs, dkl_r, z=self.z)
 
                 # Random baselines (rate-of-change signals on midpoint support)
                 js_r_raw = Metrics.successive_js(Pq_r)
-                js_r = exp_r.ewma(js_r_raw)
+                js_r = exp_r.ewma(js_r_raw, alpha=self.alpha)
 
                 dh_r_raw = np.abs(np.diff(np.asarray(H_r, dtype=float)))
-                dh_r = exp_r.ewma(dh_r_raw)
+                dh_r = exp_r.ewma(dh_r_raw, alpha=self.alpha)
 
-                q_warn_js = self._detect_baseline_break(self.qs, js_r)
-                q_warn_dh = self._detect_baseline_break(self.qs, dh_r)
+                q_warn_js = self._detect_baseline_break(self.qs, js_r, z=self.z)
+                q_warn_dh = self._detect_baseline_break(self.qs, dh_r, z=self.z)
 
                 q_collapse_r = next(
                     (float(q) for q, s in zip(self.qs, S_r) if s < 0.1),
@@ -198,21 +206,24 @@ class GammaSweepExperiment:
                         f"[gamma={gamma:.1f}, seed={seed}, targeted] non-finite raw successive KL"
                     )
 
-                dkl_t = exp_t.ewma(raw_t)
+                dkl_t = exp_t.ewma(raw_t, alpha=self.alpha)
+                # Targeted early disruption intensity: first midpoint value of smoothed successive KL.
+                tgt_intensity = float(dkl_t[0]) if len(dkl_t) > 0 else float("nan")
+                intensity_targeted.append(tgt_intensity if np.isfinite(tgt_intensity) else np.nan)
 
                 # Targeted: attack-onset detection on midpoint grid (may be pre- or post-collapse)
                 qs_mid = 0.5 * (self.qs[:-1] + self.qs[1:])
                 mu_null, sig_null = _null_baseline_mu_sigma(
                     graph,
                     self.qs,
-                    alpha=0.2,
+                    alpha=self.alpha,
                     n_baseline=3,
                 )
                 q_warn_tgt, _, _, _ = _detect_targeted_onset(
                     qs_mid,
                     dkl_t,
                     n_baseline=3,
-                    z=2.0,
+                    z=self.z,
                     mu0=mu_null,
                     sigma0=sig_null,
                 )
@@ -248,6 +259,7 @@ class GammaSweepExperiment:
             is_early_targeted = np.asarray(is_early_targeted, dtype=bool)
             q_collapse_targeted = np.asarray(q_collapse_targeted, dtype=float)
             delta_warn_tgt = np.asarray(delta_warn_tgt, dtype=float)
+            intensity_targeted = np.asarray(intensity_targeted, dtype=float)
 
             n_r = int(np.count_nonzero(~np.isnan(q_warn_random)))
             n_dr = int(np.count_nonzero(~np.isnan(delta_random)))
@@ -267,6 +279,8 @@ class GammaSweepExperiment:
             mean_collapse = float(np.nanmean(q_collapse_targeted)) if n_collapse > 0 else float("nan")
             n_delta = int(np.count_nonzero(~np.isnan(delta_warn_tgt)))
             mean_delta = float(np.nanmean(delta_warn_tgt)) if n_delta > 0 else float("nan")
+            n_intensity = int(np.count_nonzero(~np.isnan(intensity_targeted)))
+            mean_intensity = float(np.nanmean(intensity_targeted)) if n_intensity > 0 else float("nan")
 
             # ddof=1; if <2 detected, report std=0.0 (or could use np.nan)
             std_r = float(np.nanstd(q_warn_random, ddof=1)) if n_r > 1 else 0.0
@@ -276,6 +290,7 @@ class GammaSweepExperiment:
             std_warn_tgt = float(np.nanstd(q_warn_tgt_targeted, ddof=1)) if n_warn_tgt > 1 else 0.0
             std_collapse = float(np.nanstd(q_collapse_targeted, ddof=1)) if n_collapse > 1 else 0.0
             std_delta = float(np.nanstd(delta_warn_tgt, ddof=1)) if n_delta > 1 else 0.0
+            std_intensity = float(np.nanstd(intensity_targeted, ddof=1)) if n_intensity > 1 else 0.0
 
             rows.append((
                 float(gamma),
@@ -287,9 +302,76 @@ class GammaSweepExperiment:
                 mean_warn_tgt, std_warn_tgt, n_warn_tgt,
                 mean_collapse, std_collapse, n_collapse,
                 mean_delta, std_delta, n_delta,
+                mean_intensity, std_intensity,
             ))
 
         return rows, runs
+
+    def run_random_only(self):
+        """
+        Fast path used for alpha×z sensitivity runs.
+
+        Returns
+        -------
+        list[tuple]
+            (gamma,
+             random_warn_mean, random_warn_std, random_warn_n,
+             random_delta_mean, random_delta_std, random_delta_n)
+        """
+        rows = []
+        for gamma in self.gammas:
+            q_warn_random = []
+            q_collapse_random = []
+            delta_random = []
+
+            for seed in self.seeds:
+                print(f"  [sens] gamma={gamma:.1f} seed {seed}...", flush=True)
+                np.random.seed(seed)
+                random.seed(seed)
+
+                graph = GraphModel(n=self.n, gamma=float(gamma))
+                exp_r = Experiment(graph, RandomFailure())
+
+                S_r, _H_r, Pq_r = exp_r.sweep(self.qs)
+                raw_r = exp_r.successive_kl(Pq_r)
+                if not np.all(np.isfinite(raw_r)):
+                    raise ValueError(
+                        f"[sens gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
+                    )
+
+                dkl_r = exp_r.ewma(raw_r, alpha=self.alpha)
+                q_warn_r = self._detect_baseline_break(self.qs, dkl_r, z=self.z)
+
+                q_collapse_r = next(
+                    (float(q) for q, s in zip(self.qs, S_r) if s < 0.1),
+                    None,
+                )
+
+                if np.isfinite(q_warn_r) and q_collapse_r is not None and float(q_warn_r) >= float(q_collapse_r):
+                    q_warn_r = np.nan
+
+                q_warn_random.append(float(q_warn_r) if np.isfinite(q_warn_r) else np.nan)
+                q_collapse_random.append(float(q_collapse_r) if q_collapse_r is not None else np.nan)
+                if np.isfinite(q_warn_r) and q_collapse_r is not None:
+                    delta_random.append(float(q_collapse_r) - float(q_warn_r))
+                else:
+                    delta_random.append(np.nan)
+
+            q_warn_random = np.asarray(q_warn_random, dtype=float)
+            delta_random = np.asarray(delta_random, dtype=float)
+
+            n_r = int(np.count_nonzero(~np.isnan(q_warn_random)))
+            n_dr = int(np.count_nonzero(~np.isnan(delta_random)))
+
+            mean_r = float(np.nanmean(q_warn_random)) if n_r > 0 else float("nan")
+            mean_dr = float(np.nanmean(delta_random)) if n_dr > 0 else float("nan")
+
+            std_r = float(np.nanstd(q_warn_random, ddof=1)) if n_r > 1 else 0.0
+            std_dr = float(np.nanstd(delta_random, ddof=1)) if n_dr > 1 else 0.0
+
+            rows.append((float(gamma), mean_r, std_r, n_r, mean_dr, std_dr, n_dr))
+
+        return rows
 
 
     def _detect_baseline_break(self, qs, dkl, q0=0.15, z=2.0):
