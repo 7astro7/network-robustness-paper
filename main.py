@@ -6,6 +6,7 @@ from runner.export import (
     export_sensitivity_csv,
     export_sensitivity_table,
 )
+from runner.kappa_control import run_kappa_control_random_failure
 import argparse
 
 if __name__ == "__main__":
@@ -65,6 +66,9 @@ if __name__ == "__main__":
     # Per-seed long CSV (random regime only)
     random_runs = [r for r in runs if r.get("regime") == "random"]
     export_gamma_long_csv(random_runs, out_path="paper/data/gamma_sweep_random_long.csv")
+
+    # Appendix comparator: baseline deviation on EWMA-smoothed kappa(q) under random failure.
+    run_kappa_control_random_failure(outdir="paper")
 
     n_total = len(experiment.seeds)
     print("γ | Random q_warn(KL) (mean ± std) [n/n] | Random q_warn(JS) (mean ± std) [n/n] | Random q_warn(|ΔH|) (mean ± std) [n/n] | Random Δ_warn (mean ± std) [n/n] | Targeted early-rate [n/n] | Targeted q_warn_tgt (mean ± std) [n/n] | Targeted q_collapse (mean ± std) [n/n] | Targeted Δ_warn_tgt (mean ± std) [n/n] | Targeted I_tgt=~DKL(q_1/2) (mean ± std)")

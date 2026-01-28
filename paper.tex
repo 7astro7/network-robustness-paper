@@ -128,6 +128,9 @@ degree or degree variance, KL divergence is sensitive to the full shape of the
 distribution and can detect subtle shifts in connectivity patterns before they manifest as
 macroscopic changes. The asymmetric nature of KL divergence provides a temporal signal
 that naturally captures directional changes in structural degradation.
+We do not attempt to estimate the percolation threshold; instead we test whether a 
+rate-based structural signal can reliably detect the onset of nonstationary 
+reorganization well before macroscopic fragmentation.
 
 To our knowledge, no prior work has systematically tracked the KL divergence of the degree
 distribution as a function of node-removal probability, nor evaluated whether KL
@@ -175,7 +178,8 @@ states that a giant connected component exists when
 \[
 \kappa = \frac{\langle k^2 \rangle - \langle k \rangle}{\langle k \rangle} > 1.
 \]
-Under independent node failures with probability $q$, this condition yields an approximate
+Under independent \emph{random} node failures with probability $q$, this condition yields an
+approximate
 critical threshold
 \[
 (1 - q)\kappa \approx 1
@@ -347,6 +351,19 @@ and (ii) absolute entropy change,
 \]
 These are used only to assess specificity of the baseline-deviation rule and are not the
 primary signal of interest.
+
+We leave ordering-aware distances (e.g., Wasserstein on degree) for future comparator
+extensions.
+
+\paragraph{Moment-based comparator (Molloy--Reed branching factor).}
+Because classical percolation thresholds depend on low-order degree moments, we also
+compute the Molloy--Reed branching factor
+\[
+\kappa(q)=\frac{\langle k^2\rangle_q-\langle k\rangle_q}{\langle k\rangle_q},
+\]
+with moments taken from the empirical $P_q(k)$. We smooth $\kappa(q)$ with the same EWMA
+used for $\tilde{D}_{\mathrm{KL}}(q)$ and apply the same baseline-deviation rule as a
+simple benchmark. Comparator results are reported in the Supplement.
 
 \paragraph{Support and numerical stability.}
 Because $P_q(k)$ is estimated empirically from a finite graph, some degree values may
@@ -751,6 +768,8 @@ reduced hub dominance as degree heterogeneity weakens.
 
 \subsection*{Controls}
 % --- Block F: Controls (null + damage-without-collapse) ---
+\noindent In addition to distribution-level change-rate signals, we benchmark the
+baseline-deviation rule against a simple moment-based comparator $\kappa(q)$ (Appendix).
 \paragraph{Null control.}
 To verify that baseline-deviation warnings are not artifacts of recomputing degree
 distributions alone, we repeat the full random-failure detection pipeline under a
@@ -899,11 +918,11 @@ latexmk -pdf paper.tex
 \subsection*{Sensitivity to smoothing and threshold}
 \input{paper/tables/sensitivity_alpha_z.tex}
 
-\subsection*{Additional figures and sensitivity analyses}
-Additional seed overlays (seeds 1--4), sensitivity to EWMA parameter $\alpha$, drift
-window $m$, and alternative collapse thresholds are provided in supplementary materials
-(not shown in the main Results).
-
+\subsection*{Moment-based benchmark: baseline deviation on $\kappa(q)$}
+\input{paper/tables/control_kappa_random_failure.tex}
+In this setting, $\tilde{\kappa}(q)$ never triggers the baseline-deviation rule $(0/5)$ and
+$Z_{\max}^{\kappa}<2$, so the successive-KL warning is not explained by a low-order moment
+surrogate under the same decision rule.
 
 \bibliographystyle{unsrt}
 \bibliography{references}

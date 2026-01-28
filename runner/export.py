@@ -631,12 +631,11 @@ def export_gamma_table_targeted(
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
     lines.append(
-        r"\caption{Table 2: Targeted (hub-first) removal across the $\gamma$ sweep. "
-        r"We report collapse timing $q_{\mathrm{collapse}}$ and an initial disruption intensity "
-        r"$I_{\mathrm{tgt}}$, defined as the smoothed successive KL signal at the first midpoint "
-        r"($I_{\mathrm{tgt}}=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, $q_{1/2}=\Delta q/2$). "
-        r"Values are median [IQR] across seeds. The count $(n_{\mathrm{col}}/n)$ reports the "
-        r"number of seeds for which the collapse proxy is observed within the sweep.}"
+        r"\caption{Targeted (hub-first) removal across the $\gamma$ sweep. We report collapse timing "
+        r"$q_{\mathrm{collapse}}$ and initial disruption intensity $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, "
+        r"where $q_{1/2}=\Delta q/2$ is the first midpoint of the damage grid. Values are median [IQR] across "
+        r"seeds. The count $(n_{\mathrm{col}}/n)$ reports the number of seeds for which the collapse proxy is "
+        r"observed within the sweep. Zero IQR indicates identical values across seeds on the discrete $q$-grid.}"
     )
     lines.append(r"\label{tab:gamma_sweep_targeted}")
     lines.append(r"\resizebox{\linewidth}{!}{%")
