@@ -116,10 +116,30 @@ class GammaSweepExperiment:
             targeted_warn_tgt_mean, targeted_warn_tgt_std, targeted_warn_tgt_n,
             targeted_collapse_mean, targeted_collapse_std, targeted_collapse_n,
             targeted_delta_warn_tgt_mean, targeted_delta_warn_tgt_std, targeted_delta_warn_tgt_n,
-            targeted_intensity_mean, targeted_intensity_std)
+            targeted_intensity_mean, targeted_intensity_std,
+            random_warn_med, random_warn_iqr,
+            random_delta_med, random_delta_iqr,
+            targeted_collapse_med, targeted_collapse_iqr,
+            targeted_intensity_med, targeted_intensity_iqr)
         """
         rows = []
         runs = []  # long-format per-seed runs (random regime only, for plotting/export)
+
+        def _median_iqr(arr: np.ndarray) -> tuple[float, float, int]:
+            """
+            Median + IQR computed over finite entries only.
+            Returns (median, iqr, n_detected); (nan, nan, 0) if no detections.
+            """
+            x = np.asarray(arr, dtype=float)
+            det = np.isfinite(x)
+            n_det = int(np.count_nonzero(det))
+            if n_det == 0:
+                return float("nan"), float("nan"), 0
+            vals = x[det]
+            med = float(np.median(vals))
+            q1 = float(np.percentile(vals, 25))
+            q3 = float(np.percentile(vals, 75))
+            return med, float(q3 - q1), n_det
 
         for gamma in self.gammas:
             q_warn_random = []
@@ -292,6 +312,11 @@ class GammaSweepExperiment:
             std_delta = float(np.nanstd(delta_warn_tgt, ddof=1)) if n_delta > 1 else 0.0
             std_intensity = float(np.nanstd(intensity_targeted, ddof=1)) if n_intensity > 1 else 0.0
 
+            med_r, iqr_r, _ = _median_iqr(q_warn_random)
+            med_dr, iqr_dr, _ = _median_iqr(delta_random)
+            med_tc, iqr_tc, _ = _median_iqr(q_collapse_targeted)
+            med_ti, iqr_ti, _ = _median_iqr(intensity_targeted)
+
             rows.append((
                 float(gamma),
                 mean_r, std_r, n_r,
@@ -303,6 +328,10 @@ class GammaSweepExperiment:
                 mean_collapse, std_collapse, n_collapse,
                 mean_delta, std_delta, n_delta,
                 mean_intensity, std_intensity,
+                med_r, iqr_r,
+                med_dr, iqr_dr,
+                med_tc, iqr_tc,
+                med_ti, iqr_ti,
             ))
 
         return rows, runs

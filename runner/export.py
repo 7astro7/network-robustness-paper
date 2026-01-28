@@ -470,7 +470,7 @@ def export_gamma_table_random(
     """
     Write the random-removal γ-sweep table as its own file (generated, not hand-edited).
 
-    Supports the 19-col, 25-col, and 27-col row schemas produced by GammaSweepExperiment.
+    Supports the 19-col, 25-col, 27-col, and 35-col row schemas produced by GammaSweepExperiment.
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -494,7 +494,7 @@ def export_gamma_table_random(
             "targeted_delta_mean", "targeted_delta_std", "targeted_delta_n",
         ]
         df = pd.DataFrame(rows, columns=cols)
-    elif k in (25, 27):
+    elif k in (25, 27, 35):
         cols = [
             "gamma",
             "random_warn_mean", "random_warn_std", "random_warn_n",
@@ -507,18 +507,22 @@ def export_gamma_table_random(
             "targeted_delta_warn_tgt_mean", "targeted_delta_warn_tgt_std",
             "targeted_delta_warn_tgt_n",
             "targeted_intensity_mean", "targeted_intensity_std",
+            "random_warn_med", "random_warn_iqr",
+            "random_delta_med", "random_delta_iqr",
+            "targeted_collapse_med", "targeted_collapse_iqr",
+            "targeted_intensity_med", "targeted_intensity_iqr",
         ]
         df = pd.DataFrame(rows, columns=cols[:k])
     else:
         raise ValueError(
             "export_gamma_table_random: unsupported row length "
-            f"{k} (expected 19, 25, or 27)"
+            f"{k} (expected 19, 25, 27, or 35)"
         )
 
-    def fmt_mean_std(mean, std) -> str:
-        if pd.isna(mean) or pd.isna(std):
+    def fmt_med_iqr(med, iqr) -> str:
+        if pd.isna(med) or pd.isna(iqr):
             return r"--"
-        return f"{float(mean):.3f} $\\pm$ {float(std):.3f}"
+        return f"{float(med):.3f} [{float(iqr):.3f}]"
 
     def fmt_count(n_detected) -> str:
         if pd.isna(n_detected):
@@ -532,25 +536,35 @@ def export_gamma_table_random(
     lines.append(r"\centering")
     lines.append(
         r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation "
-        r"and lead time $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ "
-        r"(collapse defined by $S(q)<0.1$). Values report mean $\pm$ std across seeds with "
-        r"detection counts $[n_{\mathrm{det}}/n]$.}"
+        r"and lead time $\Delta_{\mathrm{warn}} = q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ "
+        r"(collapse defined by $S(q) < 0.1$). Values report median [IQR] across seeds where the "
+        r"quantity is defined. Detection counts $(n_{\mathrm{det}}/n)$ indicate seeds with a warning; "
+        r"$(n_{\Delta}/n)$ indicate seeds where both $q_{\mathrm{warn}}$ and $q_{\mathrm{collapse}}$ "
+        r"are observed so $\Delta_{\mathrm{warn}}$ is defined.}"
     )
     lines.append(r"\label{tab:gamma_sweep_random}")
     lines.append(r"\begin{tabular}{c c c c c}")
     lines.append(r"\toprule")
     lines.append(
-        r"$\gamma$ & $q_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\mathrm{det}}/n$] & "
-        r"$\Delta_{\mathrm{warn}}$ (mean $\pm$ std) & [$n_{\Delta}/n$] \\"
+        r"$\gamma$ & $q_{\mathrm{warn}}$ (median [IQR]) & $(n_{\mathrm{det}}/n)$ & "
+        r"$\Delta_{\mathrm{warn}}$ (median [IQR]) & $(n_{\Delta}/n)$ \\"
     )
     lines.append(r"\midrule")
     for _, r in df.iterrows():
+        warn_cell = (
+            fmt_med_iqr(r.get("random_warn_med"), r.get("random_warn_iqr"))
+            if "random_warn_med" in df.columns else r"--"
+        )
+        delta_cell = (
+            fmt_med_iqr(r.get("random_delta_med"), r.get("random_delta_iqr"))
+            if "random_delta_med" in df.columns else r"--"
+        )
         lines.append(
             f"{float(r['gamma']):.1f} & "
-            f"{fmt_mean_std(r['random_warn_mean'], r['random_warn_std'])} & "
-            f"[{fmt_count(r['random_warn_n'])}] & "
-            f"{fmt_mean_std(r['random_delta_mean'], r['random_delta_std'])} & "
-            f"[{fmt_count(r['random_delta_n'])}] \\\\"
+            f"{warn_cell} & "
+            f"({fmt_count(r['random_warn_n'])}) & "
+            f"{delta_cell} & "
+            f"({fmt_count(r['random_delta_n'])}) \\\\"
         )
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
@@ -569,7 +583,7 @@ def export_gamma_table_targeted(
     """
     Write the targeted (hub-first) γ-sweep table as its own file (generated, not hand-edited).
 
-    Supports the 27-col row schema produced by GammaSweepExperiment (with onset warnings + intensity).
+    Supports the 35-col row schema produced by GammaSweepExperiment (with onset warnings + intensity + median/IQR).
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -582,10 +596,10 @@ def export_gamma_table_targeted(
     n_total = int(n_total)
 
     k = len(rows[0])
-    if k != 27:
+    if k != 35:
         raise ValueError(
             "export_gamma_table_targeted: unsupported row length "
-            f"{k} (expected 27)"
+            f"{k} (expected 35)"
         )
 
     cols = [
@@ -600,45 +614,48 @@ def export_gamma_table_targeted(
         "targeted_delta_warn_tgt_mean", "targeted_delta_warn_tgt_std",
         "targeted_delta_warn_tgt_n",
         "targeted_intensity_mean", "targeted_intensity_std",
+        "random_warn_med", "random_warn_iqr",
+        "random_delta_med", "random_delta_iqr",
+        "targeted_collapse_med", "targeted_collapse_iqr",
+        "targeted_intensity_med", "targeted_intensity_iqr",
     ]
     df = pd.DataFrame(rows, columns=cols)
     df = df.sort_values("gamma").reset_index(drop=True)
 
-    def fmt_mean_std(mean, std) -> str:
-        if pd.isna(mean) or pd.isna(std):
+    def fmt_med_iqr(med, iqr) -> str:
+        if pd.isna(med) or pd.isna(iqr):
             return r"--"
-        return f"{float(mean):.3f} $\\pm$ {float(std):.3f}"
-
-    def fmt_warn_cell(mean, std, n_warn) -> str:
-        if pd.isna(n_warn):
-            return fmt_mean_std(mean, std)
-        n_warn = int(n_warn)
-        if n_warn == 0:
-            return rf"-- [{n_warn}/{n_total}]"
-        return f"{fmt_mean_std(mean, std)} [{n_warn}/{n_total}]"
+        return f"{float(med):.3f} [{float(iqr):.3f}]"
 
     lines: list[str] = []
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
     lines.append(
-        r"\caption{Targeted (hub-first) removal: collapse timing $q_{\mathrm{collapse}}$ and "
-        r"initial disruption intensity $I_{\mathrm{tgt}}:=\tilde D_{\mathrm{KL}}(q_{1/2})$ "
-        r"across the $\gamma$ sweep (mean $\pm$ std across seeds).}"
+        r"\caption{Table 2: Targeted (hub-first) removal across the $\gamma$ sweep. "
+        r"We report collapse timing $q_{\mathrm{collapse}}$ and an initial disruption intensity "
+        r"$I_{\mathrm{tgt}}$, defined as the smoothed successive KL signal at the first midpoint "
+        r"($I_{\mathrm{tgt}}=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, $q_{1/2}=\Delta q/2$). "
+        r"Values are median [IQR] across seeds. The count $(n_{\mathrm{col}}/n)$ reports the "
+        r"number of seeds for which the collapse proxy is observed within the sweep.}"
     )
     lines.append(r"\label{tab:gamma_sweep_targeted}")
     lines.append(r"\resizebox{\linewidth}{!}{%")
-    lines.append(r"\begin{tabular}{c c c}")
+    lines.append(r"\begin{tabular}{c c c c}")
     lines.append(r"\toprule")
     lines.append(
-        r"$\gamma$ & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & "
-        r"$I_{\mathrm{tgt}}$ (mean $\pm$ std) \\"
+        r"$\gamma$ & $q_{\mathrm{collapse}}$ (median [IQR]) & $(n_{\mathrm{col}}/n)$ & "
+        r"$I_{\mathrm{tgt}}$ (median [IQR]) \\"
     )
     lines.append(r"\midrule")
     for _, r in df.iterrows():
+        n_col = int(r["targeted_collapse_n"]) if not pd.isna(r["targeted_collapse_n"]) else 0
+        n_tot = int(r["targeted_n_total"]) if not pd.isna(r["targeted_n_total"]) else int(n_total)
+        col_count = f"({n_col}/{n_tot})"
         lines.append(
             f"{float(r['gamma']):.1f} & "
-            f"{fmt_mean_std(r['targeted_collapse_mean'], r['targeted_collapse_std'])} & "
-            f"{fmt_mean_std(r['targeted_intensity_mean'], r['targeted_intensity_std'])} \\\\"
+            f"{fmt_med_iqr(r['targeted_collapse_med'], r['targeted_collapse_iqr'])} & "
+            f"{col_count} & "
+            f"{fmt_med_iqr(r['targeted_intensity_med'], r['targeted_intensity_iqr'])} \\\\"
         )
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")

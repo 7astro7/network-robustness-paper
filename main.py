@@ -68,18 +68,22 @@ if __name__ == "__main__":
 
     n_total = len(experiment.seeds)
     print("γ | Random q_warn(KL) (mean ± std) [n/n] | Random q_warn(JS) (mean ± std) [n/n] | Random q_warn(|ΔH|) (mean ± std) [n/n] | Random Δ_warn (mean ± std) [n/n] | Targeted early-rate [n/n] | Targeted q_warn_tgt (mean ± std) [n/n] | Targeted q_collapse (mean ± std) [n/n] | Targeted Δ_warn_tgt (mean ± std) [n/n] | Targeted I_tgt=~DKL(q_1/2) (mean ± std)")
-    for (
-        g,
-        mr, sr, nr,
-        mdr, sdr, ndr,
-        mjs, sjs, njs,
-        mdh, sdh, ndh,
-        ne, nt, er,
-        mt, st, nw,
-        mc, sc, nc,
-        md, sd, nd,
-        mi, si,
-    ) in rows:
+    for row in rows:
+        # Keep console output stable even if the gamma-sweep row schema expands.
+        (
+            g,
+            mr, sr, nr,
+            mdr, sdr, ndr,
+            mjs, sjs, njs,
+            mdh, sdh, ndh,
+            ne, nt, er,
+            mt, st, nw,
+            mc, sc, nc,
+            md, sd, nd,
+            mi, si,
+            *_,  # ignore any additional summary stats (e.g., median/IQR) in newer schemas
+        ) = row
+
         r_cell = "--" if nr == 0 or mr != mr else f"{mr:.3f} ± {sr:.3f}"
         js_cell = "--" if njs == 0 or mjs != mjs else f"{mjs:.3f} ± {sjs:.3f}"
         dh_cell = "--" if ndh == 0 or mdh != mdh else f"{mdh:.3f} ± {sdh:.3f}"
