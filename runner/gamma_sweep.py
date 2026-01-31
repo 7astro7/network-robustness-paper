@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from experiment.experiment import Experiment
+from models.experiment import Experiment
 from models.graph_model import GraphModel
 from models.failure_model import RandomFailure, TargetedFailure
 from models.metrics import Metrics

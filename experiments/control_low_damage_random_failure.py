@@ -15,7 +15,7 @@ if str(REPO_ROOT) not in sys.path:
 from models.graph_model import GraphModel
 from models.failure_model import RandomFailure
 from models.metrics import Metrics
-from experiment.experiment import Experiment
+from models.experiment import Experiment
 
 
 @dataclass

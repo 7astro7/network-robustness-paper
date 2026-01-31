@@ -5,7 +5,7 @@ import random
 
 import numpy as np
 
-from experiment.experiment import Experiment
+from models.experiment import Experiment
 from models.failure_model import RandomFailure
 from models.graph_model import GraphModel
 
@@ -214,7 +214,7 @@ def run_kappa_control_random_failure(
         rf"(baseline window $q\le 0.15$, $\alpha={alpha:.2f}$). We report "
         rf"$q_{{\mathrm{{warn}}}}^{{\kappa}}$, $\Delta_{{\mathrm{{warn}}}}^{{\kappa}}"
         rf"=q_{{\mathrm{{collapse}}}}-q_{{\mathrm{{warn}}}}^{{\kappa}}$, detection counts "
-        rf"$(n_{{\mathrm{{det}}}}/n)$, and $Z_{{\max}}^{{\kappa}}=\max_q"
+        rf"$(n_{{\mathrm{{det}}}}/n)$, and the baseline-referenced $Z_{{\max}}^{{\kappa}}=\max_q"
         rf"\big(\tilde{{\kappa}}(q)-\mu_0\big)/\sigma_0$ as mean $\pm$ std across seeds "
         rf"(Chung--Lu, $N={n_tex}$, $\gamma={gamma:.1f}$).}}"
     )

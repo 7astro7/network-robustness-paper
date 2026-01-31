@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import random
 from models.graph_model import GraphModel
 from models.failure_model import RandomFailure, TargetedFailure
-from experiment.experiment import Experiment
+from models.experiment import Experiment
 from runner.gamma_sweep import _detect_targeted_onset, _null_baseline_mu_sigma
 
 
