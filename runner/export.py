@@ -466,6 +466,8 @@ def export_gamma_table_random(
     *,
     n_total: int | None = None,
     out_path: str = "paper/tables/gamma_sweep_random.tex",
+    caption: str | None = None,
+    label: str = "tab:gamma_sweep_random",
 ) -> None:
     """
     Write the random-removal γ-sweep table as its own file (generated, not hand-edited).
@@ -534,15 +536,18 @@ def export_gamma_table_random(
     lines: list[str] = []
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
-    lines.append(
-        r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation "
-        r"and lead time $\Delta_{\mathrm{warn}} = q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ "
-        r"(collapse defined by $S(q) < 0.1$). Values report median [IQR] across seeds where the "
-        r"quantity is defined. Detection counts $(n_{\mathrm{det}}/n)$ indicate seeds with a warning; "
-        r"$(n_{\Delta}/n)$ indicate seeds where both $q_{\mathrm{warn}}$ and $q_{\mathrm{collapse}}$ "
-        r"are observed so $\Delta_{\mathrm{warn}}$ is defined.}"
-    )
-    lines.append(r"\label{tab:gamma_sweep_random}")
+    if caption is None:
+        lines.append(
+            r"\caption{Random removal: warning point $q_{\mathrm{warn}}$ via baseline deviation "
+            r"and lead time $\Delta_{\mathrm{warn}} = q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ "
+            r"(collapse defined by $S(q) < 0.1$). Values report median [IQR] across seeds where the "
+            r"quantity is defined. Detection counts $(n_{\mathrm{det}}/n)$ report the number of seeds "
+            r"where $q_{\mathrm{warn}}$ is observed prior to collapse; "
+            r"$(n_{\Delta}/n)$ analogously counts seeds with a defined lead time $\Delta_{\mathrm{warn}}$.}"
+        )
+    else:
+        lines.append(rf"\caption{{{caption}}}")
+    lines.append(rf"\label{{{label}}}")
     lines.append(r"\begin{tabular}{c c c c c}")
     lines.append(r"\toprule")
     lines.append(

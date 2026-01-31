@@ -12,10 +12,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from models.graph_model import GraphModel
-from models.failure_model import RandomFailure
-from models.metrics import Metrics
-from models.experiment import Experiment
+from core.graph_model import GraphModel
+from core.failure_model import RandomFailure
+from core.metrics import Metrics
+from core.experiment import Experiment
 
 
 @dataclass

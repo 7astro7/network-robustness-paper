@@ -11,9 +11,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import random
-from models.graph_model import GraphModel
-from models.failure_model import RandomFailure, TargetedFailure
-from models.experiment import Experiment
+from core.graph_model import GraphModel
+from core.failure_model import RandomFailure, TargetedFailure
+from core.experiment import Experiment
 from runner.gamma_sweep import _detect_targeted_onset, _null_baseline_mu_sigma
 
 

@@ -1,9 +1,9 @@
 import numpy as np
 import random
-from models.experiment import Experiment
-from models.graph_model import GraphModel
-from models.failure_model import RandomFailure, TargetedFailure
-from models.metrics import Metrics
+from core.experiment import Experiment
+from core.graph_model import GraphModel, ConfigurationModel
+from core.failure_model import RandomFailure, TargetedFailure
+from core.metrics import Metrics
 
 def _detect_targeted_onset(
     qs_mid,
@@ -91,6 +91,7 @@ class GammaSweepExperiment:
         gammas: np.ndarray | list[float] | None = None,
         alpha: float = 0.2,
         z: float = 2.0,
+        graph_model: str = "chunglu",
     ):
         self.n = n
         self.qs = qs if qs is not None else np.linspace(0, 0.9, 100)
@@ -98,6 +99,10 @@ class GammaSweepExperiment:
         self.gammas = np.asarray(gammas, dtype=float) if gammas is not None else self.GAMMAS
         self.alpha = float(alpha)
         self.z = float(z)
+        self.graph_model = graph_model.lower()
+        
+        if self.graph_model not in ["chunglu", "config"]:
+            raise ValueError(f"graph_model must be 'chunglu' or 'config', got '{graph_model}'")
 
 
     def run(self):
@@ -159,7 +164,13 @@ class GammaSweepExperiment:
                 np.random.seed(seed)
                 random.seed(seed)
 
-                graph = GraphModel(n=self.n, gamma=gamma)
+                # Select graph model
+                if self.graph_model == "chunglu":
+                    graph = GraphModel(n=self.n, gamma=gamma)
+                elif self.graph_model == "config":
+                    graph = ConfigurationModel(n=self.n, gamma=gamma)
+                else:
+                    raise ValueError(f"Unknown graph_model: {self.graph_model}")
 
                 # --- random failure ---
                 exp_r = Experiment(graph, RandomFailure())

@@ -17,6 +17,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip the full gamma sweep and only generate the sensitivity table/CSV.",
     )
+    parser.add_argument(
+        "--graph-model",
+        type=str,
+        default="chunglu",
+        choices=["chunglu", "config"],
+        help="Graph model to use: 'chunglu' (default) or 'config' (configuration model).",
+    )
     args = parser.parse_args()
 
     if args.sensitivity_only and not args.sensitivity:
@@ -58,14 +65,37 @@ if __name__ == "__main__":
         )
         raise SystemExit(0)
 
-    experiment = GammaSweepExperiment()
+    experiment = GammaSweepExperiment(graph_model=args.graph_model)
     rows, runs = experiment.run()
-    export_gamma_table_random(rows, n_total=len(experiment.seeds))
-    export_gamma_table_targeted(rows, n_total=len(experiment.seeds))
+    
+    # Adjust output file names and captions based on graph model
+    model_suffix = "_config" if args.graph_model == "config" else ""
+    
+    if args.graph_model == "config":
+        config_caption = (
+            r"Configuration-model random failure across the full $\gamma$ grid. "
+            r"Detection counts $(n_{\mathrm{det}}/n)$ report the number of seeds where "
+            r"$q_{\mathrm{warn}}$ is observed prior to collapse; $(n_{\Delta}/n)$ analogously "
+            r"counts seeds with a defined lead time $\Delta_{\mathrm{warn}}$. Results use the "
+            r"same baseline-deviation rule as the Chung--Lu experiments ($\alpha=0.20$, $z=2.0$, "
+            r"baseline window $q \le 0.15$). Dashes indicate runs with no detection prior to collapse."
+        )
+        export_gamma_table_random(
+            rows, 
+            n_total=len(experiment.seeds),
+            out_path=f"paper/tables/gamma_sweep_random{model_suffix}.tex",
+            caption=config_caption,
+            label="tab:config_random"
+        )
+    else:
+        export_gamma_table_random(rows, n_total=len(experiment.seeds))
+    
+    export_gamma_table_targeted(rows, n_total=len(experiment.seeds),
+                               out_path=f"paper/tables/gamma_sweep_targeted{model_suffix}.tex")
 
     # Per-seed long CSV (random regime only)
     random_runs = [r for r in runs if r.get("regime") == "random"]
-    export_gamma_long_csv(random_runs, out_path="paper/data/gamma_sweep_random_long.csv")
+    export_gamma_long_csv(random_runs, out_path=f"paper/data/gamma_sweep_random_long{model_suffix}.csv")
 
     # Appendix comparator: baseline deviation on EWMA-smoothed kappa(q) under random failure.
     run_kappa_control_random_failure(outdir="paper")

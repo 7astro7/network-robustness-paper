@@ -5,9 +5,9 @@ import random
 
 import numpy as np
 
-from models.experiment import Experiment
-from models.failure_model import RandomFailure
-from models.graph_model import GraphModel
+from core.experiment import Experiment
+from core.failure_model import RandomFailure
+from core.graph_model import GraphModel
 
 
 @dataclass
