@@ -639,8 +639,10 @@ def export_gamma_table_targeted(
         r"\caption{Targeted (hub-first) removal across the $\gamma$ sweep. We report collapse timing "
         r"$q_{\mathrm{collapse}}$ and initial disruption intensity $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, "
         r"where $q_{1/2}=\Delta q/2$ is the first midpoint of the damage grid. Values are median [IQR] across "
-        r"seeds. The count $(n_{\mathrm{col}}/n)$ reports the number of seeds for which the collapse proxy is "
-        r"observed within the sweep. Zero IQR indicates identical values across seeds on the discrete $q$-grid.}"
+        r"seeds; zero IQR indicates identical values across seeds on the discrete $q$-grid. The count $(n_{\mathrm{col}}/n)$ "
+        r"reports the number of seeds for which the collapse proxy is observed within the sweep. Because $q^{\mathrm{tgt}}_{\mathrm{warn}}$ "
+        r"is typically pinned to the earliest midpoint by grid resolution, we summarize targeted disruption by the initial shock magnitude "
+        r"$I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$.}"
     )
     lines.append(r"\label{tab:gamma_sweep_targeted}")
     lines.append(r"\resizebox{\linewidth}{!}{%")
