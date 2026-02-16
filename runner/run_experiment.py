@@ -170,7 +170,7 @@ def make_fig2_targeted(
     graph = GraphModel(n=n, gamma=gamma)
     experiment = Experiment(graph, TargetedFailure())
 
-    qs = np.linspace(0, 0.9, 100)
+    qs = np.linspace(0, 0.9, 400)
     S_values, _, Pq_values = experiment.sweep(qs)
 
     dKL_successive = experiment.successive_kl(Pq_values)

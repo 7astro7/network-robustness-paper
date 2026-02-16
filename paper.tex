@@ -43,10 +43,9 @@ random failure and targeted (hub-first) removal. Along a fixed damage grid, we c
 EWMA-smoothed successive Kullback--Leibler divergence between adjacent empirical degree
 distributions, yielding an interpretable per-step change-rate signal. Using pre-specified
 decision rules that do not reference connectivity, we find that under random failure the
-signal departs from an initial stationary baseline well before GCC collapse across a
+signal departs from an initial low-activity regime well before GCC collapse across a
 $\gamma$ sweep, producing nontrivial warning lead time. Under targeted removal, the same
-signal confirms attack onset relative to a no-damage noise floor and tracks disruption
-intensity as collapse approaches; we do not estimate the percolation threshold $q_c$.
+signal tracks disruption intensity as collapse approaches; we do not estimate the percolation threshold $q_c$.
 
 We validate the random-failure baseline-departure pattern on an empirical AS-level Internet
 topology from the CAIDA AS Relationships dataset, and a degree-matched configuration-model
@@ -134,13 +133,13 @@ potential early-warning signal of structural failure in power-law networks.
 
 \paragraph{Scope.}
 We use EWMA-smoothed successive KL divergence between adjacent degree distributions to detect the onset of nonstationary structural reorganization under progressive node removal, using fixed decision rules that do not reference connectivity.
-We do not estimate the percolation threshold $q_c$; in the targeted regime, the same signal is interpreted as attack-onset confirmation and disruption-intensity tracking rather than advance warning of collapse.
+We do not estimate the percolation threshold $q_c$; in the targeted regime, the same signal is interpreted as immediate disruption with an intensity-based summary rather than advance warning of collapse.
 
 \paragraph{Contributions.}
 \begin{itemize}[itemsep=2pt]
     \item \textbf{Rate-based structural signal.} We track EWMA-smoothed successive KL divergence between adjacent empirical degree distributions as a per-step change-rate along the damage grid.
     \item \textbf{Random-failure warning via baseline departure.} Using a fixed baseline window and threshold rule that does not reference connectivity, the signal departs from an initial stationary regime at $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across a $\gamma$ sweep in Chung--Lu graphs.
-    \item \textbf{Targeted regime: onset and intensity, not prediction.} Under hub-first removal the signal triggers at the earliest midpoint relative to a no-damage noise floor; we interpret this as attack-onset confirmation and use the signal to track disruption intensity as collapse approaches.
+    \item \textbf{Targeted regime: intensity-only summary.} Under hub-first removal the signal exhibits immediate disruption at the grid floor; we summarize targeted disruption by the initial shock magnitude $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with the collapse proxy $q_{\mathrm{collapse}}$.
     \item \textbf{Validation and boundary check.} We reproduce the random-failure pattern on a CAIDA AS graph and show ensemble-dependent transfer via a degree-matched configuration-model check.
 \end{itemize}
 
@@ -162,13 +161,9 @@ how its behavior relates to:
 \begin{itemize}[itemsep=2pt]
     \item the GCC fraction $S(q)$ and the collapse proxy $q_{\mathrm{collapse}}$ (defined
     by $S(q)<0.1$),
-    \item warning timing $\big(q_{\mathrm{warn}},\, q_{\mathrm{warn}}^{\mathrm{tgt}}\big)$
-    under random vs.\ targeted removal,
-    \item lead time/lag relative to collapse
-    $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ (random)
-    and $\Delta_{\mathrm{warn}}^{\mathrm{tgt}}=$
-    $q_{\mathrm{collapse}}-q_{\mathrm{warn}}^{\mathrm{tgt}}$ (targeted),
-    \item robustness of these timings across the $\gamma$ sweep.
+    \item warning timing $q_{\mathrm{warn}}$ under random removal,
+    \item warning lead time $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$ under random removal,
+    \item robustness of these statistics across the $\gamma$ sweep.
 \end{itemize}
 
 Our goal is not to modify the network locally, but to evaluate how global,
@@ -238,8 +233,8 @@ fragmentation.
 
 \paragraph{Predictions.}
 \begin{itemize}
-    \item The successive KL divergence remains approximately constant for small values
-    of $q$, forming a well-defined baseline.
+    \item The successive KL divergence remains in a comparatively low-activity regime for small values
+    of $q$, enabling baseline calibration over a fixed low-damage window.
     \item A detectable deviation from this baseline occurs at a damage
     level $q_{\mathrm{warn}}$ strictly less than the collapse point
     $q_{\mathrm{collapse}}$.
@@ -252,7 +247,7 @@ fragmentation.
 Under targeted (hub-first) node removal, structural degradation begins immediately.
 Because high-degree nodes are removed first, the degree distribution is altered
 substantially even at small damage fractions. We hypothesize that, in this regime, the
-successive KL change-rate signal has no initial stationary baseline.
+successive KL change-rate signal does not admit a low-damage calibration window.
 
 Instead, the successive KL change-rate signal is immediately nonstationary, with large
 early deviations that may not evolve monotonically. The following predictions apply to 
@@ -260,15 +255,14 @@ targeted (hub-first) removal.
 
 \paragraph{Predictions.}
 \begin{itemize}
-    \item The successive KL divergence does not exhibit a stationary baseline at low
+    \item The successive KL divergence does not admit a low-damage calibration window at small
     values of $q$.
     \item The signal shows a pronounced early deviation caused by immediate removal of
     high-degree nodes.
-    \item An attack-onset warning point
-    $q_{\mathrm{warn}}^{\mathrm{tgt}}$ can be identified
-    at the earliest midpoint on the damage grid and typically precedes
-    $q_{\mathrm{collapse}}$; this
-    timestamp reflects attack detection rather than providing advance notice of collapse.
+    \item The earliest reportable targeted response occurs at the grid floor midpoint
+    $q_{1/2}=\Delta q/2$; we summarize targeted disruption by the initial shock magnitude
+    $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with the collapse proxy
+    $q_{\mathrm{collapse}}$.
 \end{itemize}
 
 
@@ -308,8 +302,8 @@ At each damage fraction $q$, we compute the empirical degree distribution
 P_q(k) = \frac{1}{|V(G_q)|} \sum_{v \in V(G_q)} \mathbf{1}\{\deg(v) = k\},
 \]
 where $G_q$ denotes the graph after a fraction $q$ of nodes has been removed. The degree
-distribution serves as a compact representation of the network’s structural state,
-encoding changes in connectivity patterns as damage accumulates.
+distribution serves as a compact marginal summary of network structure,
+capturing how node connectivity levels redistribute as damage accumulates.
 
 \subsection*{Successive Kullback--Leibler Divergence}
 
@@ -395,7 +389,7 @@ while preserving trend information, we apply an exponentially weighted moving av
 The smoothing parameter is fixed at $\alpha = 0.2$ across all experiments. 
 A brief sensitivity check indicates that detected warning points can shift with
 $\alpha$,
-particularly under targeted removal where onset is abrupt and the signal can be strongly
+particularly under targeted removal where disruption is immediate and the signal can be strongly
 nonstationary at early $q$. Accordingly, we fix $\alpha=0.2$ as a moderate smoothing choice and report
 results using this single
 pre-specified value rather than selecting $\alpha$ post hoc.
@@ -433,8 +427,10 @@ We focus on Chung--Lu for the main controlled analysis; other power-law construc
 additional correlations that complicate attribution.
 
 \paragraph{Configuration-model robustness check.}
-To probe sensitivity to the generating ensemble, we repeat the random-failure pipeline on a configuration-model graph class matched by tail exponent $\gamma$.
-Full construction details are deferred to the Appendix, and results are summarized in the Results configuration-model check subsection.
+To probe sensitivity to the generating ensemble, we repeat the random-failure pipeline using
+a configuration-model graph class matched by tail exponent $\gamma$.
+Construction details are deferred to the Appendix; findings are summarized in the Results
+configuration-model check subsection.
 
 \subsection*{Failure Regimes}
 
@@ -475,6 +471,7 @@ follows.
 
 For each failure mode, a fraction $q \in [0, 0.9]$ of nodes is progressively removed.
 All structural observables are computed on the resulting damaged graph $G_q$.
+Simulations and graph computations are implemented using NetworkX~\cite{SciPyProceedings_11}.
 
 \subsection*{Structural Observables}
 At each damage level $q$, we compute:
@@ -501,18 +498,19 @@ Rather than introducing multiple metrics, we apply regime-appropriate decision r
 the same successive KL signal.
 
 \subsubsection*{Random Failure: Baseline Deviation Rule}
-Under random failure, networks exhibit an initial stationary regime in which
+Under random failure, networks exhibit an initial low-activity regime in which
 $\tilde{D}_{\mathrm{KL}}(q)$ fluctuates weakly around a constant baseline.
 We define a baseline window
 \[
 q \le 0.15,
 \]
 and compute the baseline mean $\mu_0$ and standard deviation $\sigma_0$ over this range.
-We choose $q\le 0.15$ as a fixed low-damage stationarity window: Empirically, under random failure the low-damage region typically exhibits near-constant
-$\tilde{D}_{\mathrm{KL}}(q)$ across seeds before any sustained departure is visible.
-This window is held constant across all $\gamma$ and is
-not tuned post hoc. Sensitivity of warning timing to EWMA smoothing $\alpha$ and
-threshold $z$ in the rule $\tilde{D}_{\mathrm{KL}} > \mu_0 + z\sigma_0$ is reported in
+We choose $q\le 0.15$ as a fixed low-damage \emph{calibration} window.
+Across random-failure runs, this early region precedes the sustained departures used for detection,
+and provides a consistent noise-floor estimate $(\mu_0,\sigma_0)$ for the baseline-deviation rule.
+The window is held constant across all $\gamma$ and is not tuned post hoc.
+Sensitivity of warning timing to EWMA smoothing $\alpha$ and threshold $z$ in the rule
+$\tilde{D}_{\mathrm{KL}} > \mu_0 + z\sigma_0$ is reported in
 \autoref{tab:sensitivity_alpha_z}.
 
 The early-warning point $q_{\mathrm{warn}}$ is defined as the smallest $q$ such that
@@ -528,34 +526,19 @@ defined.
 This criterion detects the loss of structural stationarity without reference to collapse
 thresholds or numerical derivatives.
 
-\subsubsection*{Targeted Failure: Onset Rule on Midpoint Support}
-Under targeted (hub-first) removal, structural change begins immediately, so we treat the
-goal as attack-onset confirmation rather than a pre-collapse warning. Because successive KL is computed
-between adjacent damage levels, we index the smoothed signal on midpoints
+\subsubsection*{Targeted Failure: Intensity Summary (no timing estimand)}
+Under targeted (hub-first) removal, structural disruption begins immediately and the
+successive-KL signal does not admit a low-damage calibration window. Because successive
+KL is evaluated on midpoint support, the earliest reportable value occurs at
+$q_{1/2}=\Delta q/2$; in practice the targeted response triggers at this grid floor, so
+we do not treat timing as a meaningful estimand.
+Instead, we summarize targeted disruption by the initial shock magnitude
 \[
-q_{i+\frac12}=\frac{q_i+q_{i+1}}{2}.
+I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2}),
 \]
-We define the targeted onset warning point $q_{\mathrm{warn}}^{\mathrm{tgt}}$ as the
-smallest midpoint at which $\tilde{D}_{\mathrm{KL}}(q_{i+\frac12})$ exceeds a noise-floor
-baseline estimated from a no-damage control~\cite{basseville1993abrupt}. Concretely, we
-estimate $(\mu_0,\sigma_0)$
-from a no-damage control by running the full pipeline on a fixed graph
-($G_q \equiv G_0$ for all $q$) over the same $q$-grid, computing successive KL on midpoint
-support, and applying the same EWMA smoothing. We then take the mean and standard
-deviation of $\tilde{D}_{\mathrm{KL}}$ over the first $n_{\mathrm{baseline}}=3$ midpoints
-as the noise-floor baseline, and trigger onset at the earliest midpoint satisfying
-\[
-\tilde{D}_{\mathrm{KL}}(q_{i+\frac12}) > \mu_0 + 2\sigma_0.
-\]
-
-\noindent\textbf{Definition (targeted onset).} $q_{\mathrm{warn}}^{\mathrm{tgt}}$ is the first midpoint $q_{i+\frac12}$ such that $\tilde{D}_{\mathrm{KL}}(q_{i+\frac12})>\mu_0+2\sigma_0$, where $(\mu_0,\sigma_0)$ come from the first $n_{\mathrm{baseline}}=3$ midpoints of the no-damage control.
-
-If the onset condition is never satisfied, we record
-$q_{\mathrm{warn}}^{\mathrm{tgt}}=\mathrm{NaN}$ and report the corresponding detection count.
-
-In practice this onset condition is satisfied at the earliest midpoint under hub-first
-removal, so targeted results emphasize collapse timing and disruption intensity rather
-than onset timing.
+reported across seeds together with the collapse proxy $q_{\mathrm{collapse}}$ (defined
+by $S(q)<0.1$). This retains a connectivity-free targeted summary while avoiding
+overinterpretation of timing under hub-first removal.
 
 \subsection*{Collapse Identification}
 For post hoc comparison only (not used in any detection rule), we define the collapse
@@ -576,12 +559,12 @@ detection.
 
 
 \subsection*{Experimental Protocol}
-For synthetic experiments, we use a uniform damage grid $q_0,q_1,\dots,q_{99}$ spanning
-$[0,0.9]$, with increment $\Delta q = 0.9/99$ (i.e., 100 evenly spaced values).
+For synthetic experiments under random failure, we use a uniform damage grid $q_0,q_1,\dots,q_{99}$ spanning
+$[0,0.9]$, with increment $\Delta q = 0.9/99$ (i.e., 100 evenly spaced values). For targeted removal, we use a higher-resolution
+grid of 400 evenly spaced values over $[0,0.9]$.
 Each configuration is repeated across five random seeds.
 
-For each value of $\gamma$ and each failure mode, we summarize warning and collapse
-timings across seeds.
+For each value of $\gamma$, we summarize random-failure warning timing and lead time, and report targeted collapse timing together with the initial disruption intensity $I_{\mathrm{tgt}}$ across seeds.
 CAIDA experiments use a separate damage grid (e.g., $q_{\max}=0.99$ with 200 points) as
 specified in the CAIDA figure pipeline.
 
@@ -592,31 +575,38 @@ We use the CAIDA AS Relationships Dataset (serial-2; snapshot
 unique AS pairs.
 
 \subsection*{Datasets analyzed and where results appear}
-This study reports results on two network classes:
+This study reports results on three network classes:
 
 \begin{itemize}[itemsep=2pt]
-    \item \textbf{Synthetic networks (primary analysis):} Chung--Lu graphs with power-law
-    degree sequences, swept over
-    $\gamma \in (2,3)$. These experiments are used to evaluate hypotheses H1--H3 and all
-    detection-rule behavior under controlled structure.
-    \item \textbf{Empirical network (validation):} the CAIDA AS Relationships graph
-    (snapshot \CAIDASnapshot). This serves as an out-of-sample realism check of the
-    random-failure behavior observed in the synthetic setting.
+    \item \textbf{Synthetic networks (primary controlled analysis):}
+    Chung--Lu expected-degree graphs with power-law degree sequences, swept over
+    $\gamma \in (2,3)$.
+    We evaluate both random failure and targeted (hub-first) removal in this ensemble,
+    using fixed detection logic and reporting $q_{\mathrm{warn}}$ (random) and $I_{\mathrm{tgt}}$ (targeted).
+
+    \item \textbf{Empirical network (out-of-sample validation):}
+    the CAIDA AS Relationships graph (snapshot \CAIDASnapshot).
+    This serves as a realism check of the random-failure baseline-departure pattern
+    observed in the synthetic setting.
+
+    \item \textbf{Configuration-model networks (boundary check / transfer):}
+    a degree-matched configuration-model graph class used only under random failure
+    to probe ensemble sensitivity when the tail exponent is matched but the generating mechanism differs.
 \end{itemize}
 
-Unless explicitly labeled as CAIDA, all figures and tables in the Results section refer to
-the synthetic Chung--Lu experiments.
+Unless explicitly labeled as CAIDA or configuration-model, all figures and tables in the
+Results section refer to the synthetic Chung--Lu experiments.
 
 \section*{Analysis and Results}
 
-We present results in the order: (i) a representative synthetic Chung--Lu run under random
-failure to illustrate the signal relative to $S(q)$, (ii) an empirical CAIDA AS graph
+We present results in the order: (i) a representative synthetic Chung--Lu run under
+random failure to illustrate the signal relative to $S(q)$, (ii) an empirical CAIDA AS graph
 random-failure case study as an out-of-sample validation, (iii) a representative synthetic
-targeted (hub-first) run to contrast adversarial damage,
-and (iv) $\gamma$-sweep
-summaries via a plot and tables across seeds. We then report two controls (no-damage and
-damage-without-collapse) to evaluate false-trigger behavior under the same
-baseline-deviation rule.
+targeted (hub-first) Chung--Lu run to contrast adversarial damage, (iv) $\gamma$-sweep
+summaries for Chung--Lu via a plot and tables across seeds, and (v) a configuration-model
+random-failure boundary check to assess ensemble transfer under matched $\gamma$.
+We then report two controls (no-damage and damage-without-collapse) to evaluate false-trigger
+behavior under the same baseline-deviation rule.
 
 \subsection*{Synthetic (Chung--Lu) networks: Random Failure}
 
@@ -728,16 +718,12 @@ only by stochastic node removal.
 % --- Block C: Synthetic targeted representative (Fig. 2) ---
 \subsection*{Synthetic (Chung--Lu) networks: Targeted Failure}
 
-Under targeted (hub-first) removal, $\tilde{D}_{\mathrm{KL}}(q)$ shows immediate
-nonstationary disruption rather than a low-$q$ baseline regime.
-
-For targeted removal, onset warnings occur at the earliest midpoint on the damage grid,
-well before
-collapse. Across the $\gamma$ sweep, onset is detected at the earliest midpoint on the damage
-grid for all seeds, while collapse occurs at small $q$ (\autoref{tab:gamma_sweep_targeted}).
-Because detection times are reported on a discrete midpoint grid with step $\Delta q$, the earliest
-reportable value is $\Delta q/2$; thus $q^{\mathrm{tgt}}_{\mathrm{warn}}$ often equals the first midpoint,
-which is a grid-resolution ceiling rather than a substantive timing claim.
+Under targeted (hub-first) removal, structural disruption begins at the first removal step,
+so onset timing is not a substantive estimand in this regime. Accordingly, we summarize
+targeted disruption by the initial shock magnitude
+$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with $q_{\mathrm{collapse}}$.
+Refining the damage grid only moves $q_{1/2}$ closer to zero without changing the
+interpretation that disruption is immediate under hub-first removal.
 
 \begin{figure}[H]
 \centering
@@ -746,9 +732,9 @@ paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
 \caption{Targeted (hub-first) failure (same representative $\gamma=2.5$, seed=0,
 $\alpha=0.20$).
 Collapse is abrupt under targeted removal: $q_{\mathrm{collapse}}=0.091$ (defined by
-$S(q)<0.1$). The onset warning point $q_{\mathrm{warn}}^{\mathrm{tgt}}$ occurs at the
-earliest midpoint on the damage grid, indicating immediate attack onset under hub-first
-removal.}
+$S(q)<0.1$). The successive-KL signal exhibits an immediate jump at the first midpoint
+$q_{1/2}=\Delta q/2$, indicated by the gold dashed line; we summarize this initial disruption by
+$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$.}
 \label{fig:targeted_rep}
 \end{figure}
 
@@ -773,7 +759,7 @@ median [IQR] across seeds (detection-conditional where applicable).}
 across the heavy-tailed regime.
 \autoref{tab:gamma_sweep_random} and \autoref{tab:gamma_sweep_targeted} summarize the
 seed-averaged values under random failure and targeted removal. Under targeted removal,
-onset warnings occur immediately and collapse occurs at small $q$. This separation is
+disruption is immediate and collapse occurs at small $q$. This separation is
 consistent with gradual tail erosion under random removal, where degree-structure
 reorganization accumulates well before macroscopic fragmentation.
 
@@ -781,8 +767,7 @@ reorganization accumulates well before macroscopic fragmentation.
 \input{paper/tables/gamma_sweep_random.tex}
 \input{paper/tables/gamma_sweep_targeted.tex}
 \begin{samepage}
-Because $q_{\mathrm{warn}}^{\mathrm{tgt}}$ is typically pinned to the earliest midpoint by grid resolution,
-we summarize targeted disruption by the initial shock magnitude $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$.
+We summarize targeted disruption by the initial shock magnitude $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$.
 Across the $\gamma$ sweep, $q_{\mathrm{collapse}}$ varies only weakly on the chosen grid while $I_{\mathrm{tgt}}$ decreases monotonically with $\gamma$, consistent with weaker hub-dominated disruption in less heterogeneous degree sequences.
 \end{samepage}
 \FloatBarrier
@@ -829,7 +814,6 @@ three metrics).
 \input{paper/null_control_random_failure_gamma2.5_alpha0.20.tex}
 
 \paragraph{Damage-without-collapse control.}
-\input{paper/tables/control_low_damage_gamma2.5_alpha0.20.tex}
 To assess whether apparent warnings can arise under damage that is not near collapse, we
 repeat the random-failure
 pipeline while restricting the sweep to $q\le 0.25$ and report the minimum GCC fraction
@@ -844,6 +828,8 @@ In this regime ($\min_{q\le 0.25} S(q)=0.643$), successive KL produces no trigge
 while successive JS produces
 1/5 and $|\Delta H|$ produces 5/5, indicating that $|\Delta H|$ is not specific under the
 baseline-deviation rule.
+
+\input{paper/tables/control_low_damage_gamma2.5_alpha0.20.tex}
 
 \section*{Conclusion}
 
@@ -864,11 +850,10 @@ the signal is capturing genuine structural reorganization rather than an artifac
 synthetic ensemble.
 
 Under targeted (hub-first) removal, the interpretation changes: structural disruption is
-immediate, and an onset warning $q_{\mathrm{warn}}^{\mathrm{tgt}}$ is detected at the
-earliest midpoint on the damage grid relative to a no-damage noise floor. This warning
-reflects attack
-onset rather than predicting collapse, since $q_{\mathrm{collapse}}$ remains abrupt and
-occurs at small $q$ under hub-first removal. 
+immediate, and the successive-KL signal exhibits an initial shock at the grid floor
+$q_{1/2}=\Delta q/2$. We summarize targeted disruption by the initial shock magnitude
+$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with the collapse proxy
+$q_{\mathrm{collapse}}$, which remains abrupt and occurs at small $q$ under hub-first removal.
 This accords with the finding that scale-free networks are highly vulnerable 
 to intentional (hub-targeted) attacks, with rapid GCC disintegration after removing 
 only a small fraction of the highest-degree 

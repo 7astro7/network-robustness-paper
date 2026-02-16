@@ -87,6 +87,7 @@ class GammaSweepExperiment:
         self,
         n: int = 10_000,
         qs: np.ndarray | None = None,
+        qs_targeted: np.ndarray | None = None,
         seeds: list[int] | None = None,
         gammas: np.ndarray | list[float] | None = None,
         alpha: float = 0.2,
@@ -95,6 +96,7 @@ class GammaSweepExperiment:
     ):
         self.n = n
         self.qs = qs if qs is not None else np.linspace(0, 0.9, 100)
+        self.qs_targeted = qs_targeted if qs_targeted is not None else np.linspace(0, 0.9, 400)
         self.seeds = seeds if seeds is not None else [0, 1, 2, 3, 4]
         self.gammas = np.asarray(gammas, dtype=float) if gammas is not None else self.GAMMAS
         self.alpha = float(alpha)
@@ -229,7 +231,7 @@ class GammaSweepExperiment:
 
                 # --- targeted failure ---
                 exp_t = Experiment(graph, TargetedFailure())
-                S_t, _, Pq_t = exp_t.sweep(self.qs)
+                S_t, _, Pq_t = exp_t.sweep(self.qs_targeted)
                 raw_t = exp_t.successive_kl(Pq_t)
 
                 if not np.all(np.isfinite(raw_t)):
@@ -243,14 +245,14 @@ class GammaSweepExperiment:
                 intensity_targeted.append(tgt_intensity if np.isfinite(tgt_intensity) else np.nan)
 
                 # Targeted: attack-onset detection on midpoint grid (may be pre- or post-collapse)
-                qs_mid = 0.5 * (self.qs[:-1] + self.qs[1:])
+                qs_mid = 0.5 * (self.qs_targeted[:-1] + self.qs_targeted[1:])
                 mu_null, sig_null = _null_baseline_mu_sigma(
                     graph,
-                    self.qs,
+                    self.qs_targeted,
                     alpha=self.alpha,
                     n_baseline=3,
                 )
-                q_warn_tgt, _, _, _ = _detect_targeted_onset(
+                q_warn_tgt, mu0_tgt, sigma0_tgt, thresh_tgt = _detect_targeted_onset(
                     qs_mid,
                     dkl_t,
                     n_baseline=3,
@@ -262,9 +264,31 @@ class GammaSweepExperiment:
 
                 # collapse (reference only): first q where S(q) < 0.1
                 q_collapse_t = next(
-                    (float(q) for q, s in zip(self.qs, S_t) if s < 0.1),
+                    (float(q) for q, s in zip(self.qs_targeted, S_t) if s < 0.1),
                     None,
                 )
+
+                q_floor_tgt = float(qs_mid[0]) if qs_mid.size else float("nan")
+                dkl_floor_tgt = float(dkl_t[0]) if len(dkl_t) > 0 else float("nan")
+                fired_at_floor_tgt = bool(
+                    np.isfinite(dkl_floor_tgt)
+                    and np.isfinite(thresh_tgt)
+                    and (float(dkl_floor_tgt) > float(thresh_tgt))
+                )
+
+                runs.append({
+                    "regime": "targeted",
+                    "gamma": float(gamma),
+                    "seed": int(seed),
+                    "q_warn_tgt": float(q_warn_tgt) if np.isfinite(q_warn_tgt) else float("nan"),
+                    "q_collapse": float(q_collapse_t) if q_collapse_t is not None else float("nan"),
+                    "q_floor": float(q_floor_tgt),
+                    "dkl_floor": float(dkl_floor_tgt),
+                    "mu0": float(mu0_tgt),
+                    "sigma0": float(sigma0_tgt),
+                    "thresh": float(thresh_tgt),
+                    "fired_at_floor": bool(fired_at_floor_tgt),
+                })
 
                 is_early = (
                     np.isfinite(q_warn_tgt)

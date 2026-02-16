@@ -302,7 +302,100 @@ def export_gamma_table(
                 lines.append("")
 
             out_path.write_text("\n".join(lines))
-            return
+
+
+def export_targeted_floor_check_csv(runs, out_path: str = "paper/data/targeted_floor_check.csv") -> None:
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    targeted = [r for r in runs if r.get("regime") == "targeted"]
+    if not targeted:
+        raise ValueError("export_targeted_floor_check_csv: no targeted runs found")
+    df = pd.DataFrame(targeted)
+    cols = [
+        "gamma",
+        "seed",
+        "q_floor",
+        "q_warn_tgt",
+        "q_collapse",
+        "fired_at_floor",
+        "dkl_floor",
+        "thresh",
+    ]
+    for c in cols:
+        if c not in df.columns:
+            df[c] = np.nan
+    df[cols].to_csv(out_path, index=False)
+
+
+def export_targeted_floor_check_table(
+    runs,
+    out_path: str = "paper/tables/targeted_floor_check.tex",
+    label: str = "tab:targeted_floor_check",
+) -> None:
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    targeted = [r for r in runs if r.get("regime") == "targeted"]
+    if not targeted:
+        raise ValueError("export_targeted_floor_check_table: no targeted runs found")
+    df = pd.DataFrame(targeted)
+    df = df.sort_values(["gamma", "seed"]).reset_index(drop=True)
+
+    def _isfinite(x):
+        return np.isfinite(np.asarray(x, dtype=float))
+
+    lines: list[str] = []
+    lines.append(r"\begin{table}[H]")
+    lines.append(r"\centering")
+    lines.append(
+        r"\caption{Targeted onset grid-floor check. For each $\gamma$, we report the fraction of seeds where "
+        r"$q_{\mathrm{warn}}^{\mathrm{tgt}}$ equals the earliest midpoint $q_{1/2}$ (grid floor), along with summary "
+        r"statistics of $q_{\mathrm{warn}}^{\mathrm{tgt}}$ and the fraction of seeds with $q_{\mathrm{warn}}^{\mathrm{tgt}} < q_{\mathrm{collapse}}$.}"
+    )
+    lines.append(rf"\label{{{label}}}")
+    lines.append(r"\begin{tabular}{c c c c c}")
+    lines.append(r"\toprule")
+    lines.append(
+        r"$\gamma$ & $\Pr[q_{\mathrm{warn}}^{\mathrm{tgt}} = q_{1/2}]$ & $\min\,q_{\mathrm{warn}}^{\mathrm{tgt}}$ & "
+    )
+    lines.append(
+        r"$\mathrm{median}\,q_{\mathrm{warn}}^{\mathrm{tgt}}$ & $\Pr[q_{\mathrm{warn}}^{\mathrm{tgt}} < q_{\mathrm{collapse}}]$ \\"
+    )
+    lines.append(r"\midrule")
+
+    for gamma, gdf in df.groupby("gamma", sort=True):
+        q_warn = np.asarray(gdf.get("q_warn_tgt", np.nan), dtype=float)
+        q_floor = np.asarray(gdf.get("q_floor", np.nan), dtype=float)
+        q_col = np.asarray(gdf.get("q_collapse", np.nan), dtype=float)
+
+        defined = _isfinite(q_warn)
+        n_def = int(np.count_nonzero(defined))
+
+        if n_def == 0:
+            p_floor = r"0/0"
+            qmin = r"--"
+            qmed = r"--"
+            p_before = r"0/0"
+        else:
+            qf = float(q_floor[defined][0]) if np.any(_isfinite(q_floor[defined])) else float("nan")
+            n_floor = int(np.count_nonzero(q_warn[defined] == qf))
+            p_floor = f"{n_floor}/{n_def}"
+            qmin = f"{float(np.min(q_warn[defined])):.3f}"
+            qmed = f"{float(np.median(q_warn[defined])):.3f}"
+            before = defined & _isfinite(q_col) & (q_warn < q_col)
+            n_before = int(np.count_nonzero(before))
+            p_before = f"{n_before}/{n_def}"
+
+        lines.append(
+            f"{float(gamma):.1f} & {p_floor} & {qmin} & {qmed} & {p_before} \\\\"
+        )
+
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    lines.append("")
+
+    out_path.write_text("\n".join(lines))
+    return
 
 
 def export_sensitivity_csv(rows, out_path: str) -> None:
@@ -637,30 +730,22 @@ def export_gamma_table_targeted(
     lines.append(r"\centering")
     lines.append(
         r"\caption{Targeted (hub-first) removal across the $\gamma$ sweep. We report collapse timing "
-        r"$q_{\mathrm{collapse}}$ and initial disruption intensity $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, "
-        r"where $q_{1/2}=\Delta q/2$ is the first midpoint of the damage grid. Values are median [IQR] across "
-        r"seeds; zero IQR indicates identical values across seeds on the discrete $q$-grid. The count $(n_{\mathrm{col}}/n)$ "
-        r"reports the number of seeds for which the collapse proxy is observed within the sweep. Because $q^{\mathrm{tgt}}_{\mathrm{warn}}$ "
-        r"is typically pinned to the earliest midpoint by grid resolution, we summarize targeted disruption by the initial shock magnitude "
-        r"$I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$.}"
+        r"$q_{\mathrm{collapse}}$ (defined by $S(q)<0.1$) and the initial disruption intensity "
+        r"$I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$, where $q_{1/2}$ is the first midpoint of the damage grid. "
+        r"Values are median [IQR] across seeds.}"
     )
     lines.append(r"\label{tab:gamma_sweep_targeted}")
     lines.append(r"\resizebox{\linewidth}{!}{%")
-    lines.append(r"\begin{tabular}{c c c c}")
+    lines.append(r"\begin{tabular}{c c c}")
     lines.append(r"\toprule")
     lines.append(
-        r"$\gamma$ & $q_{\mathrm{collapse}}$ (median [IQR]) & $(n_{\mathrm{col}}/n)$ & "
-        r"$I_{\mathrm{tgt}}$ (median [IQR]) \\"
+        r"$\gamma$ & $q_{\mathrm{collapse}}$ (median [IQR]) & $I_{\mathrm{tgt}}$ (median [IQR]) \\\\"
     )
     lines.append(r"\midrule")
     for _, r in df.iterrows():
-        n_col = int(r["targeted_collapse_n"]) if not pd.isna(r["targeted_collapse_n"]) else 0
-        n_tot = int(r["targeted_n_total"]) if not pd.isna(r["targeted_n_total"]) else int(n_total)
-        col_count = f"({n_col}/{n_tot})"
         lines.append(
             f"{float(r['gamma']):.1f} & "
             f"{fmt_med_iqr(r['targeted_collapse_med'], r['targeted_collapse_iqr'])} & "
-            f"{col_count} & "
             f"{fmt_med_iqr(r['targeted_intensity_med'], r['targeted_intensity_iqr'])} \\\\"
         )
     lines.append(r"\bottomrule")

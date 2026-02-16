@@ -3,6 +3,8 @@ from runner.export import (
     export_gamma_table_random,
     export_gamma_table_targeted,
     export_gamma_long_csv,
+    export_targeted_floor_check_csv,
+    export_targeted_floor_check_table,
     export_sensitivity_csv,
     export_sensitivity_table,
 )
@@ -96,6 +98,14 @@ if __name__ == "__main__":
     # Per-seed long CSV (random regime only)
     random_runs = [r for r in runs if r.get("regime") == "random"]
     export_gamma_long_csv(random_runs, out_path=f"paper/data/gamma_sweep_random_long{model_suffix}.csv")
+
+    targeted_runs = [r for r in runs if r.get("regime") == "targeted"]
+    export_targeted_floor_check_csv(
+        targeted_runs, out_path=f"paper/data/targeted_floor_check{model_suffix}.csv"
+    )
+    export_targeted_floor_check_table(
+        targeted_runs, out_path=f"paper/tables/targeted_floor_check{model_suffix}.tex"
+    )
 
     # Appendix comparator: baseline deviation on EWMA-smoothed kappa(q) under random failure.
     run_kappa_control_random_failure(outdir="paper")
