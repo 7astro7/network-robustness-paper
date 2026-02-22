@@ -386,16 +386,12 @@ while preserving trend information, we apply an exponentially weighted moving av
 (1-\alpha)\tilde{D}_{\mathrm{KL}}(q_{i-1}).
 \]
 
-The smoothing parameter is fixed at $\alpha = 0.2$ across all experiments. 
-A brief sensitivity check indicates that detected warning points can shift with
-$\alpha$,
-particularly under targeted removal where disruption is immediate and the signal can be strongly
-nonstationary at early $q$. Accordingly, we fix $\alpha=0.2$ as a moderate smoothing choice and report
-results using this single
-pre-specified value rather than selecting $\alpha$ post hoc.
-Although the update rule depends only on the previous smoothed value, the EWMA assigns
-exponentially decaying weight to past observations, corresponding to an effective window
-length of approximately $1/\alpha$. No optimization over $\alpha$ is performed.
+The smoothing parameter is fixed at $\alpha=0.2$ across all experiments. A brief sensitivity
+check indicates that detected warning points can shift with $\alpha$, particularly under targeted
+removal where disruption is abrupt and the signal can be strongly nonstationary at early $q$.
+Accordingly, we use $\alpha=0.2$ as a moderate smoothing choice and report results for this single
+pre-specified value (no tuning is performed). The EWMA assigns exponentially decaying weight to past
+observations, corresponding to an effective memory on the order of $1/\alpha$.
 
 The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole warning observable
 used throughout this study; alternative signals are evaluated only in control comparisons.

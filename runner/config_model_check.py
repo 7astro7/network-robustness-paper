@@ -21,10 +21,9 @@ if str(REPO_ROOT) not in sys.path:
 from core.graph_model import ConfigurationModel
 from core.failure_model import RandomFailure
 from core.experiment import Experiment
-from core.metrics import Metrics
 
 
-def detect_baseline_break(qs, dkl_smooth, z=2.0, baseline_frac=0.15):
+def detect_baseline_break(qs: np.ndarray, dkl_smooth: np.ndarray, z: float = 2.0, baseline_frac: float = 0.15) -> float | None:
     """
     Baseline-deviation rule on midpoint-indexed signal.
     Returns q_warn (float or None).
@@ -65,7 +64,7 @@ def detect_baseline_break(qs, dkl_smooth, z=2.0, baseline_frac=0.15):
     return float(search_qs[idx[0]]) if idx.size else None
 
 
-def run_config_model_experiment(gamma, seed, n=10_000, alpha=0.2, z=2.0, num_q=100):
+def run_config_model_experiment(gamma: float, seed: int, n: int = 10_000, alpha: float = 0.2, z: float = 2.0, num_q: int = 100) -> dict:
     """
     Run one random-failure experiment on ConfigurationModel.
     

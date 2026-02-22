@@ -6,13 +6,13 @@ from core.failure_model import RandomFailure, TargetedFailure
 from core.metrics import Metrics
 
 def _detect_targeted_onset(
-    qs_mid,
-    dkl_smooth_mid,
-    n_baseline=3,
-    z=2.0,
-    mu0=None,
-    sigma0=None,
-):
+    qs_mid: np.ndarray,
+    dkl_smooth_mid: np.ndarray,
+    n_baseline: int = 3,
+    z: float = 2.0,
+    mu0: float | None = None,
+    sigma0: float | None = None,
+) -> tuple[float | None, float, float, float]:
     """
     Targeted removal: attack-onset detection on midpoint-indexed smoothed successive KL.
 
@@ -43,7 +43,7 @@ def _detect_targeted_onset(
     return q_warn_tgt, float(mu0), float(sigma0), thresh
 
 
-def _null_baseline_mu_sigma(graph: GraphModel, qs: np.ndarray, alpha: float, n_baseline: int = 3):
+def _null_baseline_mu_sigma(graph: GraphModel, qs: np.ndarray, alpha: float, n_baseline: int = 3) -> tuple[float, float]:
     """
     Estimate a noise-floor baseline for successive KL using a no-damage control.
 
@@ -93,7 +93,7 @@ class GammaSweepExperiment:
         alpha: float = 0.2,
         z: float = 2.0,
         graph_model: str = "chunglu",
-    ):
+    ) -> None:
         self.n = n
         self.qs = qs if qs is not None else np.linspace(0, 0.9, 100)
         self.qs_targeted = qs_targeted if qs_targeted is not None else np.linspace(0, 0.9, 400)
@@ -107,7 +107,7 @@ class GammaSweepExperiment:
             raise ValueError(f"graph_model must be 'chunglu' or 'config', got '{graph_model}'")
 
 
-    def run(self):
+    def run(self) -> tuple[list[tuple], list[dict]]:
         """
         Execute the full γ sweep and return summary statistics.
 
@@ -371,7 +371,7 @@ class GammaSweepExperiment:
 
         return rows, runs
 
-    def run_random_only(self):
+    def run_random_only(self) -> list[tuple]:
         """
         Fast path used for alpha×z sensitivity runs.
 
@@ -438,7 +438,7 @@ class GammaSweepExperiment:
         return rows
 
 
-    def _detect_baseline_break(self, qs, dkl, q0=0.15, z=2.0):
+    def _detect_baseline_break(self, qs: np.ndarray, dkl: np.ndarray, q0: float = 0.15, z: float = 2.0) -> float:
         """
         Detect baseline deviation for random failure.
 
@@ -464,6 +464,11 @@ class GammaSweepExperiment:
         # successive KL lives on midpoints
         qs_mid = 0.5 * (qs[:-1] + qs[1:])
 
+        if dkl.size != qs_mid.size:
+            raise ValueError(
+                f"_detect_baseline_break: dkl length {dkl.size} != len(qs)-1 {qs_mid.size}"
+            )
+
         # baseline window defined on midpoints
         baseline_mask = qs_mid <= q0
 
@@ -484,14 +489,14 @@ class GammaSweepExperiment:
 
     def _detect_positive_drift(
         self,
-        qs,
-        signal,
-        m=3,
-        q0=0.15,
-        tol=1e-12,
-        max_violations=1,
-        min_net_increase=0.0,
-    ):
+        qs: np.ndarray,
+        signal: np.ndarray,
+        m: int = 3,
+        q0: float = 0.15,
+        tol: float = 1e-12,
+        max_violations: int = 1,
+        min_net_increase: float = 0.0,
+    ) -> float:
         """
         Targeted early warning on midpoint grid.
 

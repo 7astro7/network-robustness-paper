@@ -6,7 +6,7 @@ class Metrics:
     """Computes robustness metrics such as GCC size and degree entropy."""
 
     @staticmethod
-    def giant_component_fraction(G):
+    def giant_component_fraction(G: nx.Graph) -> float:
         """Return |GCC| / |V|."""
         if G.number_of_nodes() == 0:
             return 0.0
@@ -14,7 +14,7 @@ class Metrics:
         return len(largest) / G.number_of_nodes()
 
     @staticmethod
-    def degree_entropy(G):
+    def degree_entropy(G: nx.Graph) -> float:
         """
         Compute Shannon entropy of the degree distribution in **bits**.
 
@@ -83,44 +83,9 @@ class Metrics:
         return np.asarray(js, dtype=float)
 
 
-    @staticmethod
-    def successive_kl(distributions):
-        """
-        Compute successive KL divergences:
-        D_KL(P_{i+1} || P_i)
-
-        Parameters
-        ----------
-        distributions : list of dict
-            Sequence of degree distributions indexed by q.
-
-        Returns
-        -------
-        list of float
-            Successive KL values (length = len(distributions) - 1)
-        """
-        kl_values = []
-
-        for i in range(len(distributions) - 1):
-            P_prev = distributions[i]
-            P_next = distributions[i + 1]
-
-            # Align supports
-            all_k = set(P_prev.keys()) | set(P_next.keys())
-
-            D = 0.0
-            for k in all_k:
-                p = P_next.get(k, 0.0)
-                q = P_prev.get(k, 0.0)
-                if p > 0 and q > 0:
-                    D += p * np.log2(p / q)
-
-            kl_values.append(D)
-
-        return kl_values
 
     @staticmethod
-    def detect_warning(signal, percentile=90):
+    def detect_warning(signal: np.ndarray, percentile: float = 90) -> int | None:
         """
         Detect warning index using a simple percentile-based rule.
         """
@@ -135,7 +100,7 @@ class Metrics:
 
 
     @staticmethod
-    def detect_baseline_deviation(signal, baseline_frac=0.3, k=2.0):
+    def detect_baseline_deviation(signal: np.ndarray, baseline_frac: float = 0.3, k: float = 2.0) -> int | None:
         """
         Warn when signal departs from early baseline by k std deviations.
 
@@ -167,7 +132,7 @@ class Metrics:
         return None
 
     @staticmethod
-    def detect_persistence(signal, N=3):
+    def detect_persistence(signal: np.ndarray, N: int = 3) -> int | None:
         """
         Warn when signal increases for N consecutive steps.
 
@@ -196,7 +161,7 @@ class Metrics:
         return None
 
     @staticmethod
-    def detect_slope(dKL, m=3):
+    def detect_slope(dKL: np.ndarray, m: int = 3) -> int | None:
         """
         Detect first index where dKL increases for m consecutive steps.
         """

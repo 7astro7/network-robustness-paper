@@ -730,22 +730,26 @@ def export_gamma_table_targeted(
     lines.append(r"\centering")
     lines.append(
         r"\caption{Targeted (hub-first) removal across the $\gamma$ sweep. We report collapse timing "
-        r"$q_{\mathrm{collapse}}$ (defined by $S(q)<0.1$) and the initial disruption intensity "
-        r"$I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$, where $q_{1/2}$ is the first midpoint of the damage grid. "
-        r"Values are median [IQR] across seeds.}"
+        r"$q_{\mathrm{collapse}}$ and initial disruption intensity "
+        r"$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, where $q_{1/2}=\Delta q/2$ is the first midpoint of the damage grid. "
+        r"Values are median [IQR] across seeds. "
+        r"The count $(n_{\mathrm{col}}/n)$ reports the number of seeds for which the collapse proxy is observed within the sweep. "
+        r"Zero IQR indicates identical values across seeds on the discrete $q$-grid.}"
     )
     lines.append(r"\label{tab:gamma_sweep_targeted}")
     lines.append(r"\resizebox{\linewidth}{!}{%")
-    lines.append(r"\begin{tabular}{c c c}")
+    lines.append(r"\begin{tabular}{c c c c}")
     lines.append(r"\toprule")
     lines.append(
-        r"$\gamma$ & $q_{\mathrm{collapse}}$ (median [IQR]) & $I_{\mathrm{tgt}}$ (median [IQR]) \\\\"
+        r"$\gamma$ & $q_{\mathrm{collapse}}$ (median [IQR]) & $(n_{\mathrm{col}}/n)$ & $I_{\mathrm{tgt}}$ (median [IQR]) \\"
     )
     lines.append(r"\midrule")
     for _, r in df.iterrows():
+        n_col = int(r['targeted_collapse_n']) if not pd.isna(r['targeted_collapse_n']) else 0
         lines.append(
             f"{float(r['gamma']):.1f} & "
             f"{fmt_med_iqr(r['targeted_collapse_med'], r['targeted_collapse_iqr'])} & "
+            f"({n_col}/{n_total}) & "
             f"{fmt_med_iqr(r['targeted_intensity_med'], r['targeted_intensity_iqr'])} \\\\"
         )
     lines.append(r"\bottomrule")
@@ -753,7 +757,6 @@ def export_gamma_table_targeted(
     lines.append(r"}")
     lines.append(r"\end{table}")
     lines.append("")
-
     out_path.write_text("\n".join(lines))
 
 

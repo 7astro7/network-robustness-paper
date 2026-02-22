@@ -13,11 +13,11 @@ class Experiment:
     headless environments and paper pipelines without extra dependencies.
     """
 
-    def __init__(self, graph_model, failure_model):
+    def __init__(self, graph_model: "GraphModel", failure_model: "FailureModel | None") -> None:
         self.graph_model = graph_model
         self.failure_model = failure_model
 
-    def sweep(self, qs: np.ndarray):
+    def sweep(self, qs: np.ndarray) -> tuple[list[float], list[float], list[np.ndarray]]:
         """
         Sweep over damage fractions qs and return:
           - S_values: GCC fraction S(q)

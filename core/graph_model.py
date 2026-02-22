@@ -25,18 +25,18 @@ class GraphModel:
         Baseline degree distribution P(k) for the initial graph.
     """
 
-    def __init__(self, n, gamma):
+    def __init__(self, n: int, gamma: float) -> None:
         self.n = n
         self.gamma = gamma
         self.G = self._generate_graph()
         self.P0 = self._degree_distribution(self.G)
 
-    def _generate_graph(self):
+    def _generate_graph(self) -> nx.Graph:
         """Generate a Chung–Lu expected-degree graph with a power-law degree sequence."""
         degrees = nx.utils.powerlaw_sequence(self.n, exponent=self.gamma)
         return nx.expected_degree_graph(degrees, selfloops=False)
         
-    def _degree_distribution(self, G, k_max=None, eps: float = 0.0) -> np.ndarray:
+    def _degree_distribution(self, G: nx.Graph, k_max: int | None = None, eps: float = 0.0) -> np.ndarray:
         """
         Return empirical degree PMF P(k) on fixed support k=0..k_max.
 
@@ -102,12 +102,12 @@ class ConfigurationModel(GraphModel):
         Maximum degree as a fraction of n (default: 0.1).
     """
     
-    def __init__(self, n, gamma, k_min=1, k_max_frac=0.1):
+    def __init__(self, n: int, gamma: float, k_min: int = 1, k_max_frac: float = 0.1) -> None:
         self.k_min = k_min
         self.k_max_frac = k_max_frac
         super().__init__(n, gamma)
     
-    def _generate_graph(self):
+    def _generate_graph(self) -> nx.Graph:
         """Generate a configuration-model graph from a power-law degree sequence."""
         # Generate power-law degree sequence with bounds
         k_max = max(self.k_min + 1, int(self.n * self.k_max_frac))
