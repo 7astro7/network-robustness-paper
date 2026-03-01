@@ -44,8 +44,10 @@ EWMA-smoothed successive Kullback--Leibler divergence between adjacent empirical
 distributions, yielding an interpretable per-step change-rate signal. Using pre-specified
 decision rules that do not reference connectivity, we find that under random failure the
 signal departs from an initial low-activity regime well before GCC collapse across a
-$\gamma$ sweep, producing nontrivial warning lead time. Under targeted removal, the same
-signal tracks disruption intensity as collapse approaches; we do not estimate the percolation threshold $q_c$.
+$\gamma$ sweep, producing a median warning lead time of $\Delta_{\mathrm{warn}}\approx 0.52$
+in removal fraction (IQR $[0.44, 0.60]$) across 293 detected seeds in the $\gamma$ sweep.
+Under targeted removal, the same signal tracks disruption intensity as collapse approaches;
+we do not estimate the percolation threshold $q_c$.
 
 We validate the random-failure baseline-departure pattern on an empirical AS-level Internet
 topology from the CAIDA AS Relationships dataset, and a degree-matched configuration-model
