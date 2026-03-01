@@ -789,23 +789,26 @@ see Appendix \nameref{sec:config_model_check} for construction details). All fai
 and decision-rule settings are held fixed.
 
 Under identical settings, detections are substantially sparser in the configuration model than in Chung--Lu
-(68/360 runs versus 357/360). This indicates that baseline departure in successive KL is ensemble-dependent:
-matching the tail exponent $\gamma$ alone does not guarantee the same warning behavior when degree
-heterogeneity is realized via expected-degree sampling versus a fixed degree sequence with simplification
-and largest-component restriction.
+(68/360 runs versus 357/360), summarized in \autoref{tab:config_random} below. This stark asymmetry
+constitutes a finding in its own right: baseline departure in successive KL is ensemble-dependent, and
+matching the tail exponent $\gamma$ alone is not sufficient to guarantee the same warning behavior
+when degree heterogeneity is realized via different generative mechanisms.
 
-\paragraph{Mechanism hypothesis (why transfer can fail).}
-A plausible explanation is that successive KL is sensitive not only to the tail exponent but to
-how degree mass redistributes under removal in the underlying ensemble. In Chung--Lu, degrees
-are realized as fluctuations around expected values, so progressive random removal can induce
-smooth, distributed drift in the empirical degree histogram that accumulates into a sustained
-baseline departure. In the configuration model, the degree sequence is fixed at construction,
-and subsequent simplification (removal of self-loops/parallel edges) and restriction to the
-largest connected component can alter the low-degree mass and discretize changes, potentially
-yielding more intermittent or weaker departures under the same baseline rule. Thus, matching
-$\gamma$ alone does not guarantee ensemble-stable warning behavior; characterizing which
-structural properties (beyond the one-point degree distribution) govern transfer is a
-natural direction for follow-up study.
+\input{paper/tables/gamma_sweep_random_config.tex}
+
+\paragraph{Ensemble structure governs transferability.}
+This result has a natural mechanistic interpretation. Successive KL is sensitive not only to the
+tail exponent but to how degree mass redistributes under removal in the underlying ensemble.
+In Chung--Lu, degrees are realized as fluctuations around expected values, so progressive random
+removal induces smooth, distributed drift in the empirical degree histogram that accumulates into
+a sustained baseline departure. In the configuration model, the degree sequence is fixed at
+construction, and subsequent simplification (removal of self-loops/parallel edges) and restriction
+to the largest connected component alter the low-degree mass and can discretize changes, yielding
+more intermittent or weaker departures under the same baseline rule.
+The implication is precise: the early-warning behavior is a property of the Chung--Lu ensemble
+structure, not merely of the power-law degree distribution. Characterizing which structural
+properties beyond the one-point degree distribution govern ensemble-stable transfer is a
+well-posed direction for follow-up study.
 
 % --- Block F: Control analyses (no-damage null and low-damage) ---
 \subsection*{Controls: false triggers and specificity}
@@ -938,8 +941,16 @@ This benchmark applies the same EWMA smoothing and baseline-deviation rule to $\
 
 \subsection*{Configuration-model robustness check}
 \label{sec:config_model_check}
-This boundary check repeats the random-failure sweep on a configuration-model graph class under identical detection settings.
-\input{paper/tables/gamma_sweep_random_config.tex}
+This boundary check repeats the random-failure sweep on a configuration-model graph class
+under identical detection settings (same $\alpha$, $z$, baseline window, and failure protocol
+as the Chung--Lu experiments). Detection results and the mechanism interpretation are reported
+in the main Results section; construction details are provided here.
+
+\paragraph{Graph construction.}
+A target degree sequence is drawn from a discrete power-law distribution with exponent $\gamma$
+and minimum degree $k_{\min}=1$, truncated to $N=10{,}000$ nodes. The sequence is passed to the
+configuration-model stub-matching procedure; self-loops and parallel edges are removed; and the
+experiment is conducted on the largest connected component.
 
 \bibliographystyle{unsrt}
 \bibliography{references}
