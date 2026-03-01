@@ -879,13 +879,19 @@ to intentional (hub-targeted) attacks, with rapid GCC disintegration after remov
 only a small fraction of the highest-degree 
 nodes~\cite{albert2000error,cohen2001breakdown}.
 
-Two controls clarify what the baseline-deviation rule is (and is not) detecting. A
+Three controls clarify what the baseline-deviation rule is (and is not) detecting. A
 no-damage null control produces no false triggers, while a damage-without-collapse control
 shows that entropy-change-based signals can trigger frequently even when the GCC remains
-far from collapse, whereas successive KL remains specific under the same rule. Taken
-together, these results support successive KL divergence as a simple and interpretable
-rate-based indicator that complements connectivity-based robustness analysis by
-highlighting the onset of structural change before macroscopic fragmentation.
+far from collapse, whereas successive KL remains specific under the same rule.
+A moment-based comparator --- the Molloy--Reed branching factor $\kappa(q)$ smoothed and
+evaluated under the identical EWMA and baseline-deviation rule --- produces zero detections
+across all 40 seeds at $\gamma=2.5$ (Appendix~\nameref{sec:kappa_benchmark}).
+This null result directly answers the question of whether a simpler low-order-moment
+summary could substitute for the full distributional signal: it cannot, under the same
+decision rule. Taken together, these results support successive KL divergence as a
+simple and interpretable rate-based indicator that complements connectivity-based
+robustness analysis by highlighting the onset of structural change before macroscopic
+fragmentation, in a way that low-order moment summaries do not.
 
 \begin{samepage}
 In this study we intentionally restrict the structural state to the empirical degree distribution to keep the signal interpretable and the decision rule fixed across regimes.
