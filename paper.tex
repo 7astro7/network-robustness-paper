@@ -759,6 +759,20 @@ disruption is immediate and collapse occurs at small $q$. This separation is
 consistent with gradual tail erosion under random removal, where degree-structure
 reorganization accumulates well before macroscopic fragmentation.
 
+One feature of \autoref{tab:gamma_sweep_random} warrants explicit comment.
+At $\gamma=2.1$, all 40 seeds detect $q_{\mathrm{warn}}$ but only 9/40 yield a defined
+lead time $\Delta_{\mathrm{warn}}$.
+This is not a sign of false positives: networks with $\gamma$ close to 2 are maximally
+hub-dominated and, under random failure, retain a giant connected component well beyond
+$q=0.9$.
+In 31/40 seeds the GCC fraction $S(q)$ never falls below 0.1 within the sweep, so
+$q_{\mathrm{collapse}}$ is undefined by construction.
+The 9 seeds that do collapse all satisfy $q_{\mathrm{collapse}}\ge 0.864$,
+confirming that the true percolation threshold lies at or beyond the sweep ceiling
+rather than that the warning is spurious.
+The signal correctly identifies ongoing structural reorganization; it is the collapse
+itself that is delayed beyond the observation window.
+
 \FloatBarrier
 \input{paper/tables/gamma_sweep_random.tex}
 \input{paper/tables/gamma_sweep_targeted.tex}
