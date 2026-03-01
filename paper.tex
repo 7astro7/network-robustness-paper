@@ -696,20 +696,25 @@ sep=1.6ex}}
 \node[anchor=south, yshift=-2pt] at (caidaS.north) {\pgfplotslegendfromname{caidaLegend}};
 \end{tikzpicture}
 \caption{Empirical CAIDA AS graph (\CAIDASnapshot),
-random failure (seed 0, $\alpha=0.20$).
+random failure (representative run: seed 0, $\alpha=0.20$).
 The GCC fraction $S(q)$ (left
 axis) and smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) for
 progressive random node removal.
 The baseline window $q \le 0.15$ is shaded. The baseline deviation rule identifies a
-departure from baseline (onset of
-nonstationarity) at $q_{\mathrm{warn}}\approx \CAIDAQWarn$. Majority-loss occurs at
-$q_{\mathrm{maj}}\approx \CAIDAQMaj$ (defined by $S(q)<0.5$). For reference, the collapse
-proxy is observed at $q_{\mathrm{collapse}}\approx \CAIDAQCollapse$ (defined by $S(q)<0.1$)
-within the plotted range $q \le 0.99$.}
+departure from baseline at $q_{\mathrm{warn}}\approx \CAIDAQWarn$. Majority-loss occurs at
+$q_{\mathrm{maj}}\approx \CAIDAQMaj$ (defined by $S(q)<0.5$). The collapse
+proxy is observed at $q_{\mathrm{collapse}}\approx \CAIDAQCollapse$ (defined by $S(q)<0.1$).
+Multi-seed summary statistics across 40 seeds are reported in \autoref{tab:caida_summary}.}
 \label{fig:caida_random}
 \end{figure}
-CAIDA shows the same qualitative baseline-then-departure pattern, with variability driven
-only by stochastic node removal.
+CAIDA shows the same qualitative baseline-then-departure pattern as the synthetic results,
+with variability driven only by stochastic node removal order.
+\autoref{tab:caida_summary} reports warning and collapse timing across 40 seeds,
+confirming that detection is consistent (40/40) and lead time is nontrivial
+(median $\Delta_{\mathrm{warn}} \approx 0.24$, i.e., warning fires when roughly
+24\% of nodes remain to be removed before majority-loss).
+
+\input{paper/tables/caida_summary.tex}
 
 % --- Block C: Synthetic targeted representative (Fig. 2) ---
 \subsection*{Synthetic (Chung--Lu) networks: Targeted Failure}
