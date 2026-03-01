@@ -170,7 +170,7 @@ def main():
     ap.add_argument("--gamma", type=float, default=2.5)
     ap.add_argument("--n", type=int, default=10_000)
     ap.add_argument("--alpha", type=float, default=0.2)
-    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
+    ap.add_argument("--seeds", type=int, nargs="+", default=list(range(40)))
     ap.add_argument("--outdir", type=str, default="paper")
     args = ap.parse_args()
 

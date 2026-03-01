@@ -558,7 +558,7 @@ detection.
 For synthetic experiments under random failure, we use a uniform damage grid $q_0,q_1,\dots,q_{99}$ spanning
 $[0,0.9]$, with increment $\Delta q = 0.9/99$ (i.e., 100 evenly spaced values). For targeted removal, we use a higher-resolution
 grid of 400 evenly spaced values over $[0,0.9]$.
-Each configuration is repeated across five random seeds.
+Each configuration is repeated across 40 random seeds.
 
 For each value of $\gamma$, we summarize random-failure warning timing and lead time, and report targeted collapse timing together with the initial disruption intensity $I_{\mathrm{tgt}}$ across seeds.
 CAIDA experiments use a separate damage grid (e.g., $q_{\max}=0.99$ with 200 points) as
@@ -775,7 +775,7 @@ see Appendix \nameref{sec:config_model_check} for construction details). All fai
 and decision-rule settings are held fixed.
 
 Under identical settings, detections are substantially sparser in the configuration model than in Chung--Lu
-(9/45 runs versus 45/45). This indicates that baseline departure in successive KL is ensemble-dependent:
+(68/360 runs versus 357/360). This indicates that baseline departure in successive KL is ensemble-dependent:
 matching the tail exponent $\gamma$ alone does not guarantee the same warning behavior when degree
 heterogeneity is realized via expected-degree sampling versus a fixed degree sequence with simplification
 and largest-component restriction.
@@ -804,7 +804,7 @@ no-damage control ($G_q
 \equiv G_0$ for all $q$)
 while still recomputing $P_q(k)$ and $H(q)$ at each step. As summarized in
 \autoref{tab:null_control_random_failure}, none of the three rate-of-change signals 
-(successive KL, successive JS, or $|\Delta H|$) produce false triggers (0/5 seeds for all
+(successive KL, successive JS, or $|\Delta H|$) produce false triggers (0/40 seeds for all
 three metrics).
 
 \input{paper/null_control_random_failure_gamma2.5_alpha0.20.tex}
@@ -820,9 +820,9 @@ evaluating warnings only for midpoints $q_{\mathrm{mid}} > 0.15$), we record the
 rate and the mean
 $q_{\mathrm{warn}}$ conditional on triggering for successive KL, successive JS, and
 $|\Delta H|$.
-In this regime ($\min_{q\le 0.25} S(q)=0.643$), successive KL produces no triggers (0/5),
+In this regime ($\min_{q\le 0.25} S(q)=0.653$), successive KL produces no triggers (0/40),
 while successive JS produces
-1/5 and $|\Delta H|$ produces 5/5, indicating that $|\Delta H|$ is not specific under the
+3/40 and $|\Delta H|$ produces 37/40, indicating that $|\Delta H|$ is not specific under the
 baseline-deviation rule.
 
 \input{paper/tables/control_low_damage_gamma2.5_alpha0.20.tex}

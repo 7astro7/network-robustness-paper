@@ -508,14 +508,14 @@ def main() -> None:
     ap.add_argument(
         "--collapse-sweep",
         action="store_true",
-        help="Run S(q) collapse check via DSU for 5 seeds (0..4) at higher q resolution.",
+        help="Run S(q) collapse check via DSU for 40 seeds (0..39) at higher q resolution.",
     )
     ap.add_argument("--q-max-sweep", type=float, default=0.99)
     ap.add_argument("--num-q-sweep", type=int, default=200)
     ap.add_argument(
         "--run-5-seeds",
         action="store_true",
-        help="Run full CAIDA random-failure experiment for seeds 0..4 and report q_warn/q_collapse/S(q_max).",
+        help="Run full CAIDA random-failure experiment for seeds 0..39 and report q_warn/q_collapse/S(q_max).",
     )
     args = ap.parse_args()
 
@@ -523,9 +523,9 @@ def main() -> None:
         edges, nodes, _ = _read_edges_and_nodes(args.edges)
         q_max = float(args.q_max_sweep)
         num_q = int(args.num_q_sweep)
-        print(f"CAIDA collapse sweep (random failure): q_max={q_max}, num_q={num_q}, seeds=0..4")
+        print(f"CAIDA collapse sweep (random failure): q_max={q_max}, num_q={num_q}, seeds=0..39")
         collapses: list[float] = []
-        for seed in range(5):
+        for seed in range(40):
             qs, S_vals = compute_S_curve_random_failure_dsu(
                 edges=edges,
                 nodes=nodes,
@@ -542,19 +542,19 @@ def main() -> None:
             mean = sum(collapses) / len(collapses)
             mn = min(collapses)
             mx = max(collapses)
-            print(f"collapsed in {len(collapses)}/5 seeds within q<= {q_max}: min={mn:.4f}, mean={mean:.4f}, max={mx:.4f}")
+            print(f"collapsed in {len(collapses)}/40 seeds within q<= {q_max}: min={mn:.4f}, mean={mean:.4f}, max={mx:.4f}")
         else:
-            print(f"no collapse observed in 5 seeds within q<= {q_max} (criterion S(q)<0.1)")
+            print(f"no collapse observed in 40 seeds within q<= {q_max} (criterion S(q)<0.1)")
         return
 
     if args.run_5_seeds:
         q_max = float(args.q_max)
         num_q = int(args.num_q)
         alpha = float(args.alpha)
-        print(f"CAIDA random-failure (full) 5-seed run: q_max={q_max}, num_q={num_q}, alpha={alpha}")
+        print(f"CAIDA random-failure (full) 40-seed run: q_max={q_max}, num_q={num_q}, alpha={alpha}")
         q_warns: list[float] = []
         q_collapses: list[float] = []
-        for seed in range(5):
+        for seed in range(40):
             res = run_caida_random_failure_one_seed(
                 edge_list_path=args.edges,
                 outdir=args.outdir,
@@ -575,7 +575,7 @@ def main() -> None:
             out_path="paper/tables/caida_summary.tex",
             q_warns=q_warns,
             q_collapses=q_collapses,
-            n_total=5,
+            n_total=40,
         )
         print("Wrote: paper/tables/caida_summary.tex")
         return

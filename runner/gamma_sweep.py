@@ -97,7 +97,7 @@ class GammaSweepExperiment:
         self.n = n
         self.qs = qs if qs is not None else np.linspace(0, 0.9, 100)
         self.qs_targeted = qs_targeted if qs_targeted is not None else np.linspace(0, 0.9, 400)
-        self.seeds = seeds if seeds is not None else [0, 1, 2, 3, 4]
+        self.seeds = seeds if seeds is not None else list(range(40))
         self.gammas = np.asarray(gammas, dtype=float) if gammas is not None else self.GAMMAS
         self.alpha = float(alpha)
         self.z = float(z)

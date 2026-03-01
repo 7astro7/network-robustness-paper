@@ -118,7 +118,7 @@ def run_kappa_control_random_failure(
     under random failure (Chung--Lu, fixed gamma).
     """
     if seeds is None:
-        seeds = [0, 1, 2, 3, 4]
+        seeds = list(range(40))
 
     qs = np.linspace(0.0, 0.9, 100)
 

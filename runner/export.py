@@ -505,54 +505,6 @@ def export_sensitivity_table(
 
     out_path.write_text("\n".join(lines))
 
-    lines = []
-    lines.append(r"\begin{table}[H]")
-    lines.append(r"\centering")
-    if "targeted_mean" in df.columns:
-        lines.append(r"\caption{Mean and standard deviation of detected warning points $q_{\mathrm{warn}}$ across $\gamma$ under random and targeted removal.}")
-    else:
-        lines.append(
-            r"\caption{Random removal reports the warning point $q_{\mathrm{warn}}$. Targeted removal reports the fraction of seeds with an \emph{early} onset warning ($q_{\mathrm{warn}}^{\mathrm{tgt}}<q_{\mathrm{collapse}}$) and the onset warning timing $q_{\mathrm{warn}}^{\mathrm{tgt}}$.}"
-        )
-    lines.append(r"\label{tab:gamma_sweep}")
-    if "targeted_mean" in df.columns:
-        lines.append(r"\begin{tabular}{c c c}")
-    elif "targeted_collapse_mean" in df.columns:
-        lines.append(r"\begin{tabular}{c c c c c c}")
-    else:
-        lines.append(r"\begin{tabular}{c c c c}")
-    lines.append(r"\toprule")
-    if "targeted_mean" in df.columns:
-        lines.append(r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] \\")
-    elif "targeted_collapse_mean" in df.columns:
-        lines.append(
-            r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted early-rate [$n_{\mathrm{early}}/n$] & Targeted $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] & Targeted $q_{\mathrm{collapse}}$ (mean $\pm$ std) [$n/n$] & Targeted $\Delta=q_{\mathrm{collapse}}-q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] \\"
-        )
-    else:
-        lines.append(
-            r"$\gamma$ & Random $q_{\mathrm{warn}}$ (mean $\pm$ std) [$n_{\mathrm{det}}/n$] & Targeted early-rate [$n_{\mathrm{early}}/n$] & Targeted $q_{\mathrm{warn}}^{\mathrm{tgt}}$ (mean $\pm$ std) [$n_{\mathrm{warn}}/n$] \\"
-        )
-    lines.append(r"\midrule")
-
-    for _, r in df.iterrows():
-        if "targeted_mean" in df.columns:
-            lines.append(f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_cell']} \\\\")
-        elif "targeted_collapse_mean" in df.columns:
-            lines.append(
-                f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_warn_tgt_cell']} & {r['targeted_collapse_cell']} & {r['targeted_delta_warn_tgt_cell']} \\\\"
-            )
-        else:
-            lines.append(
-                f"{r['gamma']:.1f} & {r['random_cell']} & {r['targeted_rate_cell']} & {r['targeted_warn_tgt_cell']} \\\\"
-            )
-
-    lines.append(r"\bottomrule")
-    lines.append(r"\end{tabular}")
-    lines.append(r"\end{table}")
-    lines.append("")
-
-    out_path.write_text("\n".join(lines))
-
 
 def export_gamma_table_random(
     rows,
@@ -845,7 +797,7 @@ def export_caida_summary(
     lines: list[str] = []
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
-    lines.append(r"\caption{CAIDA AS graph (2026-01-01), random failure: warning and collapse timing across 5 seeds ($\alpha=0.20$). Lead time is $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}")
+    lines.append(r"\caption{CAIDA AS graph (2026-01-01), random failure: warning and collapse timing across 40 seeds ($\alpha=0.20$). Lead time is $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}")
     lines.append(r"\label{tab:caida_summary}")
     lines.append(r"\begin{tabular}{c c c}")
     lines.append(r"\toprule")

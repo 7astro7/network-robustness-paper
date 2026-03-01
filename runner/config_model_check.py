@@ -114,8 +114,8 @@ def main():
     ap = argparse.ArgumentParser(description="ConfigurationModel robustness check.")
     ap.add_argument("--gammas", nargs="+", type=float, default=[2.5, 2.7, 3.0],
                     help="Gamma values to test (default: 2.5 2.7 3.0)")
-    ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2, 3, 4],
-                    help="Random seeds (default: 0 1 2 3 4)")
+    ap.add_argument("--seeds", nargs="+", type=int, default=list(range(40)),
+                    help="Random seeds (default: 0..39)")
     ap.add_argument("--n", type=int, default=10_000,
                     help="Number of nodes (default: 10000)")
     ap.add_argument("--alpha", type=float, default=0.2,
