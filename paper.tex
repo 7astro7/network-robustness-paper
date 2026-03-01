@@ -447,6 +447,8 @@ P(k) \propto k^{-\gamma},
 \]
 a regime characteristic of many empirical infrastructure and communication networks.
 Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
+This size is held fixed across all synthetic experiments; sensitivity to $N$ is not
+systematically explored here and is flagged as a limitation (see Conclusion).
 
 To examine sensitivity to degree heterogeneity, we sweep
 \[
@@ -889,6 +891,14 @@ highlighting the onset of structural change before macroscopic fragmentation.
 In this study we intentionally restrict the structural state to the empirical degree distribution to keep the signal interpretable and the decision rule fixed across regimes.
 Richer summaries (e.g., joint-degree structure, mixing, motifs) may refine or alter warning behavior, especially under adversarial removal.
 In addition, the configuration-model boundary check indicates that transfer is ensemble-dependent under identical settings even when the tail exponent is matched, motivating future work that characterizes when baseline-departure behavior is ensemble-stable.
+All synthetic experiments use $N=10{,}000$ nodes; we have not systematically varied network
+size. Finite-size scaling theory predicts that the percolation transition sharpens with
+increasing $N$~\cite{molloy1995critical}, which would produce a more abrupt GCC drop and
+potentially reduce detection variance. The CAIDA AS graph ($N\approx 78{,}000$ nodes) provides
+one cross-scale data point: the 40-seed detection rate is 40/40 and the qualitative signal
+shape matches the synthetic results, offering limited but encouraging evidence that the
+behavior is not confined to the $N=10{,}000$ regime. Systematic finite-size analysis remains
+future work.
 Natural next steps are to track change rates in higher-order structural features and to test analogous rules under link removal and correlated or temporally clustered failure processes.
 \end{samepage}
 
