@@ -515,7 +515,13 @@ def main() -> None:
     ap.add_argument(
         "--run-5-seeds",
         action="store_true",
-        help="Run full CAIDA random-failure experiment for seeds 0..39 and report q_warn/q_collapse/S(q_max).",
+        help="Run full CAIDA random-failure experiment across multiple seeds and report q_warn/q_collapse/S(q_max).",
+    )
+    ap.add_argument(
+        "--num-seeds",
+        type=int,
+        default=5,
+        help="Number of seeds to use with --run-5-seeds (default: 5).",
     )
     args = ap.parse_args()
 
@@ -551,10 +557,12 @@ def main() -> None:
         q_max = float(args.q_max)
         num_q = int(args.num_q)
         alpha = float(args.alpha)
-        print(f"CAIDA random-failure (full) 40-seed run: q_max={q_max}, num_q={num_q}, alpha={alpha}")
+        n_seeds = int(args.num_seeds)
+        print(f"CAIDA random-failure (full) {n_seeds}-seed run: q_max={q_max}, num_q={num_q}, alpha={alpha}")
         q_warns: list[float] = []
+        q_majs: list[float] = []
         q_collapses: list[float] = []
-        for seed in range(40):
+        for seed in range(n_seeds):
             res = run_caida_random_failure_one_seed(
                 edge_list_path=args.edges,
                 outdir=args.outdir,
@@ -567,15 +575,19 @@ def main() -> None:
             qc_str = f"{qc:.6f}" if isinstance(qc, float) else f"> {q_max:.3f} (not observed)"
             qw = res["q_warn"]
             qw_str = f"{qw:.6f}" if isinstance(qw, float) else "None"
-            print(f"  seed {seed}: q_warn={qw_str}, q_collapse={qc_str}, S(q_max)={res['S_qmax']:.4f}")
+            qm = res["q_maj"]
+            qm_str = f"{qm:.6f}" if isinstance(qm, float) else "None"
+            print(f"  seed {seed}: q_warn={qw_str}, q_maj={qm_str}, q_collapse={qc_str}, S(q_max)={res['S_qmax']:.4f}")
             q_warns.append(float(qw) if isinstance(qw, float) else float("nan"))
+            q_majs.append(float(qm) if isinstance(qm, float) else float("nan"))
             q_collapses.append(float(qc) if isinstance(qc, float) else float("nan"))
 
         export_caida_summary(
             out_path="paper/tables/caida_summary.tex",
             q_warns=q_warns,
+            q_majs=q_majs,
             q_collapses=q_collapses,
-            n_total=40,
+            n_total=n_seeds,
         )
         print("Wrote: paper/tables/caida_summary.tex")
         return

@@ -754,61 +754,101 @@ def export_caida_summary(
     *,
     out_path: str = "paper/tables/caida_summary.tex",
     q_warns: list[float],
+    q_majs: list[float] | None = None,
     q_collapses: list[float],
     n_total: int | None = None,
 ) -> None:
     """
-    Write a 1-row CAIDA random-failure summary table:
-      - q_warn (mean ± std)
-      - q_collapse (mean ± std)
-      - Δ_warn = q_collapse - q_warn (mean ± std), computed per seed then aggregated
+    Write a 1-row CAIDA random-failure summary table reporting median [IQR]
+    and detection counts for q_warn, q_maj (majority-loss), q_collapse, and
+    lead time Δ_warn = q_collapse - q_warn.
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     qw = np.asarray(q_warns, dtype=float)
     qc = np.asarray(q_collapses, dtype=float)
-    if qw.shape != qc.shape:
-        raise ValueError(f"q_warns and q_collapses must have same shape: {qw.shape} vs {qc.shape}")
+    qm = np.asarray(q_majs, dtype=float) if q_majs is not None else np.full_like(qw, float("nan"))
 
     if n_total is None:
         n_total = int(len(qw))
     n_total = int(n_total)
 
-    # detections
-    mask_qw = np.isfinite(qw)
-    mask_qc = np.isfinite(qc)
-    mask_delta = mask_qw & mask_qc
+    mask_delta = np.isfinite(qw) & np.isfinite(qc)
     deltas = np.where(mask_delta, qc - qw, np.nan)
 
-    def mean_std(arr: np.ndarray) -> tuple[float, float, int]:
+    def med_iqr_n(arr: np.ndarray) -> tuple[float, float, int]:
         arr = np.asarray(arr, dtype=float)
-        n = int(np.count_nonzero(np.isfinite(arr)))
+        finite = arr[np.isfinite(arr)]
+        n = len(finite)
         if n == 0:
             return float("nan"), float("nan"), 0
-        mean = float(np.nanmean(arr))
-        std = float(np.nanstd(arr, ddof=1)) if n > 1 else 0.0
-        return mean, std, n
+        med = float(np.median(finite))
+        q1, q3 = float(np.percentile(finite, 25)), float(np.percentile(finite, 75))
+        return med, q3 - q1, n
 
-    qw_m, qw_s, qw_n = mean_std(qw)
-    qc_m, qc_s, qc_n = mean_std(qc)
-    d_m, d_s, d_n = mean_std(deltas)
+    qw_med, qw_iqr, qw_n = med_iqr_n(qw)
+    qm_med, qm_iqr, qm_n = med_iqr_n(qm)
+    qc_med, qc_iqr, qc_n = med_iqr_n(qc)
+    d_med, d_iqr, d_n = med_iqr_n(deltas)
 
-    def fmt(mean: float, std: float, n: int) -> str:
-        if n == 0 or not np.isfinite(mean):
+    def fmt_med(med: float, iqr: float, n: int) -> str:
+        if n == 0 or not np.isfinite(med):
             return r"--"
-        return f"{mean:.3f} $\\pm$ {std:.3f}"
+        return f"{med:.3f} [{iqr:.3f}]"
+
+    def fmt_count(n: int) -> str:
+        return f"({n}/{n_total})"
+
+    has_maj = q_majs is not None
 
     lines: list[str] = []
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
-    lines.append(r"\caption{CAIDA AS graph (2026-01-01), random failure: warning and collapse timing across 40 seeds ($\alpha=0.20$). Lead time is $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}")
-    lines.append(r"\label{tab:caida_summary}")
-    lines.append(r"\begin{tabular}{c c c}")
-    lines.append(r"\toprule")
-    lines.append(r"$q_{\mathrm{warn}}$ (mean $\pm$ std) & $q_{\mathrm{collapse}}$ (mean $\pm$ std) & $\Delta_{\mathrm{warn}}$ (mean $\pm$ std) \\")
-    lines.append(r"\midrule")
-    lines.append(f"{fmt(qw_m, qw_s, qw_n)} & {fmt(qc_m, qc_s, qc_n)} & {fmt(d_m, d_s, d_n)} \\\\")
+    if has_maj:
+        lines.append(
+            rf"\caption{{CAIDA AS graph (2026-01-01), random failure across {n_total} seeds "
+            r"($\alpha=0.20$). Values are median [IQR]; $(n/N)$ is the detection count. "
+            r"$q_{\mathrm{maj}}$: majority-loss ($S(q)<0.5$); "
+            r"$q_{\mathrm{collapse}}$: GCC collapse ($S(q)<0.1$); "
+            r"$\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}"
+        )
+        lines.append(r"\label{tab:caida_summary}")
+        lines.append(r"\begin{tabular}{c c c c c c c c}")
+        lines.append(r"\toprule")
+        lines.append(
+            r"$q_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ & "
+            r"$q_{\mathrm{maj}}$ (med [IQR]) & $(n/N)$ & "
+            r"$q_{\mathrm{collapse}}$ (med [IQR]) & $(n/N)$ & "
+            r"$\Delta_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ \\"
+        )
+        lines.append(r"\midrule")
+        lines.append(
+            f"{fmt_med(qw_med, qw_iqr, qw_n)} & {fmt_count(qw_n)} & "
+            f"{fmt_med(qm_med, qm_iqr, qm_n)} & {fmt_count(qm_n)} & "
+            f"{fmt_med(qc_med, qc_iqr, qc_n)} & {fmt_count(qc_n)} & "
+            f"{fmt_med(d_med, d_iqr, d_n)} & {fmt_count(d_n)} \\\\"
+        )
+    else:
+        lines.append(
+            rf"\caption{{CAIDA AS graph (2026-01-01), random failure across {n_total} seeds "
+            r"($\alpha=0.20$). Values are median [IQR]; $(n/N)$ is the detection count. "
+            r"Lead time $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}"
+        )
+        lines.append(r"\label{tab:caida_summary}")
+        lines.append(r"\begin{tabular}{c c c c c c}")
+        lines.append(r"\toprule")
+        lines.append(
+            r"$q_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ & "
+            r"$q_{\mathrm{collapse}}$ (med [IQR]) & $(n/N)$ & "
+            r"$\Delta_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ \\"
+        )
+        lines.append(r"\midrule")
+        lines.append(
+            f"{fmt_med(qw_med, qw_iqr, qw_n)} & {fmt_count(qw_n)} & "
+            f"{fmt_med(qc_med, qc_iqr, qc_n)} & {fmt_count(qc_n)} & "
+            f"{fmt_med(d_med, d_iqr, d_n)} & {fmt_count(d_n)} \\\\"
+        )
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")
