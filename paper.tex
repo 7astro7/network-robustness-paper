@@ -333,7 +333,7 @@ which summarizes degree heterogeneity at a fixed structural state.
 While degree entropy $H(q)$ summarizes heterogeneity of the degree distribution at a fixed
 damage level, successive Kullback--Leibler divergence explicitly encodes change between
 successive states of damage. Consequently, KL divergence can be sensitive to structural
-reorganization even in regimes where entropy evolves gradually, motivating its use as a
+reorganization even in regimes where entropy evolves gradually, motivating use of entropy as a
 complementary indicator for early warning.
 
 \paragraph{Secondary control signals.}
@@ -421,8 +421,9 @@ with power-law degree sequences. In addition, we analyze an empirical CAIDA AS g
 while avoiding degree--degree correlations and growth effects inherent to other generative
 mechanisms.
 
-We focus on Chung--Lu for the main controlled analysis; other power-law constructions can induce
-additional correlations that complicate attribution.
+Unlike the configuration model which can exhibit structural degree correlations in 
+heavy-tailed networks as a finite-size artifact, Chung-Lu assigns edges independently, 
+isolating the effect of degree heterogeneity. This motivates use of Chung-Lu for the main controlled analysis.
 
 \paragraph{Configuration-model robustness check.}
 To probe sensitivity to the generating ensemble, we repeat the random-failure pipeline using
@@ -449,8 +450,9 @@ P(k) \propto k^{-\gamma},
 \]
 a regime characteristic of many empirical infrastructure and communication networks.
 Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
-This size is held fixed across all synthetic experiments; sensitivity to $N$ is not
-systematically explored here and is flagged as a limitation (see Conclusion).
+This size is held fixed across all synthetic experiments to isolate the effect 
+of degree heterogeneity; the dependence of results on 
+N is discussed in the Conclusion.
 
 To examine sensitivity to degree heterogeneity, we sweep
 \[
@@ -505,7 +507,7 @@ We define a baseline window
 q \le 0.15,
 \]
 and compute the baseline mean $\mu_0$ and standard deviation $\sigma_0$ over this range.
-We choose $q\le 0.15$ as a fixed low-damage \emph{calibration} window.
+We choose $q\le 0.15$ as a fixed low-damage calibration window.
 Across random-failure runs, this early region precedes the sustained departures used for detection,
 and provides a consistent noise-floor estimate $(\mu_0,\sigma_0)$ for the baseline-deviation rule.
 The window is held constant across all $\gamma$ and is not tuned post hoc.
@@ -551,12 +553,6 @@ warning lead times.
 As a result, changing this proxy threshold affects only the reported lead times, not the
 detected warning points.
 
-\paragraph{CAIDA operational collapse proxy (majority-loss).}
-For the CAIDA AS graph only, we also report $q_{\mathrm{maj}}$, defined as the smallest
-$q$ such that $S(q) < 0.5$, i.e., the point at which the giant connected component loses
-majority status. This proxy is used only for interpretability and does not affect warning
-detection.
-
 
 \subsection*{Experimental Protocol}
 For synthetic experiments under random failure, we use a uniform damage grid $q_0,q_1,\dots,q_{99}$ spanning
@@ -578,7 +574,7 @@ unique AS pairs.
 This study reports results on three network classes:
 
 \begin{itemize}[itemsep=2pt]
-    \item \textbf{Synthetic networks (primary controlled analysis):}
+    \item \textbf{Chung--Lu networks (primary controlled analysis):}
     Chung--Lu expected-degree graphs with power-law degree sequences, swept over
     $\gamma \in (2,3)$.
     We evaluate both random failure and targeted (hub-first) removal in this ensemble,
@@ -589,7 +585,7 @@ This study reports results on three network classes:
     This serves as a realism check of the random-failure baseline-departure pattern
     observed in the synthetic setting.
 
-    \item \textbf{Configuration-model networks (boundary check / transfer):}
+    \item \textbf{Configuration-model networks (ensemble robustness check):}
     a degree-matched configuration-model graph class used only under random failure
     to probe ensemble sensitivity when the tail exponent is matched but the generating mechanism differs.
 \end{itemize}
@@ -602,7 +598,7 @@ Results section refer to the synthetic Chung--Lu experiments.
 We present results in the order: (i) a representative synthetic Chung--Lu run under
 random failure to illustrate the signal relative to $S(q)$, (ii) an empirical CAIDA AS graph
 random-failure case study as an out-of-sample validation, (iii) a representative synthetic
-targeted (hub-first) Chung--Lu run to contrast adversarial damage, (iv) $\gamma$-sweep
+targeted (hub-first) Chung--Lu run to examine how degree-targeted removal accelerates collapse relative to random failure, (iv) $\gamma$-sweep
 summaries for Chung--Lu via a plot and tables across seeds, and (v) a configuration-model
 random-failure boundary check to assess ensemble transfer under matched $\gamma$.
 We then report two controls (no-damage and damage-without-collapse) to evaluate false-trigger
@@ -674,8 +670,6 @@ sep=1.6ex}}
 \addlegendentry{$\tilde{D}_{\mathrm{KL}}(q)$}
 % Warning marker
 \addplot [orange, dashed, thick, forget plot] coordinates {(\CAIDAQWarn,0) (\CAIDAQWarn,1)};
-% Majority-loss marker (S(q) < 0.5)
-\addplot [black, dashed, very thin, opacity=0.7, forget plot] coordinates {(\CAIDAQMaj,0) (\CAIDAQMaj,1)};
 % Collapse marker
 \addplot [black, dotted, very thin, opacity=0.7, forget plot] coordinates {(\CAIDAQCollapse,0)
 (\CAIDAQCollapse,1)};
@@ -705,8 +699,7 @@ The GCC fraction $S(q)$ (left
 axis) and smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) for
 progressive random node removal.
 The baseline window $q \le 0.15$ is shaded. The baseline deviation rule identifies a
-departure from baseline at $q_{\mathrm{warn}}\approx \CAIDAQWarn$. Majority-loss occurs at
-$q_{\mathrm{maj}}\approx \CAIDAQMaj$ (defined by $S(q)<0.5$). The collapse
+departure from baseline at $q_{\mathrm{warn}}\approx \CAIDAQWarn$. The collapse
 proxy is observed at $q_{\mathrm{collapse}}\approx \CAIDAQCollapse$ (defined by $S(q)<0.1$).
 Multi-seed summary statistics across 40 seeds are reported in \autoref{tab:caida_summary}.}
 \label{fig:caida_random}
@@ -715,8 +708,7 @@ CAIDA shows the same qualitative baseline-then-departure pattern as the syntheti
 with variability driven only by stochastic node removal order.
 \autoref{tab:caida_summary} reports warning and collapse timing across 40 seeds,
 confirming that detection is consistent (40/40) and lead time is nontrivial
-(median $\Delta_{\mathrm{warn}} \approx 0.24$, i.e., warning fires when roughly
-24\% of nodes remain to be removed before majority-loss).
+(median $\Delta_{\mathrm{warn}} \approx 0.24$).
 
 \input{paper/tables/caida_summary.tex}
 
@@ -799,23 +791,38 @@ and decision-rule settings are held fixed.
 
 Under identical settings, detections are substantially sparser in the configuration model than in Chung--Lu
 (68/360 runs versus 357/360), summarized in \autoref{tab:config_random} below. This stark asymmetry
-constitutes a finding in its own right: baseline departure in successive KL is ensemble-dependent, and
-matching the tail exponent $\gamma$ alone is not sufficient to guarantee the same warning behavior
-when degree heterogeneity is realized via different generative mechanisms.
+constitutes a finding in its own right: the successive-KL signal is sensitive to ensemble structure beyond the tail exponent, and matching $\gamma$ alone is insufficient to predict signal behavior when the generative mechanism differs.
 
 \input{paper/tables/gamma_sweep_random_config.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{paper/figures/kl_signal_comparison.pdf}
+\caption{Smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ under random failure
+for a Chung--Lu network (left) and a degree-matched configuration-model network (right),
+both at $\gamma=2.5$, seed 0, $\alpha=0.20$.
+The baseline window $q\le 0.15$ is shaded; the horizontal dashed line marks the detection
+threshold $\mu_0+2\sigma_0$.
+\textbf{Left:} the signal departs from baseline and triggers a warning at
+$q_{\mathrm{warn}}$ (vertical dashed line), producing a sustained departure before collapse.
+\textbf{Right:} the signal remains near or below the detection threshold throughout the
+sweep---no warning is detected---illustrating why the same baseline-deviation rule fails
+to transfer to the configuration-model ensemble.}
+\label{fig:kl_signal_comparison}
+\end{figure}
 
 \paragraph{Ensemble structure governs transferability.}
 This result has a natural mechanistic interpretation. Successive KL is sensitive not only to the
 tail exponent but to how degree mass redistributes under removal in the underlying ensemble.
 In Chung--Lu, degrees are realized as fluctuations around expected values, so progressive random
 removal induces smooth, distributed drift in the empirical degree histogram that accumulates into
-a sustained baseline departure. In the configuration model, the degree sequence is fixed at
-construction, and subsequent simplification (removal of self-loops/parallel edges) and restriction
-to the largest connected component alter the low-degree mass and can discretize changes, yielding
-more intermittent or weaker departures under the same baseline rule.
-The implication is precise: the early-warning behavior is a property of the Chung--Lu ensemble
-structure, not merely of the power-law degree distribution. Characterizing which structural
+a sustained baseline departure. In the configuration model, the hard degree-sequence constraint imposed at construction
+produces immediate structural churn even during the low-damage baseline window $q\le 0.15$:
+the KL signal is elevated from the outset, inflating the estimated noise floor $(\mu_0,\sigma_0)$
+and raising the detection threshold $\mu_0+2\sigma_0$ above the level the signal subsequently
+reaches. The failure to detect is therefore not due to signal absence but due to an elevated
+noise floor caused by the ensemble structure itself.
+For network classes where ensemble properties are known a priori---as is often the case for well-studied infrastructure or communication topologies---a pre-calibrated threshold could replace the data-driven baseline, restoring signal transferability without requiring per-ensemble recalibration. Characterizing which structural
 properties beyond the one-point degree distribution govern ensemble-stable transfer is a
 well-posed direction for follow-up study.
 

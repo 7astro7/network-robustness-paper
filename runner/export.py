@@ -754,21 +754,19 @@ def export_caida_summary(
     *,
     out_path: str = "paper/tables/caida_summary.tex",
     q_warns: list[float],
-    q_majs: list[float] | None = None,
     q_collapses: list[float],
     n_total: int | None = None,
 ) -> None:
     """
     Write a 1-row CAIDA random-failure summary table reporting median [IQR]
-    and detection counts for q_warn, q_maj (majority-loss), q_collapse, and
-    lead time Δ_warn = q_collapse - q_warn.
+    and detection counts for q_warn, q_collapse, and lead time
+    Δ_warn = q_collapse - q_warn.
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     qw = np.asarray(q_warns, dtype=float)
     qc = np.asarray(q_collapses, dtype=float)
-    qm = np.asarray(q_majs, dtype=float) if q_majs is not None else np.full_like(qw, float("nan"))
 
     if n_total is None:
         n_total = int(len(qw))
@@ -788,7 +786,6 @@ def export_caida_summary(
         return med, q3 - q1, n
 
     qw_med, qw_iqr, qw_n = med_iqr_n(qw)
-    qm_med, qm_iqr, qm_n = med_iqr_n(qm)
     qc_med, qc_iqr, qc_n = med_iqr_n(qc)
     d_med, d_iqr, d_n = med_iqr_n(deltas)
 
@@ -800,55 +797,29 @@ def export_caida_summary(
     def fmt_count(n: int) -> str:
         return f"({n}/{n_total})"
 
-    has_maj = q_majs is not None
-
     lines: list[str] = []
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
-    if has_maj:
-        lines.append(
-            rf"\caption{{CAIDA AS graph (2026-01-01), random failure across {n_total} seeds "
-            r"($\alpha=0.20$). Values are median [IQR]; $(n/N)$ is the detection count. "
-            r"$q_{\mathrm{maj}}$: majority-loss ($S(q)<0.5$); "
-            r"$q_{\mathrm{collapse}}$: GCC collapse ($S(q)<0.1$); "
-            r"$\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}"
-        )
-        lines.append(r"\label{tab:caida_summary}")
-        lines.append(r"\begin{tabular}{c c c c c c c c}")
-        lines.append(r"\toprule")
-        lines.append(
-            r"$q_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ & "
-            r"$q_{\mathrm{maj}}$ (med [IQR]) & $(n/N)$ & "
-            r"$q_{\mathrm{collapse}}$ (med [IQR]) & $(n/N)$ & "
-            r"$\Delta_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ \\"
-        )
-        lines.append(r"\midrule")
-        lines.append(
-            f"{fmt_med(qw_med, qw_iqr, qw_n)} & {fmt_count(qw_n)} & "
-            f"{fmt_med(qm_med, qm_iqr, qm_n)} & {fmt_count(qm_n)} & "
-            f"{fmt_med(qc_med, qc_iqr, qc_n)} & {fmt_count(qc_n)} & "
-            f"{fmt_med(d_med, d_iqr, d_n)} & {fmt_count(d_n)} \\\\"
-        )
-    else:
-        lines.append(
-            rf"\caption{{CAIDA AS graph (2026-01-01), random failure across {n_total} seeds "
-            r"($\alpha=0.20$). Values are median [IQR]; $(n/N)$ is the detection count. "
-            r"Lead time $\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}"
-        )
-        lines.append(r"\label{tab:caida_summary}")
-        lines.append(r"\begin{tabular}{c c c c c c}")
-        lines.append(r"\toprule")
-        lines.append(
-            r"$q_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ & "
-            r"$q_{\mathrm{collapse}}$ (med [IQR]) & $(n/N)$ & "
-            r"$\Delta_{\mathrm{warn}}$ (med [IQR]) & $(n/N)$ \\"
-        )
-        lines.append(r"\midrule")
-        lines.append(
-            f"{fmt_med(qw_med, qw_iqr, qw_n)} & {fmt_count(qw_n)} & "
-            f"{fmt_med(qc_med, qc_iqr, qc_n)} & {fmt_count(qc_n)} & "
-            f"{fmt_med(d_med, d_iqr, d_n)} & {fmt_count(d_n)} \\\\"
-        )
+    lines.append(
+        rf"\caption{{CAIDA AS graph (2026-01-01), random failure across {n_total} seeds "
+        r"($\alpha=0.20$). All statistics are median [IQR]; $(n/N)$ is the detection count. "
+        r"$q_{\mathrm{collapse}}$: GCC collapse ($S(q)<0.1$); "
+        r"$\Delta_{\mathrm{warn}}=q_{\mathrm{collapse}}-q_{\mathrm{warn}}$.}"
+    )
+    lines.append(r"\label{tab:caida_summary}")
+    lines.append(r"\begin{tabular}{c c c c c c}")
+    lines.append(r"\toprule")
+    lines.append(
+        r"$q_{\mathrm{warn}}$ & $(n/N)$ & "
+        r"$q_{\mathrm{collapse}}$ & $(n/N)$ & "
+        r"$\Delta_{\mathrm{warn}}$ & $(n/N)$ \\"
+    )
+    lines.append(r"\midrule")
+    lines.append(
+        f"{fmt_med(qw_med, qw_iqr, qw_n)} & {fmt_count(qw_n)} & "
+        f"{fmt_med(qc_med, qc_iqr, qc_n)} & {fmt_count(qc_n)} & "
+        f"{fmt_med(d_med, d_iqr, d_n)} & {fmt_count(d_n)} \\\\"
+    )
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")

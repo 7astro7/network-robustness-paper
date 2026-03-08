@@ -281,7 +281,7 @@ class TestGammaSweepInit:
 
     def test_default_seeds(self):
         sweep = GammaSweepExperiment()
-        assert sweep.seeds == [0, 1, 2, 3, 4]
+        assert sweep.seeds == list(range(40))
 
     def test_custom_gammas(self):
         sweep = GammaSweepExperiment(gammas=[2.5, 2.7])
