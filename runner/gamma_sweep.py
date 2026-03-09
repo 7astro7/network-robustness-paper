@@ -185,7 +185,14 @@ class GammaSweepExperiment:
                     )
 
                 dkl_r = exp_r.ewma(raw_r, alpha=self.alpha)
-                q_warn_r = self._detect_baseline_break(self.qs, dkl_r, z=self.z)
+                q_warn_r, mu0_r, sigma0_r, thresh_r = self._detect_baseline_break(
+                    self.qs, dkl_r, z=self.z, return_stats=True
+                )
+
+                # max signal after baseline window (for threshold-inflation check)
+                qs_mid_r = 0.5 * (self.qs[:-1] + self.qs[1:])
+                post_mask_r = qs_mid_r > 0.15
+                max_post_r = float(dkl_r[post_mask_r].max()) if post_mask_r.any() else float("nan")
 
                 # Random baselines (rate-of-change signals on midpoint support)
                 js_r_raw = Metrics.successive_js(Pq_r)
@@ -227,6 +234,10 @@ class GammaSweepExperiment:
                     "seed": int(seed),
                     "q_warn": float(q_warn_r) if np.isfinite(q_warn_r) else float("nan"),
                     "q_collapse": float(q_collapse_r) if q_collapse_r is not None else float("nan"),
+                    "mu0": float(mu0_r) if np.isfinite(mu0_r) else float("nan"),
+                    "sigma0": float(sigma0_r) if np.isfinite(sigma0_r) else float("nan"),
+                    "threshold": float(thresh_r) if np.isfinite(thresh_r) else float("nan"),
+                    "max_post_baseline": max_post_r,
                 })
 
                 # --- targeted failure ---
@@ -438,7 +449,7 @@ class GammaSweepExperiment:
         return rows
 
 
-    def _detect_baseline_break(self, qs: np.ndarray, dkl: np.ndarray, q0: float = 0.15, z: float = 2.0) -> float:
+    def _detect_baseline_break(self, qs: np.ndarray, dkl: np.ndarray, q0: float = 0.15, z: float = 2.0, return_stats: bool = False):
         """
         Detect baseline deviation for random failure.
 
@@ -452,11 +463,13 @@ class GammaSweepExperiment:
             Upper bound of baseline window
         z : float
             Z-score threshold
+        return_stats : bool
+            If True, return (q_warn, mu, sigma, threshold); else return q_warn only.
 
         Returns
         -------
-        float
-            q_warn (np.nan if none detected)
+        float or tuple
+            q_warn (np.nan if none detected), or (q_warn, mu, sigma, threshold) if return_stats=True
         """
         qs = np.asarray(qs)
         dkl = np.asarray(dkl)
@@ -473,18 +486,25 @@ class GammaSweepExperiment:
         baseline_mask = qs_mid <= q0
 
         if baseline_mask.sum() < 5:
+            if return_stats:
+                return np.nan, float("nan"), float("nan"), float("nan")
             return np.nan  # not enough data to define baseline
 
         mu = dkl[baseline_mask].mean()
         sigma = dkl[baseline_mask].std()
+        threshold = mu + z * sigma
 
         # detect first deviation
-        exceed = dkl > mu + z * sigma
+        exceed = dkl > threshold
         idx = np.where(exceed & (qs_mid > q0))[0]
 
         if len(idx) == 0:
+            if return_stats:
+                return np.nan, float(mu), float(sigma), float(threshold)
             return np.nan
 
+        if return_stats:
+            return qs_mid[idx[0]], float(mu), float(sigma), float(threshold)
         return qs_mid[idx[0]]
 
     def _detect_positive_drift(

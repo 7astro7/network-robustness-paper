@@ -7,6 +7,7 @@ from runner.export import (
     export_targeted_floor_check_table,
     export_sensitivity_csv,
     export_sensitivity_table,
+    export_baseline_noise_csv,
 )
 from runner.kappa_control import run_kappa_control_random_failure
 import argparse
@@ -98,6 +99,11 @@ if __name__ == "__main__":
     # Per-seed long CSV (random regime only)
     random_runs = [r for r in runs if r.get("regime") == "random"]
     export_gamma_long_csv(random_runs, out_path=f"paper/data/gamma_sweep_random_long{model_suffix}.csv")
+    export_baseline_noise_csv(
+        random_runs,
+        model=args.graph_model,
+        out_path=f"paper/data/baseline_noise_{args.graph_model}.csv",
+    )
 
     targeted_runs = [r for r in runs if r.get("regime") == "targeted"]
     export_targeted_floor_check_csv(

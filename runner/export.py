@@ -750,6 +750,49 @@ def export_gamma_long_csv(runs, out_path: str) -> None:
             })
 
 
+def export_baseline_noise_csv(runs, model: str, out_path: str) -> None:
+    """
+    Export per-seed baseline noise stats for random-regime runs.
+
+    Columns: model, gamma, seed, mu0, sigma0, threshold, max_post_baseline,
+             detected, threshold_exceeds_max_post
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    random_runs = [r for r in runs if r.get("regime") == "random"]
+    if not random_runs:
+        raise ValueError("export_baseline_noise_csv: no random-regime runs found")
+
+    fieldnames = [
+        "model", "gamma", "seed",
+        "mu0", "sigma0", "threshold", "max_post_baseline",
+        "detected", "threshold_exceeds_max_post",
+    ]
+    with out_path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for r in random_runs:
+            q_warn = r.get("q_warn", float("nan"))
+            threshold = r.get("threshold", float("nan"))
+            max_post = r.get("max_post_baseline", float("nan"))
+            detected = bool(np.isfinite(q_warn))
+            threshold_exceeds_max_post = (
+                bool(np.isfinite(threshold) and np.isfinite(max_post) and threshold > max_post)
+            )
+            w.writerow({
+                "model": model,
+                "gamma": r.get("gamma", float("nan")),
+                "seed": r.get("seed", -1),
+                "mu0": r.get("mu0", float("nan")),
+                "sigma0": r.get("sigma0", float("nan")),
+                "threshold": threshold,
+                "max_post_baseline": max_post,
+                "detected": detected,
+                "threshold_exceeds_max_post": threshold_exceeds_max_post,
+            })
+
+
 def export_caida_summary(
     *,
     out_path: str = "paper/tables/caida_summary.tex",
