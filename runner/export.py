@@ -589,6 +589,9 @@ def export_gamma_table_random(
             r"quantity is defined. Detection counts $(n_{\mathrm{det}}/n)$ report the number of seeds "
             r"where $q_{\mathrm{warn}}$ is observed prior to collapse; "
             r"$(n_{\Delta}/n)$ analogously counts seeds with a defined lead time $\Delta_{\mathrm{warn}}$. "
+            r"Where $(n_{\mathrm{det}}/n)$ and $(n_{\Delta}/n)$ differ within a row, the discrepancy "
+            r"reflects seeds in which $q_{\mathrm{collapse}}$ is undefined (the GCC never drops below "
+            r"$0.1$ within the sweep) rather than failed or spurious detection. "
             r"At $\gamma=2.1$, $(n_{\Delta}/n)$ is low because networks near $\gamma=2$ are "
             r"maximally hub-dominated and remain connected ($S(q)>0.1$) throughout the sweep "
             r"($q\le 0.9$) in 31/40 seeds; the 9 seeds with a defined collapse all satisfy "
@@ -690,8 +693,7 @@ def export_gamma_table_targeted(
         r"$q_{\mathrm{collapse}}$ and initial disruption intensity "
         r"$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$, where $q_{1/2}=\Delta q/2$ is the first midpoint of the damage grid. "
         r"Values are median [IQR] across seeds. "
-        r"The count $(n_{\mathrm{col}}/n)$ reports the number of seeds for which the collapse proxy is observed within the sweep. "
-        r"Zero IQR indicates identical values across seeds on the discrete $q$-grid.}"
+        r"The count $(n_{\mathrm{col}}/n)$ reports the number of seeds for which the collapse proxy is observed within the sweep.}"
     )
     lines.append(r"\label{tab:gamma_sweep_targeted}")
     lines.append(r"\resizebox{\linewidth}{!}{%")

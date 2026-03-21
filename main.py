@@ -81,7 +81,13 @@ if __name__ == "__main__":
             r"$q_{\mathrm{warn}}$ is observed prior to collapse; $(n_{\Delta}/n)$ analogously "
             r"counts seeds with a defined lead time $\Delta_{\mathrm{warn}}$. Results use the "
             r"same baseline-deviation rule as the Chung--Lu experiments ($\alpha=0.20$, $z=2.0$, "
-            r"baseline window $q \le 0.15$). Dashes indicate runs with no detection prior to collapse."
+            r"baseline window $q \le 0.15$). "
+            r"Where $(n_{\mathrm{det}}/n)$ and $(n_{\Delta}/n)$ differ within a row, the discrepancy "
+            r"reflects seeds in which $q_{\mathrm{collapse}}$ is undefined (the GCC never drops below "
+            r"$0.1$ within the sweep) rather than failed or spurious detection. "
+            r"The low and $\gamma$-non-monotonic $(n_{\mathrm{det}}/n)$ counts reflect inconsistent "
+            r"threshold inflation across seeds, as quantified in Table~\ref{tab:baseline_noise_comparison}, "
+            r"rather than a systematic relationship between $\gamma$ and signal detectability."
         )
         export_gamma_table_random(
             rows, 

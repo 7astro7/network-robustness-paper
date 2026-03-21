@@ -59,6 +59,10 @@ class TargetedFailure(FailureModel):
     Degree-based (hub-first) node removal.
     """
 
+    def __init__(self) -> None:
+        self._sorted_nodes: list | None = None
+        self._sorted_for: int | None = None  # id(G) of the cached graph
+
     def apply(self, G: nx.Graph, q: float) -> nx.Graph:
         n = G.number_of_nodes()
         n_remove = int(q * n)
@@ -66,12 +70,12 @@ class TargetedFailure(FailureModel):
         if n_remove == 0:
             return G.copy()
 
-        # Sort nodes by degree (descending)
-        nodes_sorted = sorted(
-            G.degree, key=lambda x: x[1], reverse=True
-        )
+        # Sort nodes by degree (descending) — cache per graph identity
+        if self._sorted_for != id(G):
+            self._sorted_nodes = sorted(G.degree, key=lambda x: x[1], reverse=True)
+            self._sorted_for = id(G)
 
-        removed = {node for node, _ in nodes_sorted[:n_remove]}
+        removed = {node for node, _ in self._sorted_nodes[:n_remove]}
         remaining = set(G.nodes()) - removed
 
         return G.subgraph(remaining).copy()
