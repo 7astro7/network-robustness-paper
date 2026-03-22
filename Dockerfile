@@ -19,5 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ── Source code and data
 COPY . .
 
+# ── Allow non-root user (passed via --user at runtime) to write outputs
+RUN chmod -R a+rw /workspace
+
 # ── Outputs land in /workspace/paper/{tables,data,figures} and paper.pdf
 CMD ["bash", "remake.sh"]

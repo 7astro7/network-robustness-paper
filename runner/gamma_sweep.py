@@ -1,5 +1,9 @@
-import numpy as np
+import os
 import random
+from multiprocessing import Pool
+
+import numpy as np
+
 from core.experiment import Experiment
 from core.graph_model import GraphModel, ConfigurationModel
 from core.failure_model import RandomFailure, TargetedFailure
@@ -75,6 +79,228 @@ def _null_baseline_mu_sigma(graph: GraphModel, qs: np.ndarray, alpha: float, n_b
     baseline = dkl_mid[:n]
     return float(np.mean(baseline)), float(np.std(baseline, ddof=0))
 
+
+def _detect_baseline_break(
+    qs: np.ndarray,
+    dkl: np.ndarray,
+    q0: float = 0.15,
+    z: float = 2.0,
+    return_stats: bool = False,
+):
+    """
+    Detect baseline deviation for random failure.
+
+    Parameters
+    ----------
+    qs : np.ndarray
+        Removal fractions of length N
+    dkl : np.ndarray
+        Successive KL of length N-1
+    q0 : float
+        Upper bound of baseline window
+    z : float
+        Z-score threshold
+    return_stats : bool
+        If True, return (q_warn, mu, sigma, threshold); else return q_warn only.
+    """
+    qs = np.asarray(qs)
+    dkl = np.asarray(dkl)
+
+    qs_mid = 0.5 * (qs[:-1] + qs[1:])
+
+    if dkl.size != qs_mid.size:
+        raise ValueError(
+            f"_detect_baseline_break: dkl length {dkl.size} != len(qs)-1 {qs_mid.size}"
+        )
+
+    baseline_mask = qs_mid <= q0
+
+    if baseline_mask.sum() < 5:
+        if return_stats:
+            return np.nan, float("nan"), float("nan"), float("nan")
+        return np.nan
+
+    mu = dkl[baseline_mask].mean()
+    sigma = dkl[baseline_mask].std()
+    threshold = mu + z * sigma
+
+    exceed = dkl > threshold
+    idx = np.where(exceed & (qs_mid > q0))[0]
+
+    if len(idx) == 0:
+        if return_stats:
+            return np.nan, float(mu), float(sigma), float(threshold)
+        return np.nan
+
+    if return_stats:
+        return qs_mid[idx[0]], float(mu), float(sigma), float(threshold)
+    return qs_mid[idx[0]]
+
+
+def _run_seed_full(args: tuple) -> dict:
+    """Worker for parallel seed execution in GammaSweepExperiment.run()."""
+    gamma, seed, n, graph_model_str, qs, qs_targeted, alpha, z = args
+
+    np.random.seed(seed)
+    random.seed(seed)
+
+    if graph_model_str == "chunglu":
+        graph = GraphModel(n=n, gamma=gamma)
+    else:
+        graph = ConfigurationModel(n=n, gamma=gamma)
+
+    # --- random failure ---
+    exp_r = Experiment(graph, RandomFailure())
+    S_r, H_r, Pq_r = exp_r.sweep(qs)
+    raw_r = exp_r.successive_kl(Pq_r)
+
+    if not np.all(np.isfinite(raw_r)):
+        raise ValueError(
+            f"[gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
+        )
+
+    dkl_r = exp_r.ewma(raw_r, alpha=alpha)
+    q_warn_r, mu0_r, sigma0_r, thresh_r = _detect_baseline_break(
+        qs, dkl_r, z=z, return_stats=True
+    )
+
+    qs_mid_r = 0.5 * (qs[:-1] + qs[1:])
+    post_mask_r = qs_mid_r > 0.15
+    max_post_r = float(dkl_r[post_mask_r].max()) if post_mask_r.any() else float("nan")
+
+    js_r_raw = Metrics.successive_js(Pq_r)
+    js_r = exp_r.ewma(js_r_raw, alpha=alpha)
+
+    dh_r_raw = np.abs(np.diff(np.asarray(H_r, dtype=float)))
+    dh_r = exp_r.ewma(dh_r_raw, alpha=alpha)
+
+    q_warn_js = _detect_baseline_break(qs, js_r, z=z)
+    q_warn_dh = _detect_baseline_break(qs, dh_r, z=z)
+
+    q_collapse_r = next((float(q) for q, s in zip(qs, S_r) if s < 0.1), None)
+
+    if np.isfinite(q_warn_r) and q_collapse_r is not None and float(q_warn_r) >= float(q_collapse_r):
+        q_warn_r = np.nan
+    if np.isfinite(q_warn_js) and q_collapse_r is not None and float(q_warn_js) >= float(q_collapse_r):
+        q_warn_js = np.nan
+    if np.isfinite(q_warn_dh) and q_collapse_r is not None and float(q_warn_dh) >= float(q_collapse_r):
+        q_warn_dh = np.nan
+
+    # --- targeted failure ---
+    exp_t = Experiment(graph, TargetedFailure())
+    S_t, _, Pq_t = exp_t.sweep(qs_targeted)
+    raw_t = exp_t.successive_kl(Pq_t)
+
+    if not np.all(np.isfinite(raw_t)):
+        raise ValueError(
+            f"[gamma={gamma:.1f}, seed={seed}, targeted] non-finite raw successive KL"
+        )
+
+    dkl_t = exp_t.ewma(raw_t, alpha=alpha)
+    tgt_intensity = float(dkl_t[0]) if len(dkl_t) > 0 else float("nan")
+
+    qs_mid = 0.5 * (qs_targeted[:-1] + qs_targeted[1:])
+    mu_null, sig_null = _null_baseline_mu_sigma(graph, qs_targeted, alpha=alpha, n_baseline=3)
+    q_warn_tgt, mu0_tgt, sigma0_tgt, thresh_tgt = _detect_targeted_onset(
+        qs_mid, dkl_t, n_baseline=3, z=z, mu0=mu_null, sigma0=sig_null,
+    )
+    q_warn_tgt = float(q_warn_tgt) if q_warn_tgt is not None else np.nan
+
+    q_collapse_t = next((float(q) for q, s in zip(qs_targeted, S_t) if s < 0.1), None)
+
+    q_floor_tgt = float(qs_mid[0]) if qs_mid.size else float("nan")
+    dkl_floor_tgt = float(dkl_t[0]) if len(dkl_t) > 0 else float("nan")
+    fired_at_floor_tgt = bool(
+        np.isfinite(dkl_floor_tgt)
+        and np.isfinite(thresh_tgt)
+        and (float(dkl_floor_tgt) > float(thresh_tgt))
+    )
+
+    is_early = (
+        np.isfinite(q_warn_tgt)
+        and (q_collapse_t is not None)
+        and (float(q_warn_tgt) < float(q_collapse_t))
+    )
+
+    delta_r = (
+        (float(q_collapse_r) - float(q_warn_r))
+        if (np.isfinite(q_warn_r) and q_collapse_r is not None)
+        else float("nan")
+    )
+    delta_tgt = (
+        (float(q_collapse_t) - float(q_warn_tgt))
+        if (np.isfinite(q_warn_tgt) and q_collapse_t is not None)
+        else float("nan")
+    )
+
+    print(f"  gamma={gamma:.1f} seed {seed}...", flush=True)
+
+    return {
+        "seed": seed,
+        "gamma": float(gamma),
+        "q_warn_r": float(q_warn_r) if np.isfinite(q_warn_r) else float("nan"),
+        "q_warn_js": float(q_warn_js) if np.isfinite(q_warn_js) else float("nan"),
+        "q_warn_dh": float(q_warn_dh) if np.isfinite(q_warn_dh) else float("nan"),
+        "q_collapse_r": float(q_collapse_r) if q_collapse_r is not None else float("nan"),
+        "delta_r": delta_r,
+        "mu0_r": float(mu0_r) if np.isfinite(mu0_r) else float("nan"),
+        "sigma0_r": float(sigma0_r) if np.isfinite(sigma0_r) else float("nan"),
+        "thresh_r": float(thresh_r) if np.isfinite(thresh_r) else float("nan"),
+        "max_post_r": max_post_r,
+        "tgt_intensity": tgt_intensity if np.isfinite(tgt_intensity) else float("nan"),
+        "q_warn_tgt": float(q_warn_tgt) if np.isfinite(q_warn_tgt) else float("nan"),
+        "q_collapse_t": float(q_collapse_t) if q_collapse_t is not None else float("nan"),
+        "is_early": bool(is_early),
+        "delta_tgt": delta_tgt,
+        "mu0_tgt": float(mu0_tgt),
+        "sigma0_tgt": float(sigma0_tgt),
+        "thresh_tgt": float(thresh_tgt),
+        "q_floor_tgt": q_floor_tgt,
+        "dkl_floor_tgt": dkl_floor_tgt,
+        "fired_at_floor_tgt": fired_at_floor_tgt,
+    }
+
+
+def _run_seed_random_only(args: tuple) -> dict:
+    """Worker for parallel seed execution in GammaSweepExperiment.run_random_only()."""
+    gamma, seed, n, qs, alpha, z = args
+
+    np.random.seed(seed)
+    random.seed(seed)
+
+    graph = GraphModel(n=n, gamma=float(gamma))
+    exp_r = Experiment(graph, RandomFailure())
+    S_r, _H_r, Pq_r = exp_r.sweep(qs)
+    raw_r = exp_r.successive_kl(Pq_r)
+
+    if not np.all(np.isfinite(raw_r)):
+        raise ValueError(
+            f"[sens gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
+        )
+
+    dkl_r = exp_r.ewma(raw_r, alpha=alpha)
+    q_warn_r = _detect_baseline_break(qs, dkl_r, z=z)
+
+    q_collapse_r = next((float(q) for q, s in zip(qs, S_r) if s < 0.1), None)
+
+    if np.isfinite(q_warn_r) and q_collapse_r is not None and float(q_warn_r) >= float(q_collapse_r):
+        q_warn_r = np.nan
+
+    print(f"  [sens] gamma={gamma:.1f} seed {seed}...", flush=True)
+
+    return {
+        "gamma": float(gamma),
+        "seed": seed,
+        "q_warn_r": float(q_warn_r) if np.isfinite(q_warn_r) else float("nan"),
+        "q_collapse_r": float(q_collapse_r) if q_collapse_r is not None else float("nan"),
+        "delta_r": (
+            (float(q_collapse_r) - float(q_warn_r))
+            if (np.isfinite(q_warn_r) and q_collapse_r is not None)
+            else float("nan")
+        ),
+    }
+
+
 class GammaSweepExperiment:
     """
     Core experimental object for sweeping degree exponent γ.
@@ -148,7 +374,25 @@ class GammaSweepExperiment:
             q3 = float(np.percentile(vals, 75))
             return med, float(q3 - q1), n_det
 
+        # Submit all (gamma, seed) tasks in one pool to avoid repeated fork overhead.
+        all_args = [
+            (gamma, seed, self.n, self.graph_model, self.qs, self.qs_targeted, self.alpha, self.z)
+            for gamma in self.gammas
+            for seed in self.seeds
+        ]
+
+        n_workers = os.cpu_count() or 1
+        with Pool(processes=n_workers) as pool:
+            all_results = pool.map(_run_seed_full, all_args)
+
+        # Group results by gamma (preserving seed order within each gamma).
+        from itertools import groupby
+        all_results.sort(key=lambda r: (r["gamma"], r["seed"]))
+        grouped = {g: list(rs) for g, rs in groupby(all_results, key=lambda r: r["gamma"])}
+
         for gamma in self.gammas:
+            seed_results = grouped[float(gamma)]
+
             q_warn_random = []
             q_collapse_random = []
             delta_random = []
@@ -160,160 +404,42 @@ class GammaSweepExperiment:
             delta_warn_tgt = []
             intensity_targeted = []
 
-            for seed in self.seeds:
-                print(f"  gamma={gamma:.1f} seed {seed}...", flush=True)
-                # Deterministic graph + failure realization
-                np.random.seed(seed)
-                random.seed(seed)
+            for r in seed_results:
+                q_warn_random.append(r["q_warn_r"])
+                q_warn_js_random.append(r["q_warn_js"])
+                q_warn_dh_random.append(r["q_warn_dh"])
+                q_collapse_random.append(r["q_collapse_r"])
+                delta_random.append(r["delta_r"])
+                intensity_targeted.append(r["tgt_intensity"])
+                q_warn_tgt_targeted.append(r["q_warn_tgt"])
+                q_collapse_targeted.append(r["q_collapse_t"])
+                is_early_targeted.append(r["is_early"])
+                delta_warn_tgt.append(r["delta_tgt"])
 
-                # Select graph model
-                if self.graph_model == "chunglu":
-                    graph = GraphModel(n=self.n, gamma=gamma)
-                elif self.graph_model == "config":
-                    graph = ConfigurationModel(n=self.n, gamma=gamma)
-                else:
-                    raise ValueError(f"Unknown graph_model: {self.graph_model}")
-
-                # --- random failure ---
-                exp_r = Experiment(graph, RandomFailure())
-                S_r, H_r, Pq_r = exp_r.sweep(self.qs)
-                raw_r = exp_r.successive_kl(Pq_r)
-
-                if not np.all(np.isfinite(raw_r)):
-                    raise ValueError(
-                        f"[gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
-                    )
-
-                dkl_r = exp_r.ewma(raw_r, alpha=self.alpha)
-                q_warn_r, mu0_r, sigma0_r, thresh_r = self._detect_baseline_break(
-                    self.qs, dkl_r, z=self.z, return_stats=True
-                )
-
-                # max signal after baseline window (for threshold-inflation check)
-                qs_mid_r = 0.5 * (self.qs[:-1] + self.qs[1:])
-                post_mask_r = qs_mid_r > 0.15
-                max_post_r = float(dkl_r[post_mask_r].max()) if post_mask_r.any() else float("nan")
-
-                # Random baselines (rate-of-change signals on midpoint support)
-                js_r_raw = Metrics.successive_js(Pq_r)
-                js_r = exp_r.ewma(js_r_raw, alpha=self.alpha)
-
-                dh_r_raw = np.abs(np.diff(np.asarray(H_r, dtype=float)))
-                dh_r = exp_r.ewma(dh_r_raw, alpha=self.alpha)
-
-                q_warn_js = self._detect_baseline_break(self.qs, js_r, z=self.z)
-                q_warn_dh = self._detect_baseline_break(self.qs, dh_r, z=self.z)
-
-                q_collapse_r = next(
-                    (float(q) for q, s in zip(self.qs, S_r) if s < 0.1),
-                    None,
-                )
-
-                # Ensure q_warn is "early"; otherwise treat as no detection for delta purposes.
-                if np.isfinite(q_warn_r) and q_collapse_r is not None and float(q_warn_r) >= float(q_collapse_r):
-                    q_warn_r = np.nan
-                if np.isfinite(q_warn_js) and q_collapse_r is not None and float(q_warn_js) >= float(q_collapse_r):
-                    q_warn_js = np.nan
-                if np.isfinite(q_warn_dh) and q_collapse_r is not None and float(q_warn_dh) >= float(q_collapse_r):
-                    q_warn_dh = np.nan
-
-                q_warn_random.append(float(q_warn_r) if np.isfinite(q_warn_r) else np.nan)
-                q_warn_js_random.append(float(q_warn_js) if np.isfinite(q_warn_js) else np.nan)
-                q_warn_dh_random.append(float(q_warn_dh) if np.isfinite(q_warn_dh) else np.nan)
-                q_collapse_random.append(float(q_collapse_r) if q_collapse_r is not None else np.nan)
-
-                if np.isfinite(q_warn_r) and q_collapse_r is not None:
-                    delta_random.append(float(q_collapse_r) - float(q_warn_r))
-                else:
-                    delta_random.append(np.nan)
-
-                # long-format record (random regime) for downstream CSV + plotting
                 runs.append({
                     "regime": "random",
-                    "gamma": float(gamma),
-                    "seed": int(seed),
-                    "q_warn": float(q_warn_r) if np.isfinite(q_warn_r) else float("nan"),
-                    "q_collapse": float(q_collapse_r) if q_collapse_r is not None else float("nan"),
-                    "mu0": float(mu0_r) if np.isfinite(mu0_r) else float("nan"),
-                    "sigma0": float(sigma0_r) if np.isfinite(sigma0_r) else float("nan"),
-                    "threshold": float(thresh_r) if np.isfinite(thresh_r) else float("nan"),
-                    "max_post_baseline": max_post_r,
+                    "gamma": r["gamma"],
+                    "seed": int(r["seed"]),
+                    "q_warn": r["q_warn_r"],
+                    "q_collapse": r["q_collapse_r"],
+                    "mu0": r["mu0_r"],
+                    "sigma0": r["sigma0_r"],
+                    "threshold": r["thresh_r"],
+                    "max_post_baseline": r["max_post_r"],
                 })
-
-                # --- targeted failure ---
-                exp_t = Experiment(graph, TargetedFailure())
-                S_t, _, Pq_t = exp_t.sweep(self.qs_targeted)
-                raw_t = exp_t.successive_kl(Pq_t)
-
-                if not np.all(np.isfinite(raw_t)):
-                    raise ValueError(
-                        f"[gamma={gamma:.1f}, seed={seed}, targeted] non-finite raw successive KL"
-                    )
-
-                dkl_t = exp_t.ewma(raw_t, alpha=self.alpha)
-                # Targeted early disruption intensity: first midpoint value of smoothed successive KL.
-                tgt_intensity = float(dkl_t[0]) if len(dkl_t) > 0 else float("nan")
-                intensity_targeted.append(tgt_intensity if np.isfinite(tgt_intensity) else np.nan)
-
-                # Targeted: attack-onset detection on midpoint grid (may be pre- or post-collapse)
-                qs_mid = 0.5 * (self.qs_targeted[:-1] + self.qs_targeted[1:])
-                mu_null, sig_null = _null_baseline_mu_sigma(
-                    graph,
-                    self.qs_targeted,
-                    alpha=self.alpha,
-                    n_baseline=3,
-                )
-                q_warn_tgt, mu0_tgt, sigma0_tgt, thresh_tgt = _detect_targeted_onset(
-                    qs_mid,
-                    dkl_t,
-                    n_baseline=3,
-                    z=self.z,
-                    mu0=mu_null,
-                    sigma0=sig_null,
-                )
-                q_warn_tgt = float(q_warn_tgt) if q_warn_tgt is not None else np.nan
-
-                # collapse (reference only): first q where S(q) < 0.1
-                q_collapse_t = next(
-                    (float(q) for q, s in zip(self.qs_targeted, S_t) if s < 0.1),
-                    None,
-                )
-
-                q_floor_tgt = float(qs_mid[0]) if qs_mid.size else float("nan")
-                dkl_floor_tgt = float(dkl_t[0]) if len(dkl_t) > 0 else float("nan")
-                fired_at_floor_tgt = bool(
-                    np.isfinite(dkl_floor_tgt)
-                    and np.isfinite(thresh_tgt)
-                    and (float(dkl_floor_tgt) > float(thresh_tgt))
-                )
-
                 runs.append({
                     "regime": "targeted",
-                    "gamma": float(gamma),
-                    "seed": int(seed),
-                    "q_warn_tgt": float(q_warn_tgt) if np.isfinite(q_warn_tgt) else float("nan"),
-                    "q_collapse": float(q_collapse_t) if q_collapse_t is not None else float("nan"),
-                    "q_floor": float(q_floor_tgt),
-                    "dkl_floor": float(dkl_floor_tgt),
-                    "mu0": float(mu0_tgt),
-                    "sigma0": float(sigma0_tgt),
-                    "thresh": float(thresh_tgt),
-                    "fired_at_floor": bool(fired_at_floor_tgt),
+                    "gamma": r["gamma"],
+                    "seed": int(r["seed"]),
+                    "q_warn_tgt": r["q_warn_tgt"],
+                    "q_collapse": r["q_collapse_t"],
+                    "q_floor": r["q_floor_tgt"],
+                    "dkl_floor": r["dkl_floor_tgt"],
+                    "mu0": r["mu0_tgt"],
+                    "sigma0": r["sigma0_tgt"],
+                    "thresh": r["thresh_tgt"],
+                    "fired_at_floor": r["fired_at_floor_tgt"],
                 })
-
-                is_early = (
-                    np.isfinite(q_warn_tgt)
-                    and (q_collapse_t is not None)
-                    and (float(q_warn_tgt) < float(q_collapse_t))
-                )
-                q_warn_tgt_targeted.append(float(q_warn_tgt) if np.isfinite(q_warn_tgt) else np.nan)
-                is_early_targeted.append(bool(is_early))
-
-                q_collapse_targeted.append(float(q_collapse_t) if q_collapse_t is not None else np.nan)
-                if np.isfinite(q_warn_tgt) and q_collapse_t is not None:
-                    delta_warn_tgt.append(float(q_collapse_t) - float(q_warn_tgt))
-                else:
-                    delta_warn_tgt.append(np.nan)
 
             # ---- aggregate (nan-safe) ----
             q_warn_random = np.asarray(q_warn_random, dtype=float)
@@ -394,46 +520,25 @@ class GammaSweepExperiment:
              random_delta_mean, random_delta_std, random_delta_n)
         """
         rows = []
+
+        all_args = [
+            (gamma, seed, self.n, self.qs, self.alpha, self.z)
+            for gamma in self.gammas
+            for seed in self.seeds
+        ]
+
+        n_workers = os.cpu_count() or 1
+        with Pool(processes=n_workers) as pool:
+            all_results = pool.map(_run_seed_random_only, all_args)
+
+        from itertools import groupby
+        all_results.sort(key=lambda r: (r["gamma"], r["seed"]))
+        grouped = {g: list(rs) for g, rs in groupby(all_results, key=lambda r: r["gamma"])}
+
         for gamma in self.gammas:
-            q_warn_random = []
-            q_collapse_random = []
-            delta_random = []
-
-            for seed in self.seeds:
-                print(f"  [sens] gamma={gamma:.1f} seed {seed}...", flush=True)
-                np.random.seed(seed)
-                random.seed(seed)
-
-                graph = GraphModel(n=self.n, gamma=float(gamma))
-                exp_r = Experiment(graph, RandomFailure())
-
-                S_r, _H_r, Pq_r = exp_r.sweep(self.qs)
-                raw_r = exp_r.successive_kl(Pq_r)
-                if not np.all(np.isfinite(raw_r)):
-                    raise ValueError(
-                        f"[sens gamma={gamma:.1f}, seed={seed}, random] non-finite raw successive KL"
-                    )
-
-                dkl_r = exp_r.ewma(raw_r, alpha=self.alpha)
-                q_warn_r = self._detect_baseline_break(self.qs, dkl_r, z=self.z)
-
-                q_collapse_r = next(
-                    (float(q) for q, s in zip(self.qs, S_r) if s < 0.1),
-                    None,
-                )
-
-                if np.isfinite(q_warn_r) and q_collapse_r is not None and float(q_warn_r) >= float(q_collapse_r):
-                    q_warn_r = np.nan
-
-                q_warn_random.append(float(q_warn_r) if np.isfinite(q_warn_r) else np.nan)
-                q_collapse_random.append(float(q_collapse_r) if q_collapse_r is not None else np.nan)
-                if np.isfinite(q_warn_r) and q_collapse_r is not None:
-                    delta_random.append(float(q_collapse_r) - float(q_warn_r))
-                else:
-                    delta_random.append(np.nan)
-
-            q_warn_random = np.asarray(q_warn_random, dtype=float)
-            delta_random = np.asarray(delta_random, dtype=float)
+            seed_results = grouped[float(gamma)]
+            q_warn_random = np.asarray([r["q_warn_r"] for r in seed_results], dtype=float)
+            delta_random = np.asarray([r["delta_r"] for r in seed_results], dtype=float)
 
             n_r = int(np.count_nonzero(~np.isnan(q_warn_random)))
             n_dr = int(np.count_nonzero(~np.isnan(delta_random)))
@@ -450,60 +555,6 @@ class GammaSweepExperiment:
 
 
     def _detect_baseline_break(self, qs: np.ndarray, dkl: np.ndarray, q0: float = 0.15, z: float = 2.0, return_stats: bool = False):
-        """
-        Detect baseline deviation for random failure.
-
-        Parameters
-        ----------
-        qs : np.ndarray
-            Removal fractions of length N
-        dkl : np.ndarray
-            Successive KL of length N-1
-        q0 : float
-            Upper bound of baseline window
-        z : float
-            Z-score threshold
-        return_stats : bool
-            If True, return (q_warn, mu, sigma, threshold); else return q_warn only.
-
-        Returns
-        -------
-        float or tuple
-            q_warn (np.nan if none detected), or (q_warn, mu, sigma, threshold) if return_stats=True
-        """
-        qs = np.asarray(qs)
-        dkl = np.asarray(dkl)
-
-        # successive KL lives on midpoints
-        qs_mid = 0.5 * (qs[:-1] + qs[1:])
-
-        if dkl.size != qs_mid.size:
-            raise ValueError(
-                f"_detect_baseline_break: dkl length {dkl.size} != len(qs)-1 {qs_mid.size}"
-            )
-
-        # baseline window defined on midpoints
-        baseline_mask = qs_mid <= q0
-
-        if baseline_mask.sum() < 5:
-            if return_stats:
-                return np.nan, float("nan"), float("nan"), float("nan")
-            return np.nan  # not enough data to define baseline
-
-        mu = dkl[baseline_mask].mean()
-        sigma = dkl[baseline_mask].std()
-        threshold = mu + z * sigma
-
-        # detect first deviation
-        exceed = dkl > threshold
-        idx = np.where(exceed & (qs_mid > q0))[0]
-
-        if len(idx) == 0:
-            if return_stats:
-                return np.nan, float(mu), float(sigma), float(threshold)
-            return np.nan
-
-        if return_stats:
-            return qs_mid[idx[0]], float(mu), float(sigma), float(threshold)
-        return qs_mid[idx[0]]
+        """Delegates to module-level _detect_baseline_break."""
+        return _detect_baseline_break(qs, dkl, q0=q0, z=z, return_stats=return_stats)
 
