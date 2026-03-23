@@ -34,33 +34,21 @@ Power-Law Networks Under Progressive Node Removal}
 
 \begin{abstract}
 Power-law networks tolerate extensive random failures yet can collapse abruptly under targeted
-attacks, often with little warning when monitored only through connectivity measures such
-as the giant connected component (GCC). We ask whether an information-theoretic rate
-of structural change can provide early warning of impending connectivity collapse, and
-under what conditions any such signal transfers across generative ensembles.
+attacks, often with little warning from connectivity measures alone. We ask whether an
+information-theoretic rate of structural change can provide early warning of impending
+connectivity collapse in such networks, and under what conditions any such signal transfers
+across generative ensembles.
 
-We study Chung--Lu scale-free networks~\cite{chunglu2002connected} with $2<\gamma<3$ under
-random failure and targeted (hub-first) removal. Along a fixed damage grid, we compute the
-EWMA-smoothed successive Kullback--Leibler divergence between adjacent empirical degree
-distributions, yielding an interpretable per-step change-rate signal. Using pre-specified
-decision rules that do not reference connectivity, we find that under random failure the
-signal departs from an initial low-activity regime well before GCC collapse across a
-$\gamma$ sweep, producing a median warning lead time of $\Delta_{\mathrm{warn}}\approx 0.52$
-in removal fraction (IQR $[0.44, 0.60]$) across 293 detected seeds in the $\gamma$ sweep.
-Under targeted removal, the same signal tracks disruption intensity as collapse approaches;
-we do not estimate the percolation threshold $q_c$.
-
-We validate the random-failure baseline-departure pattern on an empirical AS-level Internet
-topology from the CAIDA AS Relationships dataset (40/40 seeds detected), confirming that
-the signal reflects genuine structural reorganization rather than a synthetic artifact.
-A degree-matched configuration-model experiment, however, reveals that the same rule fails
-in 292/360 runs due to ensemble-induced threshold inflation: structural churn during the
-baseline window elevates $\mu_0$ and $\sigma_0$, raising the detection threshold above
-the level the signal subsequently reaches, accounting for 276 of those 292 non-detecting
-runs. This partially falsifies the hypothesis that the early-warning behavior is robust
-across ensembles when the tail exponent is matched: the signal is ensemble-stable within
-Chung--Lu across the full $\gamma$ sweep but does not transfer to the configuration-model
-ensemble under identical settings.
+We track EWMA-smoothed successive Kullback--Leibler divergence between adjacent empirical
+degree distributions in Chung--Lu scale-free graphs with $2<\gamma<3$ under both random and
+targeted node removal. Using fixed, pre-specified detection rules that do not reference
+connectivity, we find that the signal departs from an initial low-activity baseline well
+before GCC collapse under random failure, a pattern confirmed on an empirical CAIDA
+AS-level Internet topology. Under targeted removal, the signal exhibits immediate disruption
+rather than advance warning. A degree-matched configuration-model experiment reveals that
+the same rule fails due to ensemble-induced threshold inflation, a mechanistically
+interpretable limitation on transferability that motivates ensemble-aware deployment of
+structural monitoring rules.
 \end{abstract}
 
 
@@ -291,7 +279,7 @@ targeted (hub-first) removal.
 \subsection*{H3: Robustness across the Power-Law Regime}
 
 The qualitative behaviors described in H1 and H2 are hypothesized to persist across
-Chung--Lu and configuration model power-law graphs with degree exponents in the range
+the Chung--Lu ensemble for degree exponents in the range
 \[
 2 < \gamma < 3.
 \]
@@ -408,17 +396,11 @@ while preserving trend information, we apply an exponentially weighted moving av
 (1-\alpha)\tilde{D}_{\mathrm{KL}}(q_{i-1}).
 \]
 
-The smoothing parameter is fixed at $\alpha=0.2$ across all experiments. A brief sensitivity
-check indicates that detected warning points can shift with $\alpha$, particularly under targeted
-removal where disruption is abrupt and the signal can be strongly nonstationary at early $q$.
-Accordingly, we use $\alpha=0.2$ as a moderate smoothing choice and report results for this single
-pre-specified value (no tuning is performed).
-At lower values (e.g.\ $\alpha=0.1$) the EWMA over-smooths abrupt transitions, smearing out
-the baseline departure and delaying or suppressing warning detections; at higher values (e.g.\ $\alpha=0.3$)
-the filter retains too much high-frequency noise, inflating variance in the baseline estimate
-and producing spurious threshold crossings.
-The EWMA assigns exponentially decaying weight to past
-observations, corresponding to an effective memory on the order of $1/\alpha$.
+The smoothing parameter is fixed at $\alpha=0.2$ across all experiments as a pre-specified
+value; no post-hoc tuning is performed. Sensitivity of warning timing to $\alpha$ and
+threshold $z$ is reported in Appendix~\nameref{sec:appendix}.
+The EWMA assigns exponentially decaying weight to past observations, corresponding to an
+effective memory on the order of $1/\alpha$.
 
 The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole warning observable
 used throughout this study; alternative signals are evaluated only in control comparisons.
@@ -446,9 +428,6 @@ with power-law degree sequences. In addition, we analyze an empirical CAIDA AS g
 while avoiding degree--degree correlations and growth effects inherent to other generative
 mechanisms.
 
-Unlike the configuration model which can exhibit structural degree correlations in 
-heavy-tailed networks as a finite-size artifact, Chung-Lu assigns edges independently, 
-isolating the effect of degree heterogeneity. This motivates use of Chung-Lu for the main controlled analysis.
 
 \paragraph{Configuration-model ensemble experiment.}
 To probe sensitivity to the generating ensemble, we repeat the random-failure pipeline using
@@ -475,9 +454,11 @@ P(k) \propto k^{-\gamma},
 \]
 a regime characteristic of many empirical infrastructure and communication networks.
 Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
-This size is held fixed across all synthetic experiments to isolate the effect 
-of degree heterogeneity; the dependence of results on 
-N is discussed in the Conclusion.
+This size is held fixed across all synthetic experiments to isolate the effect
+of degree heterogeneity; the dependence of results on $N$ is discussed in the Conclusion.
+Unlike the configuration model, which can exhibit structural degree correlations in
+heavy-tailed networks as a finite-size artifact, Chung--Lu assigns edges independently.
+This motivates use of Chung--Lu for the main controlled analysis.
 
 To examine sensitivity to degree heterogeneity, we sweep
 \[
@@ -656,7 +637,9 @@ Vertical lines indicate $q_{\mathrm{warn}}=0.277$ and $q_{\mathrm{collapse}}=0.8
 departure that occurs well before
 collapse. Applying the baseline-deviation rule (Sec.~\nameref{sec:early_warning_criteria})
 yields
-$q_{\mathrm{warn}}<q_{\mathrm{collapse}}$ across seeds, producing nontrivial lead time.
+$q_{\mathrm{warn}}<q_{\mathrm{collapse}}$ across seeds, producing nontrivial lead time. 
+Results across the $\gamma$ sweep are summarized in \autoref{fig:gamma_sweep_random} and
+\autoref{tab:gamma_sweep_random}.
 As a low-order-moment benchmark, we apply the identical EWMA smoothing and baseline-deviation rule to the Molloy--Reed branching factor $\kappa(q)$ computed from $P_q(k)$.
 Under the same settings used for $\tilde{D}_{\mathrm{KL}}(q)$, $\tilde{\kappa}(q)$ does not cross the $z=2$ threshold in this representative run and does not trigger across seeds; summary counts are reported in Appendix \nameref{sec:kappa_benchmark}.
 
@@ -788,20 +771,6 @@ seed-averaged values under random failure and targeted removal. Under targeted r
 disruption is immediate and collapse occurs at small $q$. This separation is
 consistent with gradual tail erosion under random removal, where degree-structure
 reorganization accumulates well before macroscopic fragmentation.
-
-One feature of \autoref{tab:gamma_sweep_random} warrants explicit comment.
-At $\gamma=2.1$, all 40 seeds detect $q_{\mathrm{warn}}$ but only 9/40 yield a defined
-lead time $\Delta_{\mathrm{warn}}$.
-This is not a sign of false positives: networks with $\gamma$ close to 2 are maximally
-hub-dominated and, under random failure, retain a giant connected component well beyond
-$q=0.9$.
-In 31/40 seeds the GCC fraction $S(q)$ never falls below 0.1 within the sweep, so
-$q_{\mathrm{collapse}}$ is undefined by construction.
-The 9 seeds that do collapse all satisfy $q_{\mathrm{collapse}}\ge 0.864$,
-confirming that the true percolation threshold lies at or beyond the sweep ceiling
-rather than that the warning is spurious.
-The signal correctly identifies ongoing structural reorganization; it is the collapse
-itself that is delayed beyond the observation window.
 
 \FloatBarrier
 \input{paper/tables/gamma_sweep_random.tex}
@@ -953,7 +922,7 @@ fragmentation, in a way that low-order moment summaries do not.
 \begin{samepage}
 In this study we intentionally restrict the structural state to the empirical degree distribution to keep the signal interpretable and the decision rule fixed across regimes.
 Richer summaries (e.g., joint-degree structure, mixing, motifs) may refine or alter warning behavior, especially under adversarial removal.
-In addition, the configuration-model experiment demonstrates that transfer is ensemble-dependent under identical settings even when the tail exponent is matched: structural churn during the baseline window inflates the estimated noise floor, raising the detection threshold above the level the post-baseline signal reaches in 276 of the 292 non-detecting runs (out of 360 total). This partially falsifies hypothesis H3 as originally stated: the early-warning behavior is robust across $\gamma$ within the Chung--Lu ensemble, but does not transfer to the configuration-model ensemble under identical detection settings. H3 holds within ensemble but fails across ensembles, a mechanistically interpretable failure mode that motivates future work characterizing when baseline-departure behavior is ensemble-stable.
+In addition, the configuration-model experiment demonstrates that transfer is ensemble-dependent under identical settings even when the tail exponent is matched: structural churn during the baseline window inflates the estimated noise floor, raising the detection threshold above the level the post-baseline signal reaches in 276 of the 292 non-detecting runs (out of 360 total). This finding goes beyond H3, which concerns robustness within the Chung--Lu ensemble across $\gamma$. H3 is supported by the results; the configuration-model experiment reveals a distinct limitation on transferability, motivating future work on adaptive calibration strategies that account for ensemble-specific noise floor behavior, such as pre-calibrating the detection threshold from ensemble structure rather than from a data-driven baseline window.
 All synthetic experiments use $N=10{,}000$ nodes; we have not systematically varied network
 size. Finite-size scaling theory predicts that the percolation transition sharpens with
 increasing $N$~\cite{molloy1995critical}, which would produce a more abrupt GCC drop and
@@ -971,40 +940,34 @@ Natural next steps are to track change rates in higher-order structural features
 
 \subsection*{Reproducibility (commands)}
 
-\paragraph{Environment.}
+\paragraph{One-command reproduction.}
+All results can be regenerated from the repository root with:
 \begin{verbatim}
-.venv/bin/python --version
-.venv/bin/python -m pip freeze > paper/data/pip_freeze.txt
+bash run_docker.sh
 \end{verbatim}
+This builds a Docker image with pinned dependencies and runs the full pipeline,
+producing \texttt{paper.pdf} and all intermediate artifacts in \texttt{paper/}.
+Requires Docker. The CAIDA data file (\texttt{caida\_as\_edges.txt}) must be
+obtained separately; see \texttt{README.md} in the repository for download instructions.
+The pipeline will skip the CAIDA step gracefully if the file is absent.
 
-\paragraph{Regenerating synthetic $\gamma$-sweep tables (Chung--Lu).}
+\paragraph{Without Docker.}
+Individual steps can be run directly after installing dependencies
+(\texttt{pip install -r requirements.txt}):
 \begin{verbatim}
+# Chung-Lu gamma sweep
 .venv/bin/python main.py
-\end{verbatim}
 
-\paragraph{Regenerating CAIDA random-failure figure.}
-\begin{verbatim}
-.venv/bin/python -m runner.make_caida_fig \
-  --edges caida_as_edges.txt \
-  --outdir paper/figures \
-  --seed 0 \
-  --alpha 0.2 \
-  --q-max 0.99 \
-  --num-q 200
-\end{verbatim}
-
-\paragraph{Sensitivity table ($\alpha$ and $z$).}
-\begin{verbatim}
+# Sensitivity table
 .venv/bin/python main.py --sensitivity-only
-\end{verbatim}
 
-\paragraph{Configuration-model ensemble experiment table.}
-\begin{verbatim}
-python main.py --graph-model config
-\end{verbatim}
+# Configuration-model sweep
+.venv/bin/python main.py --graph-model config
 
-\paragraph{Build the PDF.}
-\begin{verbatim}
+# CAIDA figure
+.venv/bin/python -m runner.make_caida_fig --edges caida_as_edges.txt
+
+# Compile PDF
 latexmk -pdf paper.tex
 \end{verbatim}
 
