@@ -23,7 +23,9 @@
 
 \title{Entropy-Based Indicators of Critical Transitions in 
 Power-Law Networks Under Progressive Node Removal}
-\author{Zachary Kraehling}
+\author{Zachary Kraehling\\
+\small Independent Researcher, Nashville, TN, USA\\
+\small \texttt{zak@zakkraehling.net}}
 \date{2026}
 
 \newcommand{\CAIDASnapshot}{2026-01-01}
@@ -51,6 +53,10 @@ interpretable limitation on transferability that motivates ensemble-aware deploy
 structural monitoring rules.
 \end{abstract}
 
+\keywords{power-law networks, network robustness, KL divergence, early warning signals, percolation, complex networks, information theory, degree distribution}
+
+\section*{List of Abbreviations}
+GCC: Giant Connected Component; KL: Kullback--Leibler; EWMA: Exponentially Weighted Moving Average; IQR: Interquartile Range; AS: Autonomous System; CAIDA: Center for Applied Internet Data Analysis; CM: Configuration Model; CL: Chung--Lu.
 
 \section*{Introduction and Motivation}
 Many real-world communication, social, and biological networks are known to exhibit
@@ -991,6 +997,23 @@ A target degree sequence is drawn from a discrete power-law distribution with ex
 and minimum degree $k_{\min}=1$, truncated to $N=10{,}000$ nodes. The sequence is passed to the
 configuration-model stub-matching procedure; self-loops and parallel edges are removed; and the
 experiment is conducted on the largest connected component.
+
+\section*{Declarations}
+
+\subsection*{Availability of data and materials}
+All code required to reproduce the results in this article is available at \url{https://github.com/7astro7/network-robustness-paper} under the Apache 2.0 license. The CAIDA AS Relationships Dataset must be obtained separately from \url{https://www.caida.org/data/as-relationships/}.
+
+\subsection*{Competing interests}
+The author declares no competing interests.
+
+\subsection*{Funding}
+No funding was received for this work.
+
+\subsection*{Authors' contributions}
+Z.K. conceived the study, developed the methodology, implemented all experiments, analyzed the results, and wrote the manuscript.
+
+\subsection*{Acknowledgements}
+Not applicable.
 
 \bibliographystyle{unsrt}
 \bibliography{references}
