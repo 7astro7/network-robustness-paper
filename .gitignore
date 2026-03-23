@@ -25,6 +25,16 @@ paper.pdf
 # Generated paper artifacts
 paper/
 
+# Cover letter
+coverletter.tex
+coverletter.pdf
+coverletter.aux
+coverletter.log
+coverletter.out
+
+# Submission zip
+submission.zip
+
 # Misc
 first-deliverable.md
 start.md
