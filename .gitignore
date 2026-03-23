@@ -1,0 +1,33 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+todo.md
+zip_script.sh
+CLAUDE.md
+.claude
+
+# CAIDA data files (large; see README for download instructions)
+caida_as_edges.txt
+*.as-rel2.txt
+*.as-rel2.txt.bz2
+
+# LaTeX auxiliary files
+paper.aux
+paper.bbl
+paper.blg
+paper.fdb_latexmk
+paper.fls
+paper.log
+paper.out
+paper.pdf
+
+# Generated paper artifacts
+paper/
+
+# Misc
+first-deliverable.md
+start.md
+submission_checklist.md
+weaknesses.md
+make_paper_artifacts.sh

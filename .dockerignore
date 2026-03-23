@@ -1,0 +1,17 @@
+.git/
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+paper.pdf
+paper.aux
+paper.bbl
+paper.blg
+paper.fdb_latexmk
+paper.fls
+paper.log
+paper.oet
+paper/tables/
+paper/data/
+paper/figures/
