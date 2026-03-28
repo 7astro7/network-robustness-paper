@@ -1,7 +1,7 @@
 # Network Robustness: Early Warning via Successive KL Divergence
 
 Reproducible experiments and paper for:
-> *Structural Early Warning of Connectivity Collapse in Heavy-Tailed Networks*
+> *Entropy-Based Indicators of Critical Transitions in Power-Law Networks Under Progressive Node Removal*
 
 ## One-command reproduction
 
