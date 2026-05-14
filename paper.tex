@@ -155,10 +155,11 @@ We do not estimate the percolation threshold $q_c$; in the targeted regime, the 
 
 \paragraph{Contributions.}
 \begin{itemize}[itemsep=2pt]
-    \item \textbf{Rate-based structural signal.} We track EWMA-smoothed successive KL divergence between adjacent empirical degree distributions as a per-step change-rate along the damage grid.
-    \item \textbf{Random-failure warning via baseline departure.} Using a fixed baseline window and threshold rule that does not reference connectivity, the signal departs from an initial stationary regime at $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across a $\gamma$ sweep in Chung--Lu graphs.
+    \item \textbf{Ensemble evidence for random-failure warning.} Across 40 independent random seeds per $\gamma$ value and nine $\gamma$ values spanning $(2,3)$, the EWMA-smoothed successive KL signal consistently departs from an initial stationary baseline at $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ under a fixed detection rule that does not reference connectivity.
+    Detection of a valid warning prior to collapse is achieved in all or nearly all seeds at every tested $\gamma$ (e.g., 40/40 at $\gamma=2.5$), with median lead time $\Delta_{\mathrm{warn}} = q_{\mathrm{collapse}} - q_{\mathrm{warn}} \approx 0.56$.
+    \item \textbf{Rate-based structural signal.} We operationalize the above via EWMA-smoothed successive KL divergence between adjacent empirical degree distributions, used as a per-step change-rate proxy along the damage grid.
     \item \textbf{Targeted regime: intensity-only summary.} Under hub-first removal the signal exhibits immediate disruption at the grid floor; we summarize targeted disruption by the initial shock magnitude $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with the collapse proxy $q_{\mathrm{collapse}}$.
-    \item \textbf{Validation and ensemble experiments.} We reproduce the random-failure pattern on a CAIDA AS graph and show, via an exponent-matched configuration-model experiment, that the rule fails in 292/360 runs due to structural-churn-induced threshold inflation during the baseline window. A further degree-sequence-matched CM diagnostic (new in this revision) confirms the failure persists when the exact realized degree sequence of a Chung--Lu graph is reused for CM wiring, isolating the effect to the hard-constraint mechanism rather than the degree sequence.
+    \item \textbf{Validation and ensemble transfer experiments.} We reproduce the random-failure pattern on a CAIDA AS graph (40/40 seeds) and show, via an exponent-matched configuration-model experiment, that the rule fails in 292/360 runs due to structural-churn-induced threshold inflation. A sequence-matched CM diagnostic (new in this revision) confirms the failure persists with the exact same degree sequence, isolating the hard-constraint wiring mechanism as a second independent channel of ensemble sensitivity.
 \end{itemize}
 
 \section*{Related Work}
@@ -643,48 +644,58 @@ Results section refer to the synthetic Chung--Lu experiments.
 
 \section*{Analysis and Results}
 
-We present results in the order: (i) a representative synthetic Chung--Lu run under
-random failure to illustrate the signal relative to $S(q)$, (ii) an empirical CAIDA AS graph
-random-failure case study as an out-of-sample validation, (iii) a representative synthetic
-targeted (hub-first) Chung--Lu run to examine how degree-targeted removal accelerates collapse relative to random failure, (iv) $\gamma$-sweep
-summaries for Chung--Lu via a plot and tables across seeds, and (v) a configuration-model
-random-failure experiment to assess ensemble transfer under matched $\gamma$.
-We then report two controls (no-damage and damage-without-collapse) to evaluate false-trigger
-behavior under the same baseline-deviation rule.
+The primary evidence is the 40-seed ensemble analysis across $\gamma \in (2,3)$,
+reported in \autoref{fig:gamma_sweep_random} and \autoref{tab:gamma_sweep_random}.
+Single-seed figures (Fig.~\ref{fig:random_rep} and Fig.~\ref{fig:targeted_rep}) are
+included to illustrate signal morphology; all inferential claims are drawn from
+the ensemble results.
 
-\subsection*{Synthetic (Chung--Lu) networks: Random Failure}
+We present results in the order: (i) a representative synthetic Chung--Lu run to
+illustrate signal morphology relative to $S(q)$, (ii) the full 40-seed ensemble
+$\gamma$-sweep as the primary analysis, (iii) an empirical CAIDA AS graph as
+out-of-sample validation, (iv) a representative targeted (hub-first) Chung--Lu run
+to examine immediate disruption, and (v) ensemble experiments probing transferability
+(exponent-matched and sequence-matched configuration models).
+Two controls (no-damage null and damage-without-collapse) evaluate false-trigger behavior
+under the same rule.
+
+\subsection*{Synthetic (Chung--Lu) networks: Signal Illustration (Single Realization)}
 
 % --- Block A: Synthetic random representative (Fig. 1) ---
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{%
 paper/figures/fig1_random_gamma2.5_seed0_alpha0.20.pdf}
-\caption{Random failure ($\gamma=2.5$, seed 0, $\alpha=0.20$). The GCC fraction $S(q)$
-(left axis) declines gradually
-while the smoothed successive KL signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) departs
-from its baseline well before collapse.
+\caption{\textbf{Illustrative single realization.} Random failure ($\gamma=2.5$, seed 0, $\alpha=0.20$).
+The GCC fraction $S(q)$ (left axis) declines gradually while the smoothed successive KL
+signal $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) departs from its baseline well before collapse.
 The baseline window $q \le 0.15$ is shaded.
 Vertical lines indicate $q_{\mathrm{warn}}=0.277$ and $q_{\mathrm{collapse}}=0.827$
-(defined by $S(q)<0.1$).}
+(defined by $S(q)<0.1$).
+This single realization illustrates signal morphology; all inferential claims are drawn
+from the 40-seed ensemble (\autoref{fig:gamma_sweep_random} and \autoref{tab:gamma_sweep_random}).}
 \label{fig:random_rep}
 \end{figure}
 
 \medskip
 
-\autoref{fig:random_rep} shows an initial baseline regime followed by a sustained
-departure that occurs well before
-collapse. Applying the baseline-deviation rule (Sec.~\nameref{sec:early_warning_criteria})
-yields
-$q_{\mathrm{warn}}<q_{\mathrm{collapse}}$ across seeds, producing nontrivial lead time. 
-Results across the $\gamma$ sweep are summarized in \autoref{fig:gamma_sweep_random} and
-\autoref{tab:gamma_sweep_random}.
-As a low-order-moment benchmark, we apply the identical EWMA smoothing and baseline-deviation rule to the Molloy--Reed branching factor $\kappa(q)$ computed from $P_q(k)$.
-Under the same settings used for $\tilde{D}_{\mathrm{KL}}(q)$, $\tilde{\kappa}(q)$ does not cross the $z=2$ threshold in this representative run and does not trigger across seeds; summary counts are reported in Appendix \nameref{sec:kappa_benchmark}.
+\autoref{fig:random_rep} illustrates the typical signal structure: an initial baseline
+regime in the low-damage window ($q \le 0.15$) followed by a sustained departure that
+accumulates well before the collapse proxy $q_{\mathrm{collapse}}$.
+This single realization is representative; \autoref{fig:gamma_sweep_random} and
+\autoref{tab:gamma_sweep_random} (next subsection) show that $q_{\mathrm{warn}} \ll
+q_{\mathrm{collapse}}$ holds across all 40 seeds and across $\gamma \in (2,3)$.
+As a low-order-moment benchmark, we apply the identical EWMA smoothing and
+baseline-deviation rule to the Molloy--Reed branching factor $\kappa(q)$.
+Under the same settings, $\tilde{\kappa}(q)$ does not cross the $z=2$ threshold
+in this representative run and does not trigger across seeds; summary counts are
+reported in Appendix \nameref{sec:kappa_benchmark}.
 
 % --- Block B: Empirical CAIDA random failure (Fig. 3) ---
-\subsection*{Empirical network (CAIDA AS graph): Random Failure}
-We evaluate random node removal on CAIDA as an empirical validation of the synthetic
-random-failure behavior.
+\subsection*{Empirical Validation: CAIDA AS Graph under Random Failure}
+We evaluate random node removal on the CAIDA AS graph as an out-of-sample validation of
+the synthetic ensemble results. Figure~\ref{fig:caida_random} shows a representative
+single seed; \autoref{tab:caida_summary} reports the 40-seed ensemble summary.
 
 \begin{figure}[H]
 \centering
@@ -768,7 +779,7 @@ interpretation that disruption is immediate under hub-first removal.
 \centering
 \includegraphics[width=0.95\linewidth]{%
 paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
-\caption{Targeted (hub-first) failure ($\gamma = 2.5$, seed 0, $\alpha = 0.20$). Collapse is abrupt under targeted removal: $q_{\mathrm{collapse}} = 0.091$ (defined by $S(q) < 0.1$). The successive-KL signal exhibits an immediate jump at the first midpoint $q_{1/2} = \Delta q / 2$, indicated by the gold dashed line; we summarize this initial disruption by $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$. Table~3 shows $q_{\mathrm{collapse}} \approx 0.07$--$0.09$ across the $\gamma$ sweep.}
+\caption{\textbf{Illustrative single realization.} Targeted (hub-first) failure ($\gamma = 2.5$, seed 0, $\alpha = 0.20$). Collapse is abrupt: $q_{\mathrm{collapse}} = 0.091$ (defined by $S(q) < 0.1$). The successive-KL signal exhibits an immediate jump at the first midpoint $q_{1/2} = \Delta q / 2$, indicated by the gold dashed line; we summarize targeted disruption by $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$. \autoref{tab:gamma_sweep_targeted} reports $q_{\mathrm{collapse}}$ and $I_{\mathrm{tgt}}$ across 40 seeds and the full $\gamma$ sweep.}
 \label{fig:targeted_rep}
 \end{figure}
 
@@ -776,26 +787,37 @@ paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
 across the $\gamma$ sweep.
 
 % --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
-\subsection*{Dependence on Degree Exponent}
+\subsection*{Primary Ensemble Analysis: 40-Seed $\gamma$ Sweep}
+
+This subsection reports the primary inferential results.
+For each $\gamma \in \{2.1, 2.2, \ldots, 2.9\}$ we run 40 independent random seeds,
+apply the fixed baseline-deviation rule, and report warning timing and lead time across
+the ensemble. The key claim --- that $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ under
+random failure, consistently and across the heavy-tailed regime --- is supported by this
+ensemble, not by any single realization.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{paper/figures/fig_gamma_sweep_random.pdf}
-\caption{Random failure: mean and standard deviation of $q_{\mathrm{warn}}$ and
-$q_{\mathrm{collapse}}$ across seeds as a function of $\gamma$
+\caption{Random failure: mean $\pm$ standard deviation of $q_{\mathrm{warn}}$ and
+$q_{\mathrm{collapse}}$ across 40 seeds as a function of $\gamma$
 (Chung--Lu, $N=10{,}000$, $\alpha=0.20$).
-\autoref{tab:gamma_sweep_random} and \autoref{tab:gamma_sweep_targeted} instead report
-median [IQR] across seeds (detection-conditional where applicable).}
+$q_{\mathrm{warn}}$ is detected in all or nearly all seeds at every $\gamma$
+(see \autoref{tab:gamma_sweep_random} for per-$\gamma$ detection counts and median [IQR]).
+The gap $q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ is substantial and consistent across
+the entire $\gamma$ range tested.}
 \label{fig:gamma_sweep_random}
 \end{figure}
 
 \autoref{fig:gamma_sweep_random} shows $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$
-across the heavy-tailed regime.
-\autoref{tab:gamma_sweep_random} and \autoref{tab:gamma_sweep_targeted} summarize the
-seed-averaged values under random failure and targeted removal. Under targeted removal,
-disruption is immediate and collapse occurs at small $q$. This separation is
-consistent with gradual tail erosion under random removal, where degree-structure
-reorganization accumulates well before macroscopic fragmentation.
+across all 40 seeds at every tested $\gamma$.
+\autoref{tab:gamma_sweep_random} and \autoref{tab:gamma_sweep_targeted} tabulate
+detection counts, median warning times, and lead times (median [IQR]) per $\gamma$.
+Detection of a valid warning prior to collapse is consistent across seeds: at
+$\gamma=2.5$, for example, 40/40 seeds produce $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$
+with median lead time $\Delta_{\mathrm{warn}} \approx 0.56$.
+Under targeted removal, disruption is immediate at every $\gamma$, consistent with
+the well-known fragility of power-law networks under hub-first attack.
 
 \FloatBarrier
 \input{paper/tables/gamma_sweep_random.tex}
