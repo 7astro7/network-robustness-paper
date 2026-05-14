@@ -49,9 +49,11 @@ connectivity, we find that the signal departs from an initial low-activity basel
 before GCC collapse under random failure, a pattern confirmed on an empirical CAIDA
 AS-level Internet topology. Under targeted removal, the signal exhibits immediate disruption
 rather than advance warning. An exponent-matched configuration-model experiment reveals that
-the same rule fails due to ensemble-induced threshold inflation, a mechanistically
-interpretable limitation on transferability that motivates ensemble-aware deployment of
-structural monitoring rules.
+the same rule fails due to ensemble-induced threshold inflation. A further sequence-matched
+CM diagnostic shows detection rates intermediate between Chung--Lu and the exponent-matched
+CM, identifying two separable channels of ensemble sensitivity: degree-sequence shape and
+hard-constraint wiring. Both findings motivate ensemble-aware deployment of structural
+monitoring rules.
 \end{abstract}
 
 \keywords{power-law networks, network robustness, KL divergence, early warning signals, percolation, complex networks, information theory, degree distribution}
@@ -913,10 +915,22 @@ This controls for the degree sequence itself; any residual detection difference 
 effect of the hard-constraint wiring mechanism from distributional properties of $\mathbf{d}$.
 
 \autoref{tab:degree_matched_config} summarizes detection rates across $\gamma$ values.
-Detection remains sparse in degree-matched CM, consistent with the gamma-matched result
-and confirming that the ensemble failure is primarily attributable to the
-hard-constraint wiring of the CM construction rather than to differences in the
-degree sequence between the two models.
+Detection rates in the sequence-matched CM are intermediate between those of the CL ensemble
+(40/40 at all tested $\gamma$) and the exponent-matched CM ($\approx19$\% detection rate
+from the main ensemble experiment): at $\gamma=2.5$, 28/50 sequence-matched CM runs
+produce a valid warning, compared to $\approx$8/40 in the exponent-matched CM.
+This pattern implies that \emph{both} the degree sequence and the wiring mechanism
+contribute to detection behavior: when the degree sequence is drawn from the same CL
+source, detection improves substantially, but the hard-constraint wiring still suppresses
+it relative to CL. The residual gap ($28/50$ vs $40/40$) confirms that the stub-pairing
+randomness of the configuration model — not merely the degree sequence — is a
+second independent source of detection suppression.
+
+Together, the exponent-matched and sequence-matched experiments point to two separable
+channels of ensemble sensitivity: (i) the degree sequence shape (the exponent-matched CM
+uses a fresh power-law sequence, which introduces additional structural churn), and
+(ii) the hard-constraint wiring mechanism itself (which generates baseline-window churn
+even when the degree sequence is fixed to match CL).
 
 \input{paper/tables/degree_matched_config_random_failure.tex}
 
@@ -927,9 +941,16 @@ We sweep $q_0 \in \{0.10, 0.15, 0.20, 0.25\}$ on the primary Chung--Lu random-fa
 analysis ($\alpha=0.20$, $z=2$, 40 seeds per $\gamma$), re-applying the detection rule to
 the same smoothed signal with each window boundary.
 \autoref{tab:baseline_window_sensitivity} shows detection rates and $q_{\mathrm{warn}}$
-statistics for each $q_0$.
-Detection rates and median $q_{\mathrm{warn}}$ values are stable across the tested range,
-indicating the result is not an artifact of the specific $q_0=0.15$ default.
+statistics for each $q_0$ across three $\gamma$ values.
+At $q_0=0.10$ and $q_0=0.15$, detection rates are 40/40 or 39/40 for all tested $\gamma$
+values. Detection rates decline slightly at $q_0=0.20$ and $q_0=0.25$ (to 35--37/40),
+as expected: a wider calibration window leaves a smaller post-baseline region in which an
+exceedance can be counted, and the estimated noise floor is computed from more data
+points, which reduces variance in the threshold.
+Median $q_{\mathrm{warn}}$ shifts upward with increasing $q_0$ by construction, since
+the search region begins later. The detection rate itself, however, remains high across
+the full tested range, confirming that the signal is not an artifact of the $q_0=0.15$
+default choice.
 
 \input{paper/tables/baseline_window_sensitivity.tex}
 
