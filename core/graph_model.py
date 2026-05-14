@@ -79,6 +79,52 @@ class GraphModel:
         return P
 
 
+class DegreeMatchedConfigurationModel(GraphModel):
+    """
+    Configuration-model network built from an externally supplied degree sequence.
+
+    Unlike ConfigurationModel (which samples its own power-law sequence), this class
+    takes the realized degree sequence of an existing graph (e.g. a Chung-Lu instance)
+    and wires a new configuration-model graph from it.  The degree sequence is therefore
+    identical to the source graph's; only the stub-pairing randomness differs.
+
+    Parameters
+    ----------
+    degree_sequence : list[int] or np.ndarray
+        Realized degree sequence of the source graph.  Must have even sum.
+    gamma : float
+        Stored for metadata only; not used for graph generation.
+    """
+
+    def __init__(self, degree_sequence: list[int] | np.ndarray, gamma: float = float("nan")) -> None:
+        self._degree_sequence = list(int(d) for d in degree_sequence)
+        # call GraphModel.__init__ with a dummy n; _generate_graph uses _degree_sequence
+        self.n = len(self._degree_sequence)
+        self.gamma = float(gamma)
+        self.G = self._generate_graph()
+        self.P0 = self._degree_distribution(self.G)
+
+    def _generate_graph(self) -> nx.Graph:
+        degrees = list(self._degree_sequence)
+        degree_sum = sum(degrees)
+        if degree_sum % 2 == 1:
+            k_max = max(degrees)
+            candidates = [i for i, d in enumerate(degrees) if d < k_max]
+            if candidates:
+                degrees[np.random.choice(candidates)] += 1
+            else:
+                idx = np.random.randint(0, len(degrees))
+                degrees[idx] = max(1, degrees[idx] - 1)
+
+        G_multi = nx.configuration_model(degrees, create_using=nx.MultiGraph())
+        G = nx.Graph(G_multi)
+        G.remove_edges_from(nx.selfloop_edges(G))
+        if G.number_of_nodes() > 0:
+            largest_cc = max(nx.connected_components(G), key=len)
+            G = G.subgraph(largest_cc).copy()
+        return G
+
+
 class ConfigurationModel(GraphModel):
     """
     Configuration-model network with power-law degree sequence.

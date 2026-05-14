@@ -64,7 +64,20 @@ python scripts/plot_gamma_sweep_random.py
 
 echo ""
 echo "================================================================"
-echo " Step 9/10  CAIDA figure + summary table"
+echo " Step 7b/12  Degree-matched configuration-model diagnostic"
+echo "================================================================"
+python -m runner.degree_matched_config_check
+python -m runner.make_degree_matched_table
+
+echo ""
+echo "================================================================"
+echo " Step 7c/12  Baseline-window (q0) sensitivity table"
+echo "================================================================"
+python -m runner.baseline_window_sensitivity
+
+echo ""
+echo "================================================================"
+echo " Step 9/12  CAIDA figure + summary table"
 echo "================================================================"
 if [ -f "$CAIDA_EDGES" ]; then
     python -m runner.make_caida_fig --edges "$CAIDA_EDGES"
@@ -76,7 +89,7 @@ fi
 
 echo ""
 echo "================================================================"
-echo " Step 10/10  Compile paper.tex -> paper.pdf"
+echo " Step 12/12  Compile paper.tex -> paper.pdf"
 echo "           (pdflatex → bibtex → pdflatex → pdflatex)"
 echo "================================================================"
 pdflatex -interaction=nonstopmode paper.tex
