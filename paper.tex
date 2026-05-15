@@ -22,7 +22,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 
-\title{Entropy-Based Indicators of Critical Transitions in 
+\title{Entropy-Based Indicators of Critical Transitions in
 Power-Law Networks Under Progressive Node Removal}
 \author{Zachary Kraehling\\
 \small Independent Researcher, Nashville, TN, USA\\
@@ -61,7 +61,7 @@ monitoring rules.
 \section*{List of Abbreviations}
 GCC: Giant Connected Component; KL: Kullback--Leibler; EWMA: Exponentially Weighted Moving Average; IQR: Interquartile Range; AS: Autonomous System; CAIDA: Center for Applied Internet Data Analysis; CM: Configuration Model; CL: Chung--Lu.
 
-\section*{Introduction and Motivation}
+\section{Introduction}
 Many real-world communication, social, and biological networks are known to exhibit
 heavy-tailed degree distributions~\cite{newman2003structure,barabasi1999scaling}.
 
@@ -162,7 +162,7 @@ We do not estimate the percolation threshold $q_c$; in the targeted regime, the 
     \item \textbf{Validation and ensemble transfer experiments.} We reproduce the random-failure pattern on a CAIDA AS graph (40/40 seeds) and show, via an exponent-matched configuration-model experiment, that the rule fails in 292/360 runs due to structural-churn-induced threshold inflation. A sequence-matched CM diagnostic (new in this revision) confirms the failure persists with the exact same degree sequence, isolating the hard-constraint wiring mechanism as a second independent channel of ensemble sensitivity.
 \end{itemize}
 
-\section*{Related Work}
+\section{Related Work}
 
 \paragraph{Early-warning signals for critical transitions.}
 The statistical EWS literature originates in ecology and climate science, where rising variance and slowing recovery rates near bifurcation points are used to anticipate abrupt state transitions~\cite{scheffer2009earlywarning,scheffer2012anticipating,dakos2012methods,vannes2007slow}.
@@ -191,7 +191,9 @@ The configuration model~\cite{molloy1995critical} constructs uniformly random gr
 Ritchie et al.~\cite{ritchie2017higherorder} discuss how higher-order structure beyond degree sequences affects network behavior.
 Our sequence-matched CM diagnostic (new in this revision) constructs CM graphs from the exact realized degree sequence of a CL source graph, isolating the role of the wiring mechanism from the degree sequence.
 
-\section*{Problem Definition}
+\section{Methods}
+
+\subsection{Problem Formulation}
 
 Let $G_0$ denote an undamaged network with degree distribution $P_0(k)$. Consider
 progressive node removal at fraction $q$ (random or targeted), producing a damaged graph
@@ -218,7 +220,7 @@ Our goal is not to modify the network locally, but to evaluate how global,
 information-theoretic measures of distributional change reflect the onset of
 fragmentation.
 
-\subsection*{Theoretical Background}
+\subsection{Theoretical Background}
 
 For uncorrelated random graphs, let $k$ denote the degree of a randomly chosen node, with
 $\langle k \rangle$ and $\langle k^2 \rangle$ denoting the first and second moments of the
@@ -228,10 +230,9 @@ states that a giant connected component exists when
 \kappa = \frac{\langle k^2 \rangle - \langle k \rangle}{\langle k \rangle} > 1.
 \]
 Under independent random node failures with probability $q$, this condition yields an
-approximate
-critical threshold
+exact critical threshold
 \[
-(1 - q)\kappa \approx 1
+(1 - q)\kappa = 1
 \qquad \Rightarrow \qquad
 q_c \approx 1 - \frac{\langle k \rangle}{\langle k^2 \rangle - \langle k \rangle}.
 \]
@@ -256,7 +257,7 @@ successive damage levels. Our objective is therefore not to predict the collapse
 itself, but to detect the onset of structural reorganization that ultimately leads to
 abrupt fragmentation, an issue emphasized in recent reviews \cite{radicchi2024robustness}.
 
-\section*{Hypotheses}
+\subsection{Research Questions and Hypotheses}
 
 Classical analyses of network robustness emphasize connectivity-based quantities such as
 the size of the giant connected component and the location of percolation thresholds.
@@ -269,13 +270,13 @@ We formulate the following hypotheses regarding the behavior of information-theo
 change rates under different node-removal regimes, along with explicit empirical
 predictions.
 
-\subsection*{H1: Stationarity under Random Failure}
+\subsubsection{H1: Stationarity under Random Failure}
 
-Under random node removal, Chung--Lu 
-power-law graphs exhibit an initial regime in which structural changes are small 
+Under random node removal, Chung--Lu
+power-law graphs exhibit an initial regime in which structural changes are small
 and approximately stationary. We hypothesize that, at low
 damage levels, the successive KL change-rate signal fluctuates weakly around a stable
-baseline, reflecting the network’s tolerance to random failure.
+baseline, reflecting the network's tolerance to random failure.
 
 As damage accumulates, this stationarity is eventually lost prior to macroscopic
 fragmentation.
@@ -291,7 +292,7 @@ fragmentation.
     repeated runs with different random seeds.
 \end{itemize}
 
-\subsection*{H2: Immediate Nonstationarity under Targeted Failure}
+\subsubsection{H2: Immediate Nonstationarity under Targeted Failure}
 
 Under targeted (hub-first) node removal, structural degradation begins immediately.
 Because high-degree nodes are removed first, the degree distribution is altered
@@ -299,7 +300,7 @@ substantially even at small damage fractions. We hypothesize that, in this regim
 successive KL change-rate signal does not admit a low-damage calibration window.
 
 Instead, the successive KL change-rate signal is immediately nonstationary, with large
-early deviations that may not evolve monotonically. The following predictions apply to 
+early deviations that may not evolve monotonically. The following predictions apply to
 targeted (hub-first) removal.
 
 \paragraph{Predictions.}
@@ -315,7 +316,7 @@ targeted (hub-first) removal.
 \end{itemize}
 
 
-\subsection*{H3: Robustness across the Power-Law Regime}
+\subsubsection{H3: Robustness across the Power-Law Regime}
 
 The qualitative behaviors described in H1 and H2 are hypothesized to persist across
 the Chung--Lu ensemble for degree exponents in the range
@@ -336,15 +337,56 @@ the Chung--Lu ensemble for degree exponents in the range
     existence of an early-warning regime is robust to changes in degree heterogeneity.
 \end{itemize}
 
+\subsection{Network Models}
 
-\section*{Metrics}
+We study robustness in Chung--Lu power-law graphs with degree distributions
+\[
+P(k) \propto k^{-\gamma},
+\qquad 2 < \gamma < 3,
+\]
+a regime characteristic of many empirical infrastructure and communication networks.
+Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
+This size is held fixed across all synthetic experiments to isolate the effect
+of degree heterogeneity; the dependence of results on $N$ is discussed in the Discussion.
+Unlike the configuration model, which can exhibit structural degree correlations in
+heavy-tailed networks as a finite-size artifact, Chung--Lu assigns edges independently.
+This motivates use of Chung--Lu for the main controlled analysis.
+
+To examine sensitivity to degree heterogeneity, we sweep
+\[
+\gamma \in \{2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9\}.
+\]
+For each value of $\gamma$, results are averaged across multiple random seeds to account
+for stochastic variability in network realization and node removal.
+
+In addition, we analyze an empirical CAIDA AS graph and run an exponent-matched configuration-model experiment to assess ensemble transfer.
+
+\paragraph{Configuration-model ensemble experiment.}
+To probe sensitivity to the generating ensemble, we repeat the random-failure pipeline using
+a configuration-model graph class matched by tail exponent $\gamma$.
+Construction details are deferred to the Appendix; findings are summarized in the Results
+configuration-model check subsection.
+
+\subsection{Failure Models}
+
+The two failure regimes are implemented as follows.
+
+\begin{enumerate}
+    \item Random failure: nodes are removed uniformly at random.
+    \item Targeted failure: nodes are removed in descending order of degree (hub-first
+    removal).
+\end{enumerate}
+
+For each failure mode, a fraction $q \in [0, 0.9]$ of nodes is progressively removed.
+All structural observables are computed on the resulting damaged graph $G_q$.
+Simulations and graph computations are implemented using NetworkX~\cite{SciPyProceedings_11}.
+
+\subsection{Structural Signal: KL Divergence and Smoothing}
 
 To evaluate the hypotheses outlined previously we require a metric that captures how
 rapidly network structure changes as node removal progresses, rather than the absolute
 level of connectivity or heterogeneity at a fixed damage level. All metrics in this work
 are derived from the evolution of the degree distribution under progressive node removal.
-
-\subsection*{Degree Distribution as Structural State}
 
 At each damage fraction $q$, we compute the empirical degree distribution
 \[
@@ -354,8 +396,6 @@ where $G_q$ denotes the graph after a fraction $q$ of nodes has been removed. Th
 distribution serves as a compact marginal summary of network structure,
 capturing how node connectivity levels redistribute as damage accumulates.
 
-\subsection*{Successive Kullback--Leibler Divergence}
-
 To quantify incremental structural change, we compute the successive Kullback--Leibler
 (KL) divergence between degree distributions at adjacent damage levels:
 \[
@@ -364,7 +404,7 @@ D_{\mathrm{KL}}\!\left(P_{q+\Delta q} \,\|\, P_q\right)
 \sum_k
 P_{q+\Delta q}(k)
 \log_2
-\frac{P_{q+\Delta q}(k)}{P_q(k)}, 
+\frac{P_{q+\Delta q}(k)}{P_q(k)},
 \]
 where $\Delta q$ denotes the removal increment between successive damage levels.
 
@@ -421,8 +461,6 @@ well-defined across all $q$, we evaluate degree distributions on a fixed discret
 for each run and apply a small additive regularization
 $P_q(k)\leftarrow P_q(k)+\varepsilon$ before normalization, with $\varepsilon = 10^{-12}$.
 
-\subsection*{Signal Smoothing}
-
 The raw successive KL divergence may exhibit high-frequency fluctuations arising from
 finite-size effects and stochastic variability in node removal. To suppress such noise
 while preserving trend information, we apply an exponentially weighted moving average
@@ -444,107 +482,13 @@ effective memory on the order of $1/\alpha$.
 The smoothed signal $\tilde{D}_{\mathrm{KL}}(q)$ is the sole warning observable
 used throughout this study; alternative signals are evaluated only in control comparisons.
 
-
-\subsection*{Early-Warning Decision Rules}
-Decision rules for interpreting the smoothed successive KL signal are specified in
-Sec.~\nameref{sec:early_warning_criteria}. We define distinct criteria for random and
-targeted removal while using the same underlying signal.
-
-\section*{Experimental Design}
-
-Our experimental design isolates how information-theoretic change rates behave under
-progressive network damage across different structural regimes. We vary (i) the degree
-heterogeneity of the underlying network and (ii) the node-removal mechanism, while holding
-all detection logic fixed. For each configuration, we measure the separation between an
-information-theoretic warning point and the onset of macroscopic connectivity
-collapse.
-
-\subsection*{Graph Model}
-
-The primary synthetic networks in this work are generated using the Chung--Lu expected-degree model
-~\cite{chunglu2002connected}
-with power-law degree sequences. In addition, we analyze an empirical CAIDA AS graph and run an exponent-matched configuration-model experiment to assess ensemble transfer. This choice isolates the role of degree heterogeneity
-while avoiding degree--degree correlations and growth effects inherent to other generative
-mechanisms.
-
-
-\paragraph{Configuration-model ensemble experiment.}
-To probe sensitivity to the generating ensemble, we repeat the random-failure pipeline using
-a configuration-model graph class matched by tail exponent $\gamma$.
-Construction details are deferred to the Appendix; findings are summarized in the Results
-configuration-model check subsection.
-
-\subsection*{Failure Regimes}
-
-We consider two node-removal regimes: (i) random failure, in which nodes are removed
-uniformly at random, and (ii) targeted failure, in which nodes are removed in descending
-order of degree (hub-first removal). In both cases, node removal proceeds incrementally as
-a function of the removal fraction $q$, and all observables are evaluated on the resulting
-damaged graph $G_q$.
-
-
-\section*{Methods}
-
-\subsection*{Network Model}
-We study robustness in Chung--Lu power-law graphs with degree distributions
-\[
-P(k) \propto k^{-\gamma},
-\qquad 2 < \gamma < 3,
-\]
-a regime characteristic of many empirical infrastructure and communication networks.
-Unless otherwise stated, all networks contain $N = 10{,}000$ nodes.
-This size is held fixed across all synthetic experiments to isolate the effect
-of degree heterogeneity; the dependence of results on $N$ is discussed in the Conclusion.
-Unlike the configuration model, which can exhibit structural degree correlations in
-heavy-tailed networks as a finite-size artifact, Chung--Lu assigns edges independently.
-This motivates use of Chung--Lu for the main controlled analysis.
-
-To examine sensitivity to degree heterogeneity, we sweep
-\[
-\gamma \in \{2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9\}.
-\]
-For each value of $\gamma$, results are averaged across multiple random seeds to account
-for stochastic variability in network realization and node removal.
-
-\subsection*{Failure Models}
-The two failure regimes introduced in the Experimental Design section are implemented as
-follows.
-
-\begin{enumerate}
-    \item Random failure: nodes are removed uniformly at random.
-    \item Targeted failure: nodes are removed in descending order of degree (hub-first
-    removal).
-\end{enumerate}
-
-For each failure mode, a fraction $q \in [0, 0.9]$ of nodes is progressively removed.
-All structural observables are computed on the resulting damaged graph $G_q$.
-Simulations and graph computations are implemented using NetworkX~\cite{SciPyProceedings_11}.
-
-\subsection*{Structural Observables}
-At each damage level $q$, we compute:
-\begin{itemize}
-    \item The giant connected component fraction
-    \[
-    S(q) = \frac{| \mathrm{GCC}(G_q) |}{|V(G_q)|},
-    \]
-    used only to contextualize collapse.
-    \item The empirical degree distribution $P_q(k)$ of $G_q$.
-\end{itemize}
-
-No connectivity-based quantity is used in the detection logic.
-
-\subsection*{Successive KL Divergence}
-The successive KL divergence signal, its numerical regularization, and EWMA smoothing are
-defined in the Metrics section. Here we use the resulting smoothed sequence
-$\tilde{D}_{\mathrm{KL}}(q)$ as the sole structural change-rate observable.
-
-\subsection*{Early-Warning Criteria}
+\subsection{Decision Rules}
 \phantomsection
 \label{sec:early_warning_criteria}
 Rather than introducing multiple metrics, we apply regime-appropriate decision rules to
 the same successive KL signal.
 
-\subsubsection*{Random Failure: Baseline Deviation Rule}
+\subsubsection{Random Failure: Baseline Deviation Rule}
 Under random failure, networks exhibit an initial low-activity regime in which
 $\tilde{D}_{\mathrm{KL}}(q)$ fluctuates weakly around a constant baseline.
 We define a baseline window
@@ -577,7 +521,7 @@ defined.
 This criterion detects the loss of structural stationarity without reference to collapse
 thresholds or numerical derivatives.
 
-\subsubsection*{Targeted Failure: Intensity Summary (no timing estimand)}
+\subsubsection{Targeted Failure: Intensity Summary (no timing estimand)}
 Under targeted (hub-first) removal, structural disruption begins immediately and the
 successive-KL signal does not admit a low-damage calibration window. Because successive
 KL is evaluated on midpoint support, the earliest reportable value occurs at
@@ -591,7 +535,7 @@ reported across seeds together with the collapse proxy $q_{\mathrm{collapse}}$ (
 by $S(q)<0.1$). This retains a connectivity-free targeted summary while avoiding
 overinterpretation of timing under hub-first removal.
 
-\subsection*{Collapse Identification}
+\subsection{Collapse Proxy}
 For post hoc comparison only (not used in any detection rule), we define the collapse
 proxy $q_{\mathrm{collapse}}$ as the smallest $q$ such that
 \[
@@ -602,8 +546,7 @@ warning lead times.
 As a result, changing this proxy threshold affects only the reported lead times, not the
 detected warning points.
 
-
-\subsection*{Experimental Protocol}
+\subsection{Experimental Protocol}
 For synthetic experiments under random failure, we use a uniform damage grid $q_0,q_1,\dots,q_{99}$ spanning
 $[0,0.9]$, with increment $\Delta q = 0.9/99$ (i.e., 100 evenly spaced values). For targeted removal, we use a higher-resolution
 grid of 400 evenly spaced values over $[0,0.9]$.
@@ -613,13 +556,11 @@ For each value of $\gamma$, we summarize random-failure warning timing and lead 
 CAIDA experiments use a separate damage grid (e.g., $q_{\max}=0.99$ with 200 points) as
 specified in the CAIDA figure pipeline.
 
-\subsection*{Empirical network: CAIDA AS graph (\CAIDASnapshot)}
 We use the CAIDA AS Relationships Dataset (serial-2; snapshot
 \CAIDASnapshot)~\cite{caida_as_rel_20260101}. We parse
 \texttt{AS1|AS2|rel|source}, drop comment lines, and form an undirected simple graph from
 unique AS pairs.
 
-\subsection*{Datasets analyzed and where results appear}
 This study reports results on three network classes:
 
 \begin{itemize}[itemsep=2pt]
@@ -642,7 +583,7 @@ This study reports results on three network classes:
 Unless explicitly labeled as CAIDA or configuration-model, all figures and tables in the
 Results section refer to the synthetic Chung--Lu experiments.
 
-\section*{Analysis and Results}
+\section{Results}
 
 The primary evidence is the 40-seed ensemble analysis across $\gamma \in (2,3)$,
 reported in \autoref{fig:gamma_sweep_random} and \autoref{tab:gamma_sweep_random}.
@@ -652,14 +593,14 @@ the ensemble results.
 
 We present results in the order: (i) a representative synthetic Chung--Lu run to
 illustrate signal morphology relative to $S(q)$, (ii) the full 40-seed ensemble
-$\gamma$-sweep as the primary analysis, (iii) an empirical CAIDA AS graph as
-out-of-sample validation, (iv) a representative targeted (hub-first) Chung--Lu run
-to examine immediate disruption, and (v) ensemble experiments probing transferability
+$\gamma$-sweep as the primary analysis, (iii) a representative targeted (hub-first)
+Chung--Lu run to examine immediate disruption, (iv) an empirical CAIDA AS graph as
+out-of-sample validation, and (v) ensemble experiments probing transferability
 (exponent-matched and sequence-matched configuration models).
 Two controls (no-damage null and damage-without-collapse) evaluate false-trigger behavior
 under the same rule.
 
-\subsection*{Synthetic (Chung--Lu) networks: Signal Illustration (Single Realization)}
+\subsection{Signal Morphology: Illustrative Single Realization}
 
 % --- Block A: Synthetic random representative (Fig. 1) ---
 \begin{figure}[H]
@@ -691,8 +632,79 @@ Under the same settings, $\tilde{\kappa}(q)$ does not cross the $z=2$ threshold
 in this representative run and does not trigger across seeds; summary counts are
 reported in Appendix \nameref{sec:kappa_benchmark}.
 
+% --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
+\subsection{Primary Result: 40-Seed Ensemble across the $\gamma$ Sweep}
+
+This subsection reports the primary inferential results.
+For each $\gamma \in \{2.1, 2.2, \ldots, 2.9\}$ we run 40 independent random seeds,
+apply the fixed baseline-deviation rule, and report warning timing and lead time across
+the ensemble. The key claim --- that $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ under
+random failure, consistently and across the heavy-tailed regime --- is supported by this
+ensemble, not by any single realization.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{paper/figures/fig_gamma_sweep_random.pdf}
+\caption{Random failure: mean $\pm$ standard deviation of $q_{\mathrm{warn}}$ and
+$q_{\mathrm{collapse}}$ across 40 seeds as a function of $\gamma$
+(Chung--Lu, $N=10{,}000$, $\alpha=0.20$).
+$q_{\mathrm{warn}}$ is detected in all or nearly all seeds at every $\gamma$
+(see \autoref{tab:gamma_sweep_random} for per-$\gamma$ detection counts and median [IQR]).
+The gap $q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ is substantial and consistent across
+the entire $\gamma$ range tested.}
+\label{fig:gamma_sweep_random}
+\end{figure}
+
+\autoref{fig:gamma_sweep_random} shows $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$
+across all 40 seeds at every tested $\gamma$.
+\autoref{tab:gamma_sweep_random} and \autoref{tab:gamma_sweep_targeted} tabulate
+detection counts, median warning times, and lead times (median [IQR]) per $\gamma$.
+Detection of a valid warning prior to collapse is consistent across seeds: at
+$\gamma=2.5$, for example, 40/40 seeds produce $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$
+with median lead time $\Delta_{\mathrm{warn}} \approx 0.56$.
+Under targeted removal, disruption is immediate at every $\gamma$, consistent with
+the well-known fragility of power-law networks under hub-first attack.
+
+\FloatBarrier
+\input{paper/tables/gamma_sweep_random.tex}
+\input{paper/tables/gamma_sweep_targeted.tex}
+\begin{samepage}
+We summarize targeted disruption by the initial shock magnitude $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$.
+Across the $\gamma$ sweep, $q_{\mathrm{collapse}}$ varies only weakly on the chosen grid while $I_{\mathrm{tgt}}$ decreases monotonically with $\gamma$, consistent with weaker hub-dominated disruption in less heterogeneous degree sequences.
+This trend has a direct mechanistic interpretation: as $\gamma$ increases toward $3$, the
+power-law tail becomes lighter and the degree sequence less hub-dominated: the expected degree
+of the highest-degree nodes decreases, so removing the first hub produces a smaller
+redistributional shock to $P_q(k)$.
+Conversely, at lower $\gamma$ the tail is heavier and extreme hubs concentrate a larger
+fraction of the total degree mass; removing one such hub reorganizes a correspondingly
+larger share of the degree distribution at the first removal step, producing the elevated
+$I_{\mathrm{tgt}}$ observed at small $\gamma$.
+\end{samepage}
+\FloatBarrier
+
+% --- Block C: Synthetic targeted representative (Fig. 2) ---
+\subsection{Targeted Failure: Immediate Disruption}
+
+Under targeted (hub-first) removal, structural disruption begins at the first removal step,
+so onset timing is not a substantive estimand in this regime. Accordingly, we summarize
+targeted disruption by the initial shock magnitude
+$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with $q_{\mathrm{collapse}}$.
+Refining the damage grid only moves $q_{1/2}$ closer to zero without changing the
+interpretation that disruption is immediate under hub-first removal.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{%
+paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
+\caption{\textbf{Illustrative single realization.} Targeted (hub-first) failure ($\gamma = 2.5$, seed 0, $\alpha = 0.20$). Collapse is abrupt: $q_{\mathrm{collapse}} = 0.091$ (defined by $S(q) < 0.1$). The successive-KL signal exhibits an immediate jump at the first midpoint $q_{1/2} = \Delta q / 2$, indicated by the gold dashed line; we summarize targeted disruption by $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$. \autoref{tab:gamma_sweep_targeted} reports $q_{\mathrm{collapse}}$ and $I_{\mathrm{tgt}}$ across 40 seeds and the full $\gamma$ sweep.}
+\label{fig:targeted_rep}
+\end{figure}
+
+\autoref{tab:gamma_sweep_targeted} shows $q_{\mathrm{collapse}}\approx 0.07$--$0.09$
+across the $\gamma$ sweep.
+
 % --- Block B: Empirical CAIDA random failure (Fig. 3) ---
-\subsection*{Empirical Validation: CAIDA AS Graph under Random Failure}
+\subsection{Empirical Validation: CAIDA AS Graph}
 We evaluate random node removal on the CAIDA AS graph as an out-of-sample validation of
 the synthetic ensemble results. Figure~\ref{fig:caida_random} shows a representative
 single seed; \autoref{tab:caida_summary} reports the 40-seed ensemble summary.
@@ -765,78 +777,7 @@ confirming that detection is consistent (40/40) and lead time is nontrivial
 
 \input{paper/tables/caida_summary.tex}
 
-% --- Block C: Synthetic targeted representative (Fig. 2) ---
-\subsection*{Synthetic (Chung--Lu) networks: Targeted Failure}
-
-Under targeted (hub-first) removal, structural disruption begins at the first removal step,
-so onset timing is not a substantive estimand in this regime. Accordingly, we summarize
-targeted disruption by the initial shock magnitude
-$I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with $q_{\mathrm{collapse}}$.
-Refining the damage grid only moves $q_{1/2}$ closer to zero without changing the
-interpretation that disruption is immediate under hub-first removal.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\linewidth]{%
-paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
-\caption{\textbf{Illustrative single realization.} Targeted (hub-first) failure ($\gamma = 2.5$, seed 0, $\alpha = 0.20$). Collapse is abrupt: $q_{\mathrm{collapse}} = 0.091$ (defined by $S(q) < 0.1$). The successive-KL signal exhibits an immediate jump at the first midpoint $q_{1/2} = \Delta q / 2$, indicated by the gold dashed line; we summarize targeted disruption by $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$. \autoref{tab:gamma_sweep_targeted} reports $q_{\mathrm{collapse}}$ and $I_{\mathrm{tgt}}$ across 40 seeds and the full $\gamma$ sweep.}
-\label{fig:targeted_rep}
-\end{figure}
-
-\autoref{tab:gamma_sweep_targeted} shows $q_{\mathrm{collapse}}\approx 0.07$--$0.09$
-across the $\gamma$ sweep.
-
-% --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
-\subsection*{Primary Ensemble Analysis: 40-Seed $\gamma$ Sweep}
-
-This subsection reports the primary inferential results.
-For each $\gamma \in \{2.1, 2.2, \ldots, 2.9\}$ we run 40 independent random seeds,
-apply the fixed baseline-deviation rule, and report warning timing and lead time across
-the ensemble. The key claim --- that $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ under
-random failure, consistently and across the heavy-tailed regime --- is supported by this
-ensemble, not by any single realization.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\linewidth]{paper/figures/fig_gamma_sweep_random.pdf}
-\caption{Random failure: mean $\pm$ standard deviation of $q_{\mathrm{warn}}$ and
-$q_{\mathrm{collapse}}$ across 40 seeds as a function of $\gamma$
-(Chung--Lu, $N=10{,}000$, $\alpha=0.20$).
-$q_{\mathrm{warn}}$ is detected in all or nearly all seeds at every $\gamma$
-(see \autoref{tab:gamma_sweep_random} for per-$\gamma$ detection counts and median [IQR]).
-The gap $q_{\mathrm{collapse}} - q_{\mathrm{warn}}$ is substantial and consistent across
-the entire $\gamma$ range tested.}
-\label{fig:gamma_sweep_random}
-\end{figure}
-
-\autoref{fig:gamma_sweep_random} shows $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$
-across all 40 seeds at every tested $\gamma$.
-\autoref{tab:gamma_sweep_random} and \autoref{tab:gamma_sweep_targeted} tabulate
-detection counts, median warning times, and lead times (median [IQR]) per $\gamma$.
-Detection of a valid warning prior to collapse is consistent across seeds: at
-$\gamma=2.5$, for example, 40/40 seeds produce $q_{\mathrm{warn}} < q_{\mathrm{collapse}}$
-with median lead time $\Delta_{\mathrm{warn}} \approx 0.56$.
-Under targeted removal, disruption is immediate at every $\gamma$, consistent with
-the well-known fragility of power-law networks under hub-first attack.
-
-\FloatBarrier
-\input{paper/tables/gamma_sweep_random.tex}
-\input{paper/tables/gamma_sweep_targeted.tex}
-\begin{samepage}
-We summarize targeted disruption by the initial shock magnitude $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$.
-Across the $\gamma$ sweep, $q_{\mathrm{collapse}}$ varies only weakly on the chosen grid while $I_{\mathrm{tgt}}$ decreases monotonically with $\gamma$, consistent with weaker hub-dominated disruption in less heterogeneous degree sequences.
-This trend has a direct mechanistic interpretation: as $\gamma$ increases toward $3$, the
-power-law tail becomes lighter and the degree sequence less hub-dominated: the expected degree
-of the highest-degree nodes decreases, so removing the first hub produces a smaller
-redistributional shock to $P_q(k)$.
-Conversely, at lower $\gamma$ the tail is heavier and extreme hubs concentrate a larger
-fraction of the total degree mass; removing one such hub reorganizes a correspondingly
-larger share of the degree distribution at the first removal step, producing the elevated
-$I_{\mathrm{tgt}}$ observed at small $\gamma$.
-\end{samepage}
-\FloatBarrier
-
-\subsection*{Ensemble sensitivity: configuration-model check}
+\subsection{Ensemble Sensitivity: Configuration-Model Experiments}
 \label{sec:config_model_check_results}
 To assess transfer beyond the expected-degree Chung--Lu ensemble, we repeat the random-failure
 $\gamma$ sweep using an exponent-matched configuration-model network class (degree-sequence constrained;
@@ -880,14 +821,14 @@ noise floor caused by the ensemble structure itself.
 
 \input{paper/tables/baseline_noise_comparison.tex}
 
-For network classes where ensemble properties are known a priori, as is often the case for well-studied 
-infrastructure or communication topologies, a pre-calibrated threshold could replace the data-driven baseline, 
+For network classes where ensemble properties are known a priori, as is often the case for well-studied
+infrastructure or communication topologies, a pre-calibrated threshold could replace the data-driven baseline,
 restoring signal transferability without requiring per-ensemble recalibration. Characterizing which structural
 properties beyond the one-point degree distribution govern ensemble-stable transfer is a
 well-posed direction for follow-up study.
 
+\subsection{Controls and Specificity}
 % --- Block F: Control analyses (no-damage null and low-damage) ---
-\subsection*{Controls: false triggers and specificity}
 In addition to distribution-level change-rate signals, we benchmark the
 baseline-deviation rule against a simple moment-based comparator $\kappa(q)$ (\nameref{sec:kappa_benchmark}).
 \paragraph{Null control.}
@@ -896,7 +837,7 @@ distributions alone, we repeat the full random-failure detection pipeline under 
 no-damage control ($G_q
 \equiv G_0$ for all $q$)
 while still recomputing $P_q(k)$ and $H(q)$ at each step. As summarized in
-\autoref{tab:null_control_random_failure}, none of the three rate-of-change signals 
+\autoref{tab:null_control_random_failure}, none of the three rate-of-change signals
 (successive KL, successive JS, or $|\Delta H|$) produce false triggers (0/40 seeds for all
 three metrics).
 
@@ -924,7 +865,7 @@ that suppresses detection in the configuration-model ensemble (see \nameref{sec:
 
 \input{paper/tables/control_low_damage_gamma2.5_alpha0.20.tex}
 
-\subsection*{Degree-matched configuration-model diagnostic}
+\subsection{Degree-Matched Configuration-Model Diagnostic}
 \label{sec:degree_matched_config}
 The existing configuration-model experiment (\nameref{sec:config_model_check_results}) matches
 $\gamma$ between the Chung--Lu source and the configuration-model network, but uses an
@@ -956,7 +897,7 @@ even when the degree sequence is fixed to match CL).
 
 \input{paper/tables/degree_matched_config_random_failure.tex}
 
-\subsection*{Baseline-window sensitivity}
+\subsection{Sensitivity Analysis: Baseline Window}
 \label{sec:baseline_window_sensitivity}
 The baseline-deviation rule depends on the choice of calibration window endpoint $q_0$.
 We sweep $q_0 \in \{0.10, 0.15, 0.20, 0.25\}$ on the primary Chung--Lu random-failure
@@ -976,7 +917,41 @@ default choice.
 
 \input{paper/tables/baseline_window_sensitivity.tex}
 
-\section*{Conclusion}
+\section{Discussion}
+
+\paragraph{Ensemble sensitivity and transferability.}
+Together, the exponent-matched and sequence-matched configuration-model experiments identify
+two separable channels of ensemble sensitivity: (i) the degree sequence shape (the exponent-matched CM
+uses a fresh power-law sequence, which introduces additional structural churn), and
+(ii) the hard-constraint wiring mechanism itself (which generates baseline-window churn
+even when the degree sequence is fixed to match CL). The configuration-model experiment demonstrates
+that transfer is ensemble-dependent under identical settings even when the tail exponent is matched:
+structural churn during the baseline window inflates the estimated noise floor, raising the detection
+threshold above the level the post-baseline signal reaches in 276 of the 292 non-detecting runs
+(out of 360 total). This finding goes beyond H3, which concerns robustness within the Chung--Lu
+ensemble across $\gamma$. H3 is supported by the results; the configuration-model experiment
+reveals a distinct limitation on transferability, motivating future work on adaptive calibration
+strategies that account for ensemble-specific noise floor behavior, such as pre-calibrating the
+detection threshold from ensemble structure rather than from a data-driven baseline window.
+
+In this study we intentionally restrict the structural state to the empirical degree distribution to keep the signal interpretable and the decision rule fixed across regimes.
+Richer summaries (e.g., joint-degree structure, mixing, motifs) may refine or alter warning behavior, especially under adversarial removal.
+For network classes where ensemble properties are known a priori, as is often the case for well-studied infrastructure or communication topologies, a pre-calibrated threshold could replace the data-driven baseline, restoring signal transferability without requiring per-ensemble recalibration.
+
+\paragraph{Limitations.}
+All synthetic experiments use $N=10{,}000$ nodes; we have not systematically varied network
+size. Finite-size scaling theory predicts that the percolation transition sharpens with
+increasing $N$~\cite{molloy1995critical}, which would produce a more abrupt GCC drop and
+potentially reduce detection variance. The CAIDA AS graph ($N\approx 78{,}000$ nodes) provides
+one cross-scale data point: the 40-seed detection rate is 40/40 and the qualitative signal
+shape matches the synthetic results, offering limited but encouraging evidence that the
+behavior is not confined to the $N=10{,}000$ regime. Systematic finite-size analysis remains
+future work.
+
+\paragraph{Future directions.}
+Natural next steps are to track change rates in higher-order structural features and to test analogous rules under link removal and correlated or temporally clustered failure processes.
+
+\section{Conclusion}
 
 We asked whether a purely structural, information-theoretic change-rate signal can provide
 advance notice of connectivity collapse in heavy-tailed networks under progressive
@@ -999,9 +974,9 @@ immediate, and the successive-KL signal exhibits an initial shock at the grid fl
 $q_{1/2}=\Delta q/2$. We summarize targeted disruption by the initial shock magnitude
 $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(q_{1/2})$ together with the collapse proxy
 $q_{\mathrm{collapse}}$, which remains abrupt and occurs at small $q$ under hub-first removal.
-This accords with the finding that scale-free networks are highly vulnerable 
-to intentional (hub-targeted) attacks, with rapid GCC disintegration after removing 
-only a small fraction of the highest-degree 
+This accords with the finding that scale-free networks are highly vulnerable
+to intentional (hub-targeted) attacks, with rapid GCC disintegration after removing
+only a small fraction of the highest-degree
 nodes~\cite{albert2000error,cohen2001breakdown}.
 
 Three controls clarify what the baseline-deviation rule is (and is not) detecting. A
@@ -1017,21 +992,6 @@ decision rule. Taken together, these results support successive KL divergence as
 simple and interpretable rate-based indicator that complements connectivity-based
 robustness analysis by highlighting the onset of structural change before macroscopic
 fragmentation, in a way that low-order moment summaries do not.
-
-\begin{samepage}
-In this study we intentionally restrict the structural state to the empirical degree distribution to keep the signal interpretable and the decision rule fixed across regimes.
-Richer summaries (e.g., joint-degree structure, mixing, motifs) may refine or alter warning behavior, especially under adversarial removal.
-In addition, the configuration-model experiment demonstrates that transfer is ensemble-dependent under identical settings even when the tail exponent is matched: structural churn during the baseline window inflates the estimated noise floor, raising the detection threshold above the level the post-baseline signal reaches in 276 of the 292 non-detecting runs (out of 360 total). This finding goes beyond H3, which concerns robustness within the Chung--Lu ensemble across $\gamma$. H3 is supported by the results; the configuration-model experiment reveals a distinct limitation on transferability, motivating future work on adaptive calibration strategies that account for ensemble-specific noise floor behavior, such as pre-calibrating the detection threshold from ensemble structure rather than from a data-driven baseline window.
-All synthetic experiments use $N=10{,}000$ nodes; we have not systematically varied network
-size. Finite-size scaling theory predicts that the percolation transition sharpens with
-increasing $N$~\cite{molloy1995critical}, which would produce a more abrupt GCC drop and
-potentially reduce detection variance. The CAIDA AS graph ($N\approx 78{,}000$ nodes) provides
-one cross-scale data point: the 40-seed detection rate is 40/40 and the qualitative signal
-shape matches the synthetic results, offering limited but encouraging evidence that the
-behavior is not confined to the $N=10{,}000$ regime. Systematic finite-size analysis remains
-future work.
-Natural next steps are to track change rates in higher-order structural features and to test analogous rules under link removal and correlated or temporally clustered failure processes.
-\end{samepage}
 
 \clearpage
 \section*{Appendix: Supplementary Material}
