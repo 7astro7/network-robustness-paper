@@ -267,19 +267,15 @@ the sole warning observable; alternatives appear only in controls.
 Two regime-appropriate rules apply to the same signal.
 
 \subsubsection{Random Failure: Baseline Deviation Rule}
-Under random failure, $\tilde{D}_{\mathrm{KL}}(q)$ settles within the calibration window
-$q \le 0.15$ without sustained exceedance of $\mu_0+2\sigma_0$; this non-triggering
-property is confirmed by 0/40 false triggers in the null control
-(\autoref{tab:null_control_random_failure}). We estimate $\mu_0$ and $\sigma_0$ over
-the window $q \le 0.15$,
+The window boundary $q_0 = 0.15$ is chosen empirically; sensitivity to this choice is
+reported in \autoref{tab:baseline_window_sensitivity}, which shows detection rates of
+39--40/40 across $q_0 \in \{0.10, 0.15, 0.20, 0.25\}$ at all tested $\gamma$
+(\S\ref{sec:baseline_window_sensitivity}).
+We estimate $\mu_0$ and $\sigma_0$ over the window $q \le 0.15$,
 which contains $\approx16$ midpoints on the 100-step grid (step size $\Delta q=0.009$,
-midpoints at $(i-0.5)\cdot0.009$ for $i=1,\ldots,16$), sufficient for a stable
-noise-floor estimate and narrow enough to precede departures at all tested $\gamma$.
-Stationarity means no sustained exceedances of $\mu_0 + 2\sigma_0$ within the window,
-confirmed by 0/40 null-control false triggers (\autoref{tab:null_control_random_failure}).
+midpoints at $(i-0.5)\cdot0.009$ for $i=1,\ldots,16$).
 The window is fixed across all $\gamma$ and not tuned post hoc; sensitivity to $\alpha$
-and $z$ is in the Supplementary Material; sensitivity to the choice of $q_0$
-is in \autoref{tab:baseline_window_sensitivity} (\S\ref{sec:baseline_window_sensitivity}).
+and $z$ is in the Supplementary Material.
 
 The early-warning point $q_{\mathrm{warn}}$ is defined as the smallest $q$ such that
 \[
