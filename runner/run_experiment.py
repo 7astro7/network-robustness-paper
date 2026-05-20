@@ -19,7 +19,7 @@ from runner.gamma_sweep import _detect_targeted_onset, _null_baseline_mu_sigma
 
 def make_fig1_random(
     gamma: float = 2.5,
-    seed: int = 0,
+    seed: int = 18,
     outdir: str = "paper/figures",
     alpha: float = 0.2,
     n: int = 10_000,

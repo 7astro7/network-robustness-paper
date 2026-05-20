@@ -82,3 +82,28 @@ class Metrics:
             js.append(Metrics.js_divergence(Pq_values[i + 1], Pq_values[i]))
         return np.asarray(js, dtype=float)
 
+    @staticmethod
+    def kl_decomp_by_k(P_new: np.ndarray, P_old: np.ndarray) -> np.ndarray:
+        """
+        Return per-degree contribution to D_KL(P_new || P_old).
+
+        Each element k is:  P_new[k] * log2(P_new[k] / P_old[k])
+
+        The sum equals D_KL(P_new || P_old). Individual terms can be negative
+        when P_new[k] < P_old[k].  P_old must be strictly positive (use eps
+        smoothing before calling).
+
+        Returns
+        -------
+        np.ndarray
+            Array of length len(P_new) with per-k contributions in bits.
+        """
+        P_new = np.asarray(P_new, dtype=float)
+        P_old = np.asarray(P_old, dtype=float)
+        if P_new.shape != P_old.shape:
+            raise ValueError(f"kl_decomp_by_k shape mismatch: {P_new.shape} vs {P_old.shape}")
+        contrib = np.zeros_like(P_new)
+        mask = P_new > 0
+        contrib[mask] = P_new[mask] * np.log2(P_new[mask] / P_old[mask])
+        return contrib
+

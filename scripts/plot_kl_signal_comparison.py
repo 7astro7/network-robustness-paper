@@ -75,7 +75,7 @@ def _plot_panel(ax, qs_mid, dkl_smooth, mu0, sigma0, threshold, q_warn,
     signal_color = "#5b2d8e"   # purple (matches Figure 1 style)
 
     # Baseline shading
-    ax.axvspan(0, BASELINE_CUTOFF, color="gray", alpha=0.15, label="baseline window")
+    ax.axvspan(0, BASELINE_CUTOFF, color="gray", alpha=0.15, label="calibration window")
 
     # Signal
     ax.plot(qs_mid, dkl_smooth, color=signal_color, linewidth=1.8,

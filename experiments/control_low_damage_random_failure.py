@@ -17,6 +17,51 @@ from core.failure_model import RandomFailure
 from core.metrics import Metrics
 from core.experiment import Experiment
 
+_ROLLING_W = 7
+
+
+def _rolling_std_signal(signal: np.ndarray, w: int = _ROLLING_W, min_periods: int = 3) -> np.ndarray:
+    n = len(signal)
+    out = np.full(n, np.nan)
+    for i in range(n):
+        start = max(0, i - w + 1)
+        window = signal[start : i + 1]
+        if len(window) >= min_periods and np.all(np.isfinite(window)):
+            out[i] = float(np.std(window, ddof=1)) if len(window) > 1 else 0.0
+    return out
+
+
+def _rolling_ac1_signal(signal: np.ndarray, w: int = _ROLLING_W, min_periods: int = 5) -> np.ndarray:
+    n = len(signal)
+    out = np.full(n, np.nan)
+    for i in range(n):
+        start = max(0, i - w + 1)
+        window = signal[start : i + 1]
+        if len(window) >= min_periods and np.all(np.isfinite(window)):
+            x = window[:-1]
+            y = window[1:]
+            sx, sy = float(np.std(x)), float(np.std(y))
+            if sx > 1e-15 and sy > 1e-15:
+                out[i] = float(np.corrcoef(x, y)[0, 1])
+    return out
+
+
+def _detect_nanfree(qs: np.ndarray, signal: np.ndarray, q0: float = 0.15, z: float = 2.0) -> float:
+    """Baseline-deviation detection that skips NaN values in the baseline window."""
+    qs = np.asarray(qs, dtype=float)
+    signal = np.asarray(signal, dtype=float)
+    qs_mid = 0.5 * (qs[:-1] + qs[1:])
+    if signal.size != qs_mid.size:
+        raise ValueError("signal length mismatch")
+    baseline_vals = signal[qs_mid <= q0]
+    baseline_vals = baseline_vals[np.isfinite(baseline_vals)]
+    if len(baseline_vals) < 5:
+        return np.nan
+    threshold = float(np.mean(baseline_vals)) + z * float(np.std(baseline_vals))
+    exceed = np.isfinite(signal) & (signal > threshold) & (qs_mid > q0)
+    idx = np.where(exceed)[0]
+    return float(qs_mid[idx[0]]) if idx.size else np.nan
+
 
 @dataclass
 class ControlRow:
@@ -96,7 +141,8 @@ def run_low_damage_control(
         s_min = float(np.min(np.asarray(S_values, dtype=float))) if len(S_values) else float("nan")
 
         # Midpoint signals (rate-of-change), EWMA-smoothed
-        dkl_mid = exp.ewma(exp.successive_kl(Pq_values), alpha=alpha)
+        raw_dkl = exp.successive_kl(Pq_values)
+        dkl_mid = exp.ewma(raw_dkl, alpha=alpha)
         js_mid = exp.ewma(Metrics.successive_js(Pq_values), alpha=alpha)
         dh_mid = exp.ewma(np.abs(np.diff(np.asarray(H_values, dtype=float))), alpha=alpha)
 
@@ -106,11 +152,15 @@ def run_low_damage_control(
         qw_dkl = detect_baseline_break_midpoint(qs, dkl_mid, q0=0.15, z=2.0)
         qw_js = detect_baseline_break_midpoint(qs, js_mid, q0=0.15, z=2.0)
         qw_dh = detect_baseline_break_midpoint(qs, dh_mid, q0=0.15, z=2.0)
+        qw_rv = _detect_nanfree(qs, _rolling_std_signal(raw_dkl), q0=0.15, z=2.0)
+        qw_ac1 = _detect_nanfree(qs, _rolling_ac1_signal(raw_dkl), q0=0.15, z=2.0)
 
         for metric, q_warn in [
             ("successive_KL", qw_dkl),
             ("successive_JS", qw_js),
             ("abs_delta_entropy", qw_dh),
+            ("rolling_sd_KL", qw_rv),
+            ("rolling_ac1_KL", qw_ac1),
         ]:
             trig = int(np.isfinite(q_warn))
             rows.append(
@@ -144,9 +194,11 @@ def run_low_damage_control(
         mean_q = float(np.nanmean([r.q_warn for r in rs])) if n_trig > 0 else float("nan")
         return n_trig, n_total, mean_q
 
-    trig_kl, n_total, mean_q_kl = agg("successive_KL")
-    trig_js, _, mean_q_js = agg("successive_JS")
-    trig_dh, _, mean_q_dh = agg("abs_delta_entropy")
+    trig_kl,  n_total, mean_q_kl  = agg("successive_KL")
+    trig_js,  _,       mean_q_js  = agg("successive_JS")
+    trig_dh,  _,       mean_q_dh  = agg("abs_delta_entropy")
+    trig_rv,  _,       mean_q_rv  = agg("rolling_sd_KL")
+    trig_ac1, _,       mean_q_ac1 = agg("rolling_ac1_KL")
 
     # Same S_min across metrics for a given seed; report mean across seeds.
     s_min_mean = float(np.mean([r.s_min for r in rows if r.metric == "successive_KL"]))
@@ -160,7 +212,7 @@ def run_low_damage_control(
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
     lines.append(
-        rf"\caption{{Damage-without-collapse control (random failure, $q\le {q_max:.2f}$): trigger rates under the baseline-deviation rule (baseline window $q\le 0.15$) with EWMA $\alpha={alpha:.2f}$. Metrics are computed from adjacent $q$-levels (reported on the midpoint grid) with $N={n_tex}$ and $\gamma={gamma:.1f}$ over {len(seeds)} seeds. Collapse is not evaluated; instead we report the mean minimum GCC fraction $\min_{{q\le {q_max:.2f}}} S(q)$ over the run.}}"
+        rf"\caption{{Damage-without-collapse control (random failure, $q\le {q_max:.2f}$): trigger rates under the baseline-deviation rule (baseline window $q\le 0.15$, rolling window $w={_ROLLING_W}$) with EWMA $\alpha={alpha:.2f}$. Metrics are computed from adjacent $q$-levels (reported on the midpoint grid) with $N={n_tex}$ and $\gamma={gamma:.1f}$ over {len(seeds)} seeds. Collapse is not evaluated; instead we report the mean minimum GCC fraction $\min_{{q\le {q_max:.2f}}} S(q)$ over the run.}}"
     )
     lines.append(r"\label{tab:control_low_damage}")
     lines.append(r"\begin{tabular}{l c c c}")
@@ -169,7 +221,9 @@ def run_low_damage_control(
     lines.append(r"\midrule")
     lines.append(rf"successive KL ($\tilde{{D}}_{{\mathrm{{KL}}}}$) & {trig_kl}/{n_total} & {fmt_mean_q(mean_q_kl)} & {s_min_mean:.3f} \\")
     lines.append(rf"successive JS ($\widetilde{{\mathrm{{JS}}}}$) & {trig_js}/{n_total} & {fmt_mean_q(mean_q_js)} & {s_min_mean:.3f} \\")
-    lines.append(rf"entropy change ($\widetilde{{|\Delta H|}}$) & {trig_dh}/{n_total} & {fmt_mean_q(mean_q_dh)} & {s_min_mean:.3f} \\")
+    lines.append(rf"entropy change ($|\Delta H|$) & {trig_dh}/{n_total} & {fmt_mean_q(mean_q_dh)} & {s_min_mean:.3f} \\")
+    lines.append(rf"rolling $\mathrm{{sd}}(D_{{\mathrm{{KL}}}})$ & {trig_rv}/{n_total} & {fmt_mean_q(mean_q_rv)} & {s_min_mean:.3f} \\")
+    lines.append(rf"rolling $\mathrm{{AC}}(1)(D_{{\mathrm{{KL}}}})$ & {trig_ac1}/{n_total} & {fmt_mean_q(mean_q_ac1)} & {s_min_mean:.3f} \\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")

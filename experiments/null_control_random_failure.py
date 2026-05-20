@@ -16,6 +16,8 @@ from core.graph_model import GraphModel
 from core.metrics import Metrics
 from core.experiment import Experiment
 
+_ROLLING_W = 7
+
 
 @dataclass
 class NullControlResult:
@@ -56,6 +58,49 @@ def detect_baseline_break_midpoint(
     if len(idx) == 0:
         return float("nan")
     return float(qs_mid[idx[0]])
+
+
+def _rolling_std_signal(signal: np.ndarray, w: int = _ROLLING_W, min_periods: int = 3) -> np.ndarray:
+    n = len(signal)
+    out = np.full(n, np.nan)
+    for i in range(n):
+        start = max(0, i - w + 1)
+        window = signal[start : i + 1]
+        if len(window) >= min_periods and np.all(np.isfinite(window)):
+            out[i] = float(np.std(window, ddof=1)) if len(window) > 1 else 0.0
+    return out
+
+
+def _rolling_ac1_signal(signal: np.ndarray, w: int = _ROLLING_W, min_periods: int = 5) -> np.ndarray:
+    n = len(signal)
+    out = np.full(n, np.nan)
+    for i in range(n):
+        start = max(0, i - w + 1)
+        window = signal[start : i + 1]
+        if len(window) >= min_periods and np.all(np.isfinite(window)):
+            x = window[:-1]
+            y = window[1:]
+            sx, sy = float(np.std(x)), float(np.std(y))
+            if sx > 1e-15 and sy > 1e-15:
+                out[i] = float(np.corrcoef(x, y)[0, 1])
+    return out
+
+
+def _detect_nanfree(qs: np.ndarray, signal: np.ndarray, q0: float = 0.15, z: float = 2.0) -> float:
+    """Baseline-deviation detection that skips NaN values in the baseline window."""
+    qs = np.asarray(qs, dtype=float)
+    signal = np.asarray(signal, dtype=float)
+    qs_mid = 0.5 * (qs[:-1] + qs[1:])
+    if signal.size != qs_mid.size:
+        raise ValueError("signal length mismatch")
+    baseline_vals = signal[qs_mid <= q0]
+    baseline_vals = baseline_vals[np.isfinite(baseline_vals)]
+    if len(baseline_vals) < 5:
+        return np.nan
+    threshold = float(np.mean(baseline_vals)) + z * float(np.std(baseline_vals))
+    exceed = np.isfinite(signal) & (signal > threshold) & (qs_mid > q0)
+    idx = np.where(exceed)[0]
+    return float(qs_mid[idx[0]]) if idx.size else np.nan
 
 
 def run_null_control(
@@ -103,7 +148,8 @@ def run_null_control(
             H_values.append(Metrics.degree_entropy(G0))
 
         # Midpoint signals
-        dkl_mid = exp.ewma(np.asarray([Metrics.kl_divergence(Pq_values[i + 1], Pq_values[i]) for i in range(len(Pq_values) - 1)]), alpha=alpha)
+        raw_dkl = np.asarray([Metrics.kl_divergence(Pq_values[i + 1], Pq_values[i]) for i in range(len(Pq_values) - 1)])
+        dkl_mid = exp.ewma(raw_dkl, alpha=alpha)
         js_mid = exp.ewma(Metrics.successive_js(Pq_values), alpha=alpha)
         dh_mid = exp.ewma(np.abs(np.diff(np.asarray(H_values, dtype=float))), alpha=alpha)
 
@@ -112,11 +158,15 @@ def run_null_control(
         qw_dkl = detect_baseline_break_midpoint(qs, dkl_mid)
         qw_js = detect_baseline_break_midpoint(qs, js_mid)
         qw_dh = detect_baseline_break_midpoint(qs, dh_mid)
+        qw_rv = _detect_nanfree(qs, _rolling_std_signal(raw_dkl))
+        qw_ac1 = _detect_nanfree(qs, _rolling_ac1_signal(raw_dkl))
 
         for metric, q_warn in [
             ("successive_KL", qw_dkl),
             ("successive_JS", qw_js),
             ("abs_delta_entropy", qw_dh),
+            ("rolling_sd_KL", qw_rv),
+            ("rolling_ac1_KL", qw_ac1),
         ]:
             triggered = int(np.isfinite(q_warn))
             rows.append(NullControlResult(seed=seed, metric=metric, triggered=triggered, q_warn=float(q_warn) if np.isfinite(q_warn) else float("nan")))
@@ -136,9 +186,11 @@ def run_null_control(
         rate = (n_trig / n_total) if n_total else float("nan")
         return n_trig, n_total, rate
 
-    trig_kl, n_total, rate_kl = agg("successive_KL")
-    trig_js, _, rate_js = agg("successive_JS")
-    trig_dh, _, rate_dh = agg("abs_delta_entropy")
+    trig_kl,  n_total, _ = agg("successive_KL")
+    trig_js,  _,       _ = agg("successive_JS")
+    trig_dh,  _,       _ = agg("abs_delta_entropy")
+    trig_rv,  _,       _ = agg("rolling_sd_KL")
+    trig_ac1, _,       _ = agg("rolling_ac1_KL")
 
     n_tex = f"{n:,}".replace(",", "{,}")
 
@@ -146,7 +198,7 @@ def run_null_control(
     lines.append(r"\begin{table}[H]")
     lines.append(r"\centering")
     lines.append(
-        rf"\caption{{Null control (no removals): false-trigger rates under the random-failure baseline-deviation rule (baseline window $q\le 0.15$, EWMA $\alpha={alpha:.2f}$). Each metric is computed from adjacent $q$-levels (reported on the midpoint grid) with $N={n_tex}$ and $\gamma={gamma:.1f}$ over {len(seeds)} seeds.}}"
+        rf"\caption{{Null control (no removals): false-trigger rates under the random-failure baseline-deviation rule (baseline window $q\le 0.15$, EWMA $\alpha={alpha:.2f}$, rolling window $w={_ROLLING_W}$). Each metric is computed from adjacent $q$-levels (reported on the midpoint grid) with $N={n_tex}$ and $\gamma={gamma:.1f}$ over {len(seeds)} seeds.}}"
     )
     lines.append(r"\label{tab:null_control_random_failure}")
     lines.append(r"\begin{tabular}{l c}")
@@ -155,7 +207,9 @@ def run_null_control(
     lines.append(r"\midrule")
     lines.append(rf"successive KL ($\tilde{{D}}_{{\mathrm{{KL}}}}$) & {trig_kl}/{n_total} \\")
     lines.append(rf"successive JS ($\widetilde{{\mathrm{{JS}}}}$) & {trig_js}/{n_total} \\")
-    lines.append(rf"entropy change ($\widetilde{{|\Delta H|}}$) & {trig_dh}/{n_total} \\")
+    lines.append(rf"entropy change ($|\Delta H|$) & {trig_dh}/{n_total} \\")
+    lines.append(rf"rolling $\mathrm{{sd}}(D_{{\mathrm{{KL}}}})$ & {trig_rv}/{n_total} \\")
+    lines.append(rf"rolling $\mathrm{{AC}}(1)(D_{{\mathrm{{KL}}}})$ & {trig_ac1}/{n_total} \\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")

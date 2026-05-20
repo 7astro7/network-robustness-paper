@@ -72,13 +72,13 @@ def main() -> None:
     lines.append(r"\centering")
     lines.append(r"\footnotesize")
     lines.append(
-        r"\caption{Baseline-window noise floor comparison between Chung--Lu (CL) and "
+        r"\caption{Calibration-window noise floor comparison between Chung--Lu (CL) and "
         r"configuration-model (CM) ensembles across the $\gamma$ sweep. "
-        r"$\bar{\mu}_0$ and $\bar{\sigma}_0$ are means across 40 seeds of the baseline-window "
+        r"$\bar{\mu}_0$ and $\bar{\sigma}_0$ are means across 40 seeds of the calibration-window "
         r"mean and standard deviation of the EWMA-smoothed successive KL signal "
         r"($q \le 0.15$, $\alpha=0.20$). "
         r"CM $\bar{\sigma}_0$ is systematically elevated at every $\gamma$, "
-        r"consistent with structural churn during the baseline window inflating "
+        r"consistent with structural churn during the calibration window inflating "
         r"the estimated noise floor and detection threshold. "
         r"$n_{\mathrm{det}}$: number of seeds (out of 40) with a detection prior to collapse.}"
     )
