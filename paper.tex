@@ -330,10 +330,7 @@ paper/figures/fig1_random_gamma2.5_seed18_alpha0.20.pdf}
 GCC fraction $S(q)$ (left axis) declines gradually while smoothed successive KL
 $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) departs from the calibration window well before collapse.
 Baseline window $q \le 0.15$ shaded; vertical lines mark $q_{\mathrm{warn}}=0.350$ and
-$q_{\mathrm{collapse}}=0.836$. The early-window rise in $\tilde{D}_{\mathrm{KL}}$ reflects an EWMA initialization
-transient; the signal settles within the calibration window, and no exceedance of
-$\mu_0+2\sigma_0$ occurs within it (0/40 seeds,
-\autoref{tab:null_control_random_failure}).}
+$q_{\mathrm{collapse}}=0.836$.}
 \label{fig:random_rep}
 \end{figure}
 
@@ -343,23 +340,6 @@ confirms $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across all or nearly all 
 at every $\gamma$ (39--40/40; see \autoref{tab:gamma_sweep_random}). $\kappa(q)$ under the same rule does not trigger in this run or across seeds
 (Supplementary Material, S3).
 
-\autoref{fig:kl_decomp} decomposes $D_{\mathrm{KL}}$ into the per-degree contribution
-$c(k;\,q)$ (defined in the caption of \autoref{fig:kl_decomp})
-across four snapshots spanning baseline, pre-warning, and post-warning regimes.
-Contributions are not concentrated at high-degree nodes; both low- and intermediate-degree classes contribute at all damage levels, confirming that the signal reflects broad redistributional change rather than hub-dominated reorganization.
-Past $q_{\mathrm{warn}}$, intermediate and high-degree contributions grow, consistent
-with progressive hub-connectivity restructuring.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.98\linewidth]{%
-paper/figures/fig_kl_decomp_by_k_gamma2.5_seed0_alpha0.20.pdf}
-\caption{Per-degree contributions $c(k;\,q) = P(k;\,q{+}\Delta q)\log_2[P(k;\,q{+}\Delta q)/P(k;\,q)]$
-at four snapshot steps ($\gamma=2.5$, seed 0, $\alpha=0.20$, random failure), plotted on a log degree axis.
-Snapshot $q$ values span the baseline, pre-warning, post-warning, and late-damage regimes
-(see \autoref{fig:random_rep} for signal context). Contributions are not concentrated at high-degree nodes; both low- and intermediate-degree classes contribute at all damage levels, confirming that the signal reflects broad redistributional change rather than hub-dominated reorganization.}
-\label{fig:kl_decomp}
-\end{figure}
 
 % --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
 \subsection{Primary Result: 40-Seed Ensemble across the $\gamma$ Sweep}
@@ -694,9 +674,7 @@ consistently than rolling AC(1) (40/40 vs. 15--22/40), while moment-based $\kapp
 produces zero detections in the low-damage control (\autoref{tab:control_low_damage};
 full-sweep zero-detection results in Supplementary Material S3), confirming that the full
 distributional signal is necessary.
-The per-degree decomposition (Figure~\ref{fig:kl_decomp}) shows contributions distributed
-across degree classes, not concentrated at high-degree nodes. A direct comparison between
-$D_{\mathrm{KL}}(q)$ and the mean degree of nodes removed at each step remains future work.
+The signal reflects broad redistributional change rather than hub-dominated reorganization: contributions to $D_{\mathrm{KL}}$ are distributed across low- and intermediate-degree classes at all damage levels. A direct comparison between $D_{\mathrm{KL}}(q)$ and the mean degree of nodes removed at each step remains future work.
 
 Pre-collapse signal acceleration is explained analytically via binomial thinning: the
 Fisher information $\mathcal{I}(q)$ of the residual distribution grows as the high-degree

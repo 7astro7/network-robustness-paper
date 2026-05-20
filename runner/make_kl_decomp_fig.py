@@ -1,4 +1,6 @@
 """
+UNUSED: Figure removed from paper. Script retained for reference only.
+
 Generate Figure 2: KL divergence decomposition by degree class.
 
 For a representative CL run (gamma=2.5, seed=0), shows how different degree
