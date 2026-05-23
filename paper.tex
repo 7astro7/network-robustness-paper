@@ -1,7 +1,7 @@
 \documentclass{nws}
 \usepackage{amsmath, amssymb, amsfonts}
 \usepackage{float}
-\usepackage[section]{placeins}
+\usepackage{placeins}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{natbib}
@@ -102,11 +102,11 @@ mechanism is an independent structural channel of ensemble sensitivity.
 
 \section{Related Work}
 
-Existing EWS methods for tipping points share a common data requirement that our setting does not satisfy: repeated observations of system state under a slowly drifting external parameter. Early-warning signals have been studied across ecology, climate, finance, and other complex systems, where rising variance and lag-1 autocorrelation serve as generic indicators of critical slowing down near bifurcations \citep{scheffer2012anticipating,scheffer2009earlywarning}. These indicators are estimated from repeated observations of system state under a slowly drifting external parameter \citep{vannes2007slow,dakos2012methods}. Recent work extends EWS to machine-learning-based detection \citep{bury2021deeplearning} and to structural disintegration in complex systems via network-feature monitoring \citep{grassia2021machine}, as well as to percolation-based signals in coupled oscillatory systems \citep{ehstand2023network}. \citet{MacLaren2023} derive early warning signals for multi-stage transitions in networked systems by monitoring node-state variance and autocorrelation across heterogeneous network topologies; their setting requires repeated observations of node states under a slowly drifting external parameter, whereas ours tracks a single monotone structural-damage trajectory with no node-state time series available. \citet{JonesWiesner2022} clarify the relationship between degree-distribution entropy and GCC robustness to node removal, showing that static entropy sets only a lower bound on robustness rather than a direct proxy; successive KL divergence, by contrast, measures rates of distributional change across the damage trajectory rather than entropy at a fixed state. \citet{GoltsevDorogovtsev2026} characterize the network susceptibility $\chi(h)=dS/dh$ (the derivative of GCC fraction with respect to a randomly sampled observer-node fraction $h$) as an EWS for percolation transitions, deriving it analytically from generative-model equations and showing it diverges near $q_c$ with Landau-type critical exponents; this is a fundamentally different signal from successive KL divergence, which measures information distance between consecutive empirical degree-distribution snapshots rather than the sensitivity of the order parameter to a perturbation field, and their analytical computation of $\chi(h)$ requires a generative model, whereas the baseline-deviation rule applied here requires only the empirical damage sequence and operates identically on Chung--Lu graphs and the CAIDA AS graph. \citet{Dakos2024} provide a recent comprehensive review of EWS methodology across climate, ecological, and human systems, situating variance and autocorrelation indicators within a broader landscape of transition-detection approaches. Our setting differs fundamentally: we have a single monotone structural-damage trajectory rather than a time series of repeated state observations, so variance and autocorrelation of a state variable are not available; instead we track successive KL divergence between adjacent empirical degree distributions, and we make an analytical connection between this indicator and Fisher information.
+Early-warning signals for tipping points have been studied across ecology, climate, finance, and other complex systems, where rising variance and lag-1 autocorrelation serve as generic indicators of critical slowing down near bifurcations \citep{scheffer2012anticipating,scheffer2009earlywarning}. These indicators are estimated from repeated observations of system state under a slowly drifting external parameter \citep{vannes2007slow,dakos2012methods}. Recent work extends EWS to machine-learning-based detection \citep{bury2021deeplearning} and to structural disintegration in complex systems via network-feature monitoring \citep{grassia2021machine}, as well as to percolation-based signals in coupled oscillatory systems \citep{ehstand2023network}. Our setting differs fundamentally: we have a single monotone structural-damage trajectory rather than a time series of repeated state observations, so variance and autocorrelation of a state variable are not available; instead we track successive KL divergence between adjacent empirical degree distributions, and we employ a fully analytical connection between this indicator and Fisher information.
 
-Network resilience and robustness have been characterized analytically via degree-moment conditions \citep{molloy1995critical,callaway2000network} and percolation theory \citep{cohen2000resilience}. \citet{gao2016resilience} show that high-dimensional network dynamics can be reduced to a one-dimensional system, enabling resilience prediction from network structure; their framework targets dynamical resilience rather than structural early warning under damage. \citet{suweis2014earlywarning} demonstrate that rising variance and cross-correlation in node-state dynamics anticipate instability on networks, but rely on a time series of node states rather than the evolving degree distribution. The robustness literature \citep{albert2000error,radicchi2024robustness} relies primarily on GCC fraction and degree-moment thresholds, not information-theoretic quantities that change before collapse. \citet{bellingeri2021modularity} show that modularity shapes collapse outcomes under degree-based and betweenness-based targeted attacks, but again the focus is on post-collapse topology rather than precursor signals. Information-theoretic measures of static graph complexity were introduced by \citet{dehmer2008information} but do not address progressive damage or percolation. The present work applies successive KL divergence to the sequence of empirical degree distributions under node removal, connecting distributional change rates to the Fisher information of the binomial-thinning residual distribution.
+Network resilience and robustness have been characterized analytically via degree-moment conditions \citep{molloy1995critical,callaway2000network} and percolation theory \citep{cohen2000resilience}. \citet{gao2016resilience} show that high-dimensional network dynamics can be reduced to a one-dimensional system, enabling resilience prediction from network structure; their framework targets dynamical resilience rather than structural early warning under damage. \citet{suweis2014earlywarning} demonstrate that rising variance and cross-correlation in node-state dynamics anticipate instability on networks, but rely on a time series of node states rather than the evolving degree distribution. The robustness literature \citep{albert2000error,radicchi2024robustness} relies primarily on GCC fraction and degree-moment thresholds, not information-theoretic quantities that change before collapse. Structural properties such as modularity further modulate robustness under degree-based and betweenness-based targeted attacks \citep{bellingeri2021modularity}, but the focus remains on post-collapse topology rather than precursor signals. Information-theoretic measures of static graph complexity were introduced by \citet{dehmer2008information} but do not address progressive damage or percolation. The present work applies successive KL divergence to the sequence of empirical degree distributions under node removal, connecting distributional change rates to the Fisher information of the binomial-thinning residual distribution.
 
-The closest methodological predecessor to the present work applies KL divergence directly to the degree distribution under sequential node removal. \citet{lee2022degree} apply relative entropy to classify how the functional form of the residual degree distribution changes across a spectrum of hub-protection strategies, parameterized by a continuous hub-preference exponent. Comparing the post-removal distribution against Poisson and power-law reference distributions, they identify a two-regime partition in the (removal fraction, hub-protection) parameter space, separating configurations where the distribution converges toward Poisson form from those retaining a power-law shape. Their central question is which reference distribution the post-removal snapshot most resembles; ours is whether the rate of successive distributional change provides advance warning of GCC collapse before it occurs. Both employ KL divergence as a structural diagnostic, but differ in reference distribution (fixed parametric forms versus the preceding empirical snapshot), in question (functional form classification versus early-warning detection), and in temporal framing (snapshot comparison versus continuous monitoring across the removal trajectory).
+\citet{lee2022degree} apply relative entropy to classify how the functional form of the residual degree distribution changes under sequential node removal across a spectrum of hub-protection strategies, parameterized by a continuous hub-preference exponent. Comparing the post-removal distribution against Poisson and power-law reference distributions, they identify a two-regime partition in the (removal fraction, hub-protection) parameter space, separating configurations where the distribution converges toward Poisson form from those retaining a power-law shape. Their central question is which reference distribution the post-removal snapshot most resembles; ours is whether the rate of successive distributional change provides advance warning of GCC collapse before it occurs. Both employ KL divergence as a structural diagnostic, but differ in reference distribution (fixed parametric forms versus the preceding empirical snapshot), in question (functional form classification versus early-warning detection), and in temporal framing (snapshot comparison versus continuous monitoring across the removal trajectory).
 
 \section{Methods}
 
@@ -335,10 +335,11 @@ to Chung--Lu.
 \subsection{Signal Morphology: Illustrative Single Realization}
 
 % --- Block A: Synthetic random representative (Fig. 1) ---
-\begin{figure}[!htbp]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\linewidth, height=0.45\textheight, keepaspectratio]{%
+\includegraphics[width=0.95\linewidth]{%
 paper/figures/fig1_random_gamma2.5_seed18_alpha0.20.pdf}
+\vspace{2em}
 \caption{Random failure ($\gamma=2.5$, seed 18, $\alpha=0.20$).
 GCC fraction $S(q)$ (left axis) declines gradually while smoothed successive KL
 $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) departs from the calibration window well before collapse.
@@ -353,7 +354,7 @@ confirms $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across all or nearly all 
 at every $\gamma$ (39--40/40; see \autoref{tab:gamma_sweep_random}). $\kappa(q)$ under the same rule does not trigger in this run or across seeds (0/40).
 
 
-
+\FloatBarrier
 % --- Block D/E: γ-sweep summary plot (Fig. 4) + Tables (Tables 1–3) ---
 \subsection{Primary Result: 40-Seed Ensemble across the $\gamma$ Sweep}
 
@@ -361,9 +362,10 @@ For each $\gamma$ we run 40 seeds under the fixed baseline-deviation rule. The k
 $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across the heavy-tailed regime, rests on
 this ensemble, not any single realization.
 
-\begin{figure}[!htbp]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\linewidth, height=0.45\textheight, keepaspectratio]{paper/figures/fig_gamma_sweep_random.pdf}
+\includegraphics[width=0.95\linewidth]{paper/figures/fig_gamma_sweep_random.pdf}
+\vspace{1.5em}
 \caption{Random failure: mean $\pm$ standard deviation of $q_{\mathrm{warn}}$ and
 $q_{\mathrm{collapse}}$ across 40 seeds as a function of $\gamma$
 (Chung--Lu, $N=10{,}000$, $\alpha=0.20$).
@@ -379,12 +381,12 @@ $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ at every $\gamma$. At $\gamma=2.5$
 40/40 seeds, median lead time $\Delta_{\mathrm{warn}} \approx 0.55$. Under targeted
 removal, disruption is immediate at every $\gamma$.
 
-
+\FloatBarrier
 \input{paper/tables/gamma_sweep_random.tex}
 \input{paper/tables/gamma_sweep_targeted.tex}
 $I_{\mathrm{tgt}}$ decreases monotonically with $\gamma$: lighter tails at high $\gamma$
 mean weaker hub-dominated disruption.
-
+\FloatBarrier
 
 \subsection{Degree-Class Structure of the KL Signal}
 \label{sec:kl_degree_structure}
@@ -401,10 +403,12 @@ The signal is therefore concentrated in the low-$k$ classes, not the high-$k$ ta
 This is mechanistically expected: when any node is removed under random failure, each neighbour loses one link and shifts one step left in the degree distribution.
 Because $P(k)\sim k^{-\gamma}$ places the overwhelming majority of nodes at low degrees, these shifts produce large absolute changes in $P(k)$ at small $k$ and negligible changes at large $k$ where $P(k)\approx 0$.
 The KL signal therefore tracks diffuse low-degree redistribution in the surviving subgraph, not isolated hub-removal events.
+To quantify this directly, we compute the Pearson correlation between $\tilde{D}_{\mathrm{KL}}(q)$ and $\bar{k}_{\mathrm{removed}}(q)$, the mean original degree of nodes removed at each step: $r = 0.33 \pm 0.23$ (mean $\pm$ std across 40 seeds, $\gamma=2.5$). This moderate positive correlation reflects a step-level physical effect (steps that by chance remove higher-degree nodes produce larger per-step distributional shifts), but under random failure $\bar{k}_{\mathrm{removed}}(q)$ is drawn approximately i.i.d.\ from the original degree distribution at each step and carries no systematic trend with $q$; the pre-collapse rise of $\tilde{D}_{\mathrm{KL}}(q)$ is therefore driven by cumulative reorganization of the surviving subgraph, not by increasing removed-node degree.
 
-\begin{figure}[!htbp]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.7\linewidth, height=0.45\textheight, keepaspectratio]{paper/figures/fig_kl_lorenz.pdf}
+\includegraphics[width=0.7\linewidth]{paper/figures/fig_kl_lorenz.pdf}
+\vspace{1.5em}
 \caption{Cumulative fraction of $\sum_k |c(k;\,q)|$, where
 $c(k;\,q)=P_{q+\Delta q}(k)\log_2[P_{q+\Delta q}(k)/P_q(k)]$, accounted for by occupied
 degree classes ($P_q(k)>0$) up to the $x$-th percentile (sorted ascending $k$), at
@@ -417,7 +421,7 @@ the high-$k$ tail where $P(k)$ is vanishingly small.}
 \label{fig:kl_lorenz}
 \end{figure}
 
-
+\FloatBarrier
 \subsection{Rolling EWS Comparators}
 \label{sec:ews_comparators}
 Two rolling indicators, both under the identical detection rule
@@ -464,7 +468,7 @@ falls within the plotted range. Here $q_c$ denotes the Molloy--Reed percolation 
 applied to the population-level residual distribution $\tilde{P}(k';\,q)$; the empirical
 collapse fraction $q_{\mathrm{collapse}}$ (defined by $S(q)<0.1$ in finite graphs)
 differs from this analytical threshold due to finite-size effects and graph
-stochasticity; see \autoref{tab:gamma_sweep_random} for empirical values.
+stochasticity---see \autoref{tab:gamma_sweep_random} for empirical values.
 
 \autoref{fig:analytical_kl} shows the analytical $\tilde{D}_{\mathrm{KL}}(q)$ after EWMA
 smoothing ($\alpha=0.20$) alongside the detection threshold $\mu_0+2\sigma_0$ for each
@@ -485,9 +489,9 @@ baseline below the population-level prediction. Near $q_c$, cascade-induced corr
 lift the empirical signal above the mean-field prediction. The post-minimum monotone rise in $\mathcal{I}(q)$ confirms
 that distributional change accelerates approaching $q_c$.
 
-\begin{figure}[!htbp]
+\begin{figure}[p]
 \centering
-\includegraphics[width=\textwidth, height=0.45\textheight, keepaspectratio]{paper/figures/fig_analytical_kl.pdf}
+\includegraphics[width=\textwidth, height=0.42\textheight, keepaspectratio]{paper/figures/fig_analytical_kl.pdf}
 \caption{Analytical successive KL divergence $\tilde{D}_{\mathrm{KL}}(q)$ computed from
 the binomial-thinning residual distribution $\tilde{P}(k';\,q)$ (Eq.~\ref{eq:binomial_thinning}),
 EWMA-smoothed ($\alpha=0.20$), for $\gamma\in\{2.1,2.5,2.9\}$.
@@ -523,7 +527,7 @@ across the $\gamma$ sweep.
 \autoref{fig:caida_random} shows a representative run;
 \autoref{tab:caida_summary} reports the 40-seed summary.
 
-\begin{figure}[!htbp]
+\begin{figure}[htbp]
 \centering
 \input{paper/figures/caida_random_constants_20260101_seed0.tex}
 \begin{tikzpicture}
@@ -532,7 +536,7 @@ sep=1.6ex}}
 \begin{axis}[
     name=caidaS,
     width=0.95\linewidth,
-    height=0.38\textheight,
+    height=6cm,
     xmin=0, xmax=0.995,
     ymin=0, ymax=1,
     xlabel={$q$},
@@ -564,7 +568,7 @@ sep=1.6ex}}
 
 \begin{axis}[
     width=0.95\linewidth,
-    height=0.38\textheight,
+    height=6cm,
     xmin=0, xmax=0.995,
     axis x line=none,
     axis y line*=right,
@@ -596,9 +600,10 @@ ensemble structure beyond the tail exponent.
 
 \input{paper/tables/gamma_sweep_random_config.tex}
 
-\begin{figure}[!htbp]
+\begin{figure}[p]
 \centering
-\includegraphics[width=\textwidth, height=0.45\textheight, keepaspectratio]{paper/figures/kl_signal_comparison.pdf}
+\includegraphics[width=\textwidth]{paper/figures/kl_signal_comparison.pdf}
+\vspace{1.5em}
 \caption{Smoothed successive KL $\tilde{D}_{\mathrm{KL}}(q)$ under random failure for a
 Chung--Lu network (left) and an exponent-matched configuration-model network (right),
 $\gamma=2.5$, seed 0, $\alpha=0.20$.
@@ -803,7 +808,6 @@ to keep the signal interpretable and the decision rule fixed across regimes; ric
 All synthetic experiments use $N=10{,}000$ nodes; the CAIDA AS graph ($N=78{,}673$) provides one cross-scale data point (40-seed
 detection rate 40/40 with qualitatively matched signal shape), though systematic
 finite-size analysis remains future work.
-Network susceptibility $\chi(h)=dS/dh$ \citep{GoltsevDorogovtsev2026} is a theoretically grounded comparator, but its evaluation requires deriving analytical equations from a generative model; because the baseline-deviation rule applied here requires only the empirical damage sequence, a direct head-to-head comparison on the same graphs would need a model-fitted estimate of $\chi(h)$, which is outside the scope of a model-agnostic monitoring procedure.
 Natural next steps are to track change rates in higher-order structural features, to test
 analogous rules under link removal and correlated or temporally clustered failure processes,
 and to extend the analysis to hub-protecting removal strategies in which lower-fitness or

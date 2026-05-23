@@ -98,7 +98,7 @@ def main():
         frameon=False,
         borderaxespad=0.0,
     )
-    fig.savefig(out_pdf, bbox_inches="tight", pad_inches=0.02)
+    fig.savefig(out_pdf, bbox_inches="tight", pad_inches=0.15)
     plt.close(fig)
 
 

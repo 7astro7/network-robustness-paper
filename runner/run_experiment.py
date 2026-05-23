@@ -125,8 +125,8 @@ def make_fig1_random(
     stem = f"fig1_random_gamma{gamma:.1f}_seed{seed}_alpha{alpha:.2f}"
     png_path = out_path / f"{stem}.png"
     pdf_path = out_path / f"{stem}.pdf"
-    fig.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=0.02)
-    fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.02)
+    fig.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=0.15)
+    fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.15)
     plt.close(fig)
 
     return {
@@ -270,8 +270,8 @@ def make_fig2_targeted(
     stem = f"fig2_targeted_gamma{gamma:.1f}_seed{seed}_alpha{alpha:.2f}"
     png_path = out_path / f"{stem}.png"
     pdf_path = out_path / f"{stem}.pdf"
-    fig.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=0.02)
-    fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.02)
+    fig.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=0.15)
+    fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.15)
     plt.close(fig)
 
     return {
