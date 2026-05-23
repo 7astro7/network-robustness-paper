@@ -43,7 +43,7 @@ Power-Law Networks Under Progressive Node Removal}
 \email{zak@zakkraehling.net}}
 
 \begin{abstract}
-Power-law networks tolerate extensive random failures yet collapse abruptly under targeted attacks with little warning from connectivity measures alone. We track smoothed successive Kullback--Leibler (KL) divergence between adjacent empirical degree distributions in Chung--Lu (CL) graphs ($2<\gamma<3$) under progressive node removal using fixed detection rules that do not reference connectivity. Under random failure the signal rises above the calibration-window threshold before giant-component collapse (40/40 seeds at $\gamma=2.5$; replicated on an empirical Internet AS topology); under targeted removal it exhibits immediate disruption. The residual degree distribution is derived analytically via binomial thinning: a Fisher information approximation explains why the KL signal accelerates near the percolation threshold. Null and low-damage controls confirm specificity (0/40 false triggers in each). Successive KL produces earlier warning than rolling-variance early-warning signals under the same decision rule, a timing advantage attributable to rolling-window lag. Separately, the Fisher information $\mathcal{I}(q)$ of the analytical residual distribution grows near $q_c$, confirming pre-collapse signal acceleration analytically. The indicator's divergence between CL and the configuration model (CM) reveals its sensitivity to stub-pairing-induced structural correlations: the baseline KL noise floor is elevated in CM relative to CL ($\bar{\mu}_0$ by 1.4--3.8$\times$, $\bar{\sigma}_0$ by 2.0--6.1$\times$ across $\gamma$), inflating the detection threshold above the post-window signal in the majority of CM runs.
+Early warning of network collapse is an open problem: classical connectivity measures such as giant-component fraction change little until failure is already underway, leaving little time for intervention. We propose tracking smoothed successive Kullback--Leibler (KL) divergence between adjacent empirical degree distributions as a structural early-warning signal for power-law networks under progressive node removal. The signal measures the rate of distributional reorganization at each damage step without referencing connectivity, and fires a detection rule grounded in a calibration window over the early damage trajectory. We derive the residual degree distribution analytically via binomial thinning and show that the Fisher information of this distribution grows near the percolation threshold, explaining why the signal accelerates before collapse. Across Chung--Lu graphs spanning the heavy-tailed regime $2 < \gamma < 3$, the signal departs from baseline well before giant-component collapse under random failure, with zero false triggers in null and low-damage controls; it produces earlier warning than rolling-variance early-warning signals under the same decision rule. Results replicate on an empirical Internet AS topology. Under targeted hub removal, the signal instead provides an immediate disruption intensity summary. A comparison with the configuration model reveals that the indicator is sensitive to ensemble wiring mechanics beyond the degree exponent: hard-constraint stub-pairing elevates the baseline noise floor and suppresses detection, a finding with practical implications for null-model selection in network monitoring.
 \end{abstract}
 
 \begin{keywords}
@@ -283,8 +283,8 @@ Two regime-appropriate rules apply to the same signal.
 \subsubsection{Random Failure: Baseline Deviation Rule}
 The window boundary $q_0 = 0.15$ is chosen empirically; sensitivity to this choice is
 reported in \autoref{tab:baseline_window_sensitivity}, which shows detection rates of
-39--40/40 across $q_0 \in \{0.10, 0.15, 0.20, 0.25\}$ at all tested $\gamma$
-(\S\ref{sec:baseline_window_sensitivity}).
+39--40/40 at $q_0 \in \{0.10, 0.15\}$, declining modestly to 36--39/40 at $q_0 = 0.20$
+and 35--37/40 at $q_0 = 0.25$ (\S\ref{sec:baseline_window_sensitivity}).
 We estimate $\mu_0$ and $\sigma_0$ over the window $q \le 0.15$,
 which contains $\approx16$ midpoints on the 100-step grid (step size $\Delta q=0.009$,
 midpoints at $(i-0.5)\cdot0.009$ for $i=1,\ldots,16$).
@@ -681,6 +681,10 @@ elevates calibration-window churn even when the degree sequence is identical.
 The further gap between exponent-matched CM ($\approx$4/40) and sequence-matched CM (28/50)
 isolates degree sequence realization: drawing a fresh sequence at each seed adds a second source of noise floor
 elevation on top of the wiring effect.
+This degree-sequence-matched variant directly addresses the question of whether detection
+differences between CL and CM stem from the degree sequence or from wiring alone: the 28/50
+result confirms that the degree sequence accounts for roughly half the gap, while
+hard-constraint wiring accounts for the other half.
 
 \input{paper/tables/degree_matched_config_random_failure.tex}
 
@@ -728,9 +732,7 @@ calibration window stability.
 Calibration window stability is an empirical property, validated here at $N=10{,}000$
 across $\gamma\in(2,3)$: visible in \autoref{fig:random_rep}, robust to window-endpoint
 choice (\autoref{tab:baseline_window_sensitivity}), and confirmed by the null and
-low-damage controls (0/40 false triggers in each), but not derived from the
-binomial-thinning framework, and its behaviour at other network scales or degree
-distributions remains an open empirical question.
+low-damage controls (0/40 false triggers in each).
 
 The indicator's divergence between Chung--Lu and the configuration model reveals the
 indicator's sensitivity to localized structural correlations and finite-size stub-matching
@@ -752,35 +754,22 @@ graph. This pattern holds across $\gamma$: CM detection rates range from 1/40 to
 14/40 for every $\gamma\in\{2.1,\ldots,2.9\}$ (\autoref{tab:baseline_noise_comparison}),
 while CL detects in all or nearly all seeds at every $\gamma$.
 
-The Fisher information $\mathcal{I}(q)$ of the binomial-thinning residual distribution provides a population-level reference for the KL signal's shape across the damage trajectory.
-$\mathcal{I}(q)$ computed from binomial thinning (supplementary Fig.~S1) is large at
-small $q$, reaches a minimum in the mid-damage range, then grows toward $q_c$; since
-successive KL per step scales as $(\Delta q)^2\mathcal{I}(q)/2$, the post-minimum rise
-remains small in absolute terms. The calibration window $q\le0.15$ falls on the high-$\mathcal{I}(q)$ early portion of the
-analytical curve, so the population-level signal is not intrinsically quiet there.
-The empirical signal's stability during $q\le0.15$ in finite CL graphs is not fully
-explained by the binomial-thinning model; we hypothesize that simultaneous stub deletion,
-which removes all edges incident to a deleted node at once rather than independently,
-induces correlated neighbourhood updates that suppress the early empirical baseline below
-the population-level prediction.
-Characterizing this mechanism analytically and testing its $N$-dependence remains future work.
-Under the same baseline-deviation rule applied to the analytical signal, detection does not occur
-(\autoref{fig:analytical_kl}): the calibration window $q \le 0.15$ falls on the elevated early
-portion of $\tilde{D}_{\mathrm{KL}}(q)$, so $\mu_0$ and $\sigma_0$ are estimated from a
-high-amplitude region, placing the threshold above the post-window signal at every $\gamma$.
-Empirical detection in the Chung--Lu ensemble succeeds because correlated deletion
-suppresses the early empirical baseline below the population-level prediction, giving the
-post-window rise room to exceed the threshold; detection depends on this structural mechanism,
-not on population-level dynamics alone. The binomial-thinning model (Eq.~\ref{eq:binomial_thinning}) assumes each edge
-survives independently with probability $(1-q)$, whereas actual node removal deletes all
-edges incident to a removed node at once. We hypothesize that this correlated deletion
-keeps the empirical baseline lower and flatter than the population-level prediction,
-concentrating distributional shift into the post-window signal; the analytical framework
-correctly characterizes population-level dynamics near $q_c$ but does not capture this
-mechanism. This identifies a scope condition for the baseline-deviation rule: the calibration
-window must fall in a low-noise region of the empirical signal. For the Chung--Lu graphs studied here, $q \le 0.15$ satisfies this condition
-empirically; the population-level $\mathcal{I}(q)$ analysis identifies ensemble type
-and network scale as the structural parameters governing its transferability.
+The binomial-thinning model yields $\mathcal{I}(q)$ that is large at small $q$,
+reaches a minimum in the mid-damage range, and grows toward $q_c$ (supplementary Fig.~S1);
+successive KL per step scales as $(\Delta q)^2\mathcal{I}(q)/2$, so the post-minimum rise
+remains small in absolute terms. Crucially, the calibration window $q\le0.15$ falls on the
+elevated early portion of this analytical curve, yet the empirical CL baseline is quiet there.
+This discrepancy reflects a mechanism absent from the model: binomial thinning assumes each
+edge survives independently with probability $(1-q)$, whereas actual node removal deletes all
+incident edges simultaneously; the resulting correlated neighbourhood updates suppress
+step-to-step distributional variation below the population-level prediction, keeping $\mu_0$
+and $\sigma_0$ small enough for the post-window rise to exceed the threshold.
+Applying the same baseline-deviation rule to the analytical $\tilde{D}_{\mathrm{KL}}(q)$
+(\autoref{fig:analytical_kl}) confirms this: $\mu_0$ is estimated from the high-amplitude
+early portion of the analytical curve, placing the threshold above the post-window signal at
+every $\gamma$, so detection does not occur.
+Empirical detection thus depends on this structural suppression mechanism, not on
+population-level dynamics alone.
 
 The CL--CM performance gap is quantifiable as a signal-to-noise ratio.
 The SNR contrast itself encodes structural information:
@@ -805,12 +794,11 @@ Variance collapses a complex distribution into a single scalar statistic, losing
 By directly measuring the information distance between successive steps, the metric bypasses the inherent lag of sliding-window estimators.
 The divergence between Chung--Lu and configuration-model signatures further demonstrates that the signal is sensitive to structural correlations embedded in the wiring mechanics of the graph ensemble, independent of the degree exponent $\gamma$.
 
-This study intentionally restricts the structural state to the empirical degree distribution
-to keep the signal interpretable and the decision rule fixed across regimes; richer summaries
-(joint-degree structure, mixing, motifs) may refine warning behavior under targeted removal.
-All synthetic experiments use $N=10{,}000$ nodes; the CAIDA AS graph ($N=78{,}673$) provides one cross-scale data point (40-seed
-detection rate 40/40 with qualitatively matched signal shape), though systematic
-finite-size analysis remains future work.
+Three scope conditions govern where these results transfer.
+First, the calibration window must fall in a low-noise region of the empirical signal: $q\le0.15$ satisfies this for Chung--Lu graphs at $N=10{,}000$, but the condition depends on ensemble type and network scale, and the binomial-thinning model does not derive it; characterizing the $N$-dependence of the empirical baseline analytically remains open.
+Second, the indicator is sensitive to ensemble wiring mechanics: the configuration model's hard-constraint stub-pairing elevates the baseline noise floor enough to suppress detection, so null-model choice matters when applying this rule to real networks.
+Third, all synthetic results use $N=10{,}000$; the CAIDA AS graph ($N=78{,}673$) provides one cross-scale data point with matched behavior, but systematic finite-size scaling has not been performed.
+This study restricts the structural state to the empirical degree distribution to keep the signal interpretable and the decision rule fixed; richer summaries (joint-degree structure, mixing, motifs) may refine behavior, particularly under targeted removal.
 Natural next steps are to track change rates in higher-order structural features, to test
 analogous rules under link removal and correlated or temporally clustered failure processes,
 and to extend the analysis to hub-protecting removal strategies in which lower-fitness or

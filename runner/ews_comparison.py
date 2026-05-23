@@ -218,9 +218,15 @@ class EWSComparisonExperiment:
                 r"All three signals use the identical baseline-deviation rule. "
                 r"$n_{\mathrm{det}}/40$: seeds with a valid $q_{\mathrm{warn}}$ "
                 r"prior to collapse. "
-                r"Median $[IQR]$: $q_{\mathrm{warn}}$ over detected seeds. "
-                r"Rolling window: $w=" + str(_ROLLING_W) + r"$ steps "
-                r"($\Delta q \approx 0.009$ per step).}"
+                r"Median $[IQR]$: $q_{\mathrm{warn}}$ over detected seeds; "
+                r"lower median = earlier warning. "
+                r"Rolling window: $w=" + str(_ROLLING_W) + r"$ steps, "
+                r"covering $\Delta q \approx 0.063$ of damage fraction "
+                r"(grid step size $\Delta q \approx 0.009$). "
+                r"$\gamma=3.0$ is included as an out-of-range test point "
+                r"(beyond the primary sweep $\gamma\in(2,3)$) to probe comparator "
+                r"behaviour near the lighter-tail boundary; it is absent from all "
+                r"other primary results tables.}"
             ),
             r"\label{tab:ews_comparison}",
             r"\begin{tabular}{c c c c}",
