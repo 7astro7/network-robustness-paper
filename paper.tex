@@ -1,7 +1,7 @@
 \documentclass{nws}
 \usepackage{amsmath, amssymb, amsfonts}
 \usepackage{float}
-\usepackage{placeins}
+\usepackage[section]{placeins}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{natbib}
@@ -335,7 +335,7 @@ to Chung--Lu.
 \subsection{Signal Morphology: Illustrative Single Realization}
 
 % --- Block A: Synthetic random representative (Fig. 1) ---
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.95\linewidth, height=0.45\textheight, keepaspectratio]{%
 paper/figures/fig1_random_gamma2.5_seed18_alpha0.20.pdf}
@@ -361,7 +361,7 @@ For each $\gamma$ we run 40 seeds under the fixed baseline-deviation rule. The k
 $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ across the heavy-tailed regime, rests on
 this ensemble, not any single realization.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.95\linewidth, height=0.45\textheight, keepaspectratio]{paper/figures/fig_gamma_sweep_random.pdf}
 \caption{Random failure: mean $\pm$ standard deviation of $q_{\mathrm{warn}}$ and
@@ -402,7 +402,7 @@ This is mechanistically expected: when any node is removed under random failure,
 Because $P(k)\sim k^{-\gamma}$ places the overwhelming majority of nodes at low degrees, these shifts produce large absolute changes in $P(k)$ at small $k$ and negligible changes at large $k$ where $P(k)\approx 0$.
 The KL signal therefore tracks diffuse low-degree redistribution in the surviving subgraph, not isolated hub-removal events.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.7\linewidth, height=0.45\textheight, keepaspectratio]{paper/figures/fig_kl_lorenz.pdf}
 \caption{Cumulative fraction of $\sum_k |c(k;\,q)|$, where
@@ -485,9 +485,9 @@ baseline below the population-level prediction. Near $q_c$, cascade-induced corr
 lift the empirical signal above the mean-field prediction. The post-minimum monotone rise in $\mathcal{I}(q)$ confirms
 that distributional change accelerates approaching $q_c$.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth, height=0.42\textheight, keepaspectratio]{paper/figures/fig_analytical_kl.pdf}
+\includegraphics[width=\textwidth, height=0.45\textheight, keepaspectratio]{paper/figures/fig_analytical_kl.pdf}
 \caption{Analytical successive KL divergence $\tilde{D}_{\mathrm{KL}}(q)$ computed from
 the binomial-thinning residual distribution $\tilde{P}(k';\,q)$ (Eq.~\ref{eq:binomial_thinning}),
 EWMA-smoothed ($\alpha=0.20$), for $\gamma\in\{2.1,2.5,2.9\}$.
@@ -523,7 +523,7 @@ across the $\gamma$ sweep.
 \autoref{fig:caida_random} shows a representative run;
 \autoref{tab:caida_summary} reports the 40-seed summary.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \input{paper/figures/caida_random_constants_20260101_seed0.tex}
 \begin{tikzpicture}
@@ -596,9 +596,9 @@ ensemble structure beyond the tail exponent.
 
 \input{paper/tables/gamma_sweep_random_config.tex}
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth, height=0.42\textheight, keepaspectratio]{paper/figures/kl_signal_comparison.pdf}
+\includegraphics[width=\textwidth, height=0.45\textheight, keepaspectratio]{paper/figures/kl_signal_comparison.pdf}
 \caption{Smoothed successive KL $\tilde{D}_{\mathrm{KL}}(q)$ under random failure for a
 Chung--Lu network (left) and an exponent-matched configuration-model network (right),
 $\gamma=2.5$, seed 0, $\alpha=0.20$.

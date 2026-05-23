@@ -62,7 +62,7 @@ def main():
     q_col_mean = np.asarray(q_col_mean, dtype=float)
     q_col_std = np.asarray(q_col_std, dtype=float)
 
-    fig, ax = plt.subplots(figsize=(6.8, 3.8), dpi=300)
+    fig, ax = plt.subplots(figsize=(6.8, 3.8), dpi=300, constrained_layout=True)
 
     ax.errorbar(
         gammas,
@@ -98,8 +98,6 @@ def main():
         frameon=False,
         borderaxespad=0.0,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
-
     fig.savefig(out_pdf, bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
 

@@ -99,8 +99,7 @@ cm_model = ConfigurationModel(n=N, gamma=GAMMA)
 # --------------------------------------------------------------------------- #
 # Plot
 # --------------------------------------------------------------------------- #
-fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2))
-fig.subplots_adjust(wspace=0.38)
+fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2), constrained_layout=True)
 
 _plot_panel(
     axes[0], cl_model.G, Q_LEVELS,

@@ -133,8 +133,7 @@ y_max = 0.30
 # --------------------------------------------------------------------------- #
 # Plot
 # --------------------------------------------------------------------------- #
-fig, axes = plt.subplots(1, 2, figsize=(10, 4.0), sharey=False)
-fig.subplots_adjust(wspace=0.30)
+fig, axes = plt.subplots(1, 2, figsize=(10, 4.0), sharey=False, constrained_layout=True)
 
 _plot_panel(
     axes[0], cl_qs_mid, cl_dkl, cl_mu0, cl_sigma0, cl_threshold, cl_q_warn,
