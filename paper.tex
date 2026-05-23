@@ -460,12 +460,12 @@ post-window signal (see Discussion, \S\ref{sec:discussion_noise_floor}).
 
 The calibration window $q \le 0.15$ falls in the high-$\mathcal{I}(q)$ early regime.
 In the empirical CL signal, the calibration window exhibits lower amplitude and variance than
-this analytical early regime, because finite-sample degree distributions produce noise
-floors lower than the elevated population-level early region. Near $q_c$, cascade dynamics
-produce correlated shifts absent from binomial thinning, lifting the empirical signal above
-the mean-field prediction. The post-minimum monotone rise in $\mathcal{I}(q)$ confirms
-that distributional change accelerates approaching $q_c$. The analytical-to-empirical
-mismatch identifies cascade dynamics as the operative mechanism.
+this analytical early regime. We hypothesize that simultaneous stub deletion, which removes
+all edges incident to a deleted node at once rather than independently, induces correlated
+neighbourhood updates absent from binomial thinning and suppresses the early empirical
+baseline below the population-level prediction. Near $q_c$, cascade-induced correlated shifts
+lift the empirical signal above the mean-field prediction. The post-minimum monotone rise in $\mathcal{I}(q)$ confirms
+that distributional change accelerates approaching $q_c$.
 
 \begin{figure}[htbp]
 \centering
@@ -495,20 +495,6 @@ meaningful estimand. We summarize by $I_{\mathrm{tgt}}:=\tilde{D}_{\mathrm{KL}}(
 and $q_{\mathrm{collapse}}$; refining the grid moves $q_{1/2}$ toward zero without
 changing the interpretation.
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\linewidth]{%
-paper/figures/fig2_targeted_gamma2.5_seed0_alpha0.20.pdf}
-\caption{Targeted (hub-first) failure ($\gamma = 2.5$, seed 0, $\alpha = 0.20$).
-$S(q)$ collapses abruptly at $q_{\mathrm{collapse}} = 0.091$; the successive-KL signal
-jumps at the first midpoint $q_{1/2} = \Delta q / 2$ (gold dashed line). Note that this
-seed's $q_{\mathrm{collapse}}=0.091$ lies slightly above the ensemble median
-(\autoref{tab:gamma_sweep_targeted}); the qualitative pattern---immediate disruption at
-the first step---holds uniformly across seeds.
-\autoref{tab:gamma_sweep_targeted} reports $q_{\mathrm{collapse}}$ and $I_{\mathrm{tgt}}$
-across 40 seeds and the full $\gamma$ sweep.}
-\label{fig:targeted_rep}
-\end{figure}
 
 \autoref{tab:gamma_sweep_targeted} shows $q_{\mathrm{collapse}}\approx 0.07$--$0.09$
 across the $\gamma$ sweep.
@@ -701,22 +687,28 @@ q_{\mathrm{collapse}}$ in all or nearly all seeds at every tested $\gamma$; this
 AS graph. Under targeted (hub-first) removal, no calibration window exists; we instead record
 initial shock magnitude $I_{\mathrm{tgt}} := \tilde{D}_{\mathrm{KL}}(q_{1/2})$. Controls
 confirm specificity: successive KL produces zero false triggers in null and low-damage regimes
-whereas entropy-change and rolling-sd signals trigger frequently (37/40 and 27/40). It fires earlier than rolling-sd EWS by 0.013--0.027 in median $q_{\mathrm{warn}}$ across tested $\gamma$ (\autoref{tab:ews_comparison}), and detects more consistently than rolling AC(1) (39--40/40 vs.\ 15--22/40).
-Moment-based $\kappa(q)$ produces zero detections in the low-damage control (0/40), confirming that the full distributional signal is necessary.
-The degree-class decomposition (Section~\ref{sec:kl_degree_structure}) further shows that the signal tracks diffuse low-degree redistribution rather than hub-removal events.
+whereas entropy-change and rolling-sd signals trigger frequently (37/40 and 27/40). Successive KL 
+divergence fires earlier than rolling-sd EWS by 0.013--0.027 in median $q_{\mathrm{warn}}$ across 
+tested $\gamma$ (\autoref{tab:ews_comparison}), and detects more consistently than rolling AC(1) (39--40/40 vs.\ 15--22/40).
+The degree-class decomposition (Section~\ref{sec:kl_degree_structure}) shows that the signal tracks diffuse low-degree redistribution rather than hub-removal events.
 
-Pre-collapse signal acceleration is explained analytically via binomial thinning: the
+Signal acceleration near $q_c$ is explained analytically via binomial thinning: the
 Fisher information $\mathcal{I}(q)$ of the residual distribution grows as the high-degree
 tail contracts near the percolation threshold, producing $(\Delta q)^2\,\mathcal{I}(q)$
 per-step KL that accelerates approaching $q_c$, matching the observed post-window rise.
-The stability of the calibration window is an empirical property of the finite-sample CL
-signal, visible in \autoref{fig:random_rep} and robust to window-endpoint choice
-(\autoref{tab:baseline_window_sensitivity}).
+This analytical result characterises signal behaviour near $q_c$ only; it does not predict
+calibration window stability.
+Calibration window stability is an empirical property, validated here at $N=10{,}000$
+across $\gamma\in(2,3)$: visible in \autoref{fig:random_rep}, robust to window-endpoint
+choice (\autoref{tab:baseline_window_sensitivity}), and confirmed by the null and
+low-damage controls (0/40 false triggers in each), but not derived from the
+binomial-thinning framework, and its behaviour at other network scales or degree
+distributions remains an open empirical question.
 
 The indicator's divergence between Chung--Lu and the configuration model reveals the
 indicator's sensitivity to localized structural correlations and finite-size stub-matching
 constraints that mean-field models ignore.
-The dominant structural property governing ensemble transfer is the baseline KL noise floor.
+The key observable governing ensemble transfer is the baseline KL noise floor.
 In Chung--Lu graphs, the expected-degree wiring (soft degree constraint) produces
 smooth, low-amplitude step-to-step variation in $P_q(k)$: at $\gamma=2.5$,
 $\bar{\mu}_0=0.058$ and $\bar{\sigma}_0=0.011$ (\autoref{tab:baseline_noise_comparison}), so the
@@ -725,47 +717,44 @@ threshold $\bar{\mu}_0+2\bar{\sigma}_0=0.080$ lies below the post-window signal 
 higher baseline noise: $\bar{\mu}_0=0.118$ and $\bar{\sigma}_0=0.032$
 (\autoref{tab:baseline_noise_comparison}), driving the threshold to $0.182$, consistent with
 36/40 non-detecting seeds ($n_{\mathrm{det}}=4/40$, \autoref{tab:baseline_noise_comparison}).
-The mechanistic source is stub-pairing randomness: surviving nodes' stubs
-are re-paired randomly at each damage step, introducing per-step variability in $P_q(k)$
-absent in CL. This pattern holds across $\gamma$: CM detection rates range from 1/40 to
+The mechanistic source is stub-pairing randomness at construction time: hard-constraint
+wiring introduces degree--degree correlations and local clustering into the initial CM graph
+that are absent under CL's soft expected-degree constraint, and these baked-in correlations
+produce elevated step-to-step variability in $P_q(k)$ as nodes are removed from the 
+graph. This pattern holds across $\gamma$: CM detection rates range from 1/40 to
 14/40 for every $\gamma\in\{2.1,\ldots,2.9\}$ (\autoref{tab:baseline_noise_comparison}),
 while CL detects in all or nearly all seeds at every $\gamma$.
 
+The Fisher information $\mathcal{I}(q)$ of the binomial-thinning residual distribution provides a population-level reference for the KL signal's shape across the damage trajectory.
 $\mathcal{I}(q)$ computed from binomial thinning (\autoref{fig:fisher_info}) is large at
 small $q$, reaches a minimum in the mid-damage range, then grows toward $q_c$; since
 successive KL per step scales as $(\Delta q)^2\mathcal{I}(q)/2$, the post-minimum rise
-remains small in absolute terms. The calibration window $q\le0.15$ falls on the
-high-$\mathcal{I}(q)$ early portion of the curve, meaning the population-level analytical
-signal does not itself exhibit a calibration window with low-noise behavior; the
-non-triggering property observed in the CL ensemble is a finite-sample property, not a
-consequence of population-level distributional dynamics.
+remains small in absolute terms. The calibration window $q\le0.15$ falls on the high-$\mathcal{I}(q)$ early portion of the
+analytical curve, so the population-level signal is not intrinsically quiet there.
+The empirical signal's stability during $q\le0.15$ in finite CL graphs is not fully
+explained by the binomial-thinning model; we hypothesize that simultaneous stub deletion,
+which removes all edges incident to a deleted node at once rather than independently,
+induces correlated neighbourhood updates that suppress the early empirical baseline below
+the population-level prediction.
+Characterizing this mechanism analytically and testing its $N$-dependence remains future work.
 Under the same baseline-deviation rule, this analytical signal does not trigger: the
 calibration window $q \le 0.15$ falls on the elevated early portion of the signal, so
 $\mu_0$ and $\sigma_0$ are estimated from a high-amplitude region, placing the threshold
-above the post-window signal. Empirical detection in the Chung--Lu ensemble succeeds
-because finite-sample degree distributions produce noise floors lower and flatter than the
-elevated analytical early region, giving the post-window rise room to exceed the threshold;
-detection is thus a property of finite-sample signal geometry, not population-level dynamics
-alone. The mechanism underlying this geometry is the simultaneous stub deletion absent from
-the binomial-thinning model (Eq.~\ref{eq:binomial_thinning}): that model assumes each edge
+above the post-window signal. Empirical detection in the Chung--Lu ensemble succeeds because correlated deletion
+suppresses the early empirical baseline below the population-level prediction, giving the
+post-window rise room to exceed the threshold; detection depends on this structural mechanism,
+not on population-level dynamics alone. The binomial-thinning model (Eq.~\ref{eq:binomial_thinning}) assumes each edge
 survives independently with probability $(1-q)$, whereas actual node removal deletes all
-edges incident to a removed node at once, inducing correlated degree changes across the
-entire neighborhood and introducing structural cascades that the mean-field independence
-assumption cannot capture. These cascade-induced correlations keep the empirical
-baseline noise floor lower and flatter than the elevated analytical early region while
-concentrating distributional shift into the post-window signal. This discrepancy between
-the mean-field analytical prediction and the empirical signal is real and consequential:
-empirical detection succeeds specifically because cascade-induced correlations suppress
-the baseline noise floor below the population-level prediction; the analytical framework
-correctly characterizes population-level distributional dynamics but does not capture
-the simultaneous stub deletion that governs empirical baseline geometry. This identifies a scope condition for the baseline-deviation rule: the calibration
-window must fall in the low-noise mid-range of the empirical signal rather than the
-high-$\mathcal{I}(q)$ early regime, a condition satisfied by $q \le 0.15$ at the network
-scales and degree exponents studied here and confirmed by the null and low-damage controls.
-This signal shape also suggests that adaptive window placement, selecting from the empirical
-mid-range rather than a fixed low-damage interval, could improve robustness across network
-sizes and ensemble types.
+edges incident to a removed node at once. We hypothesize that this correlated deletion
+keeps the empirical baseline lower and flatter than the population-level prediction,
+concentrating distributional shift into the post-window signal; the analytical framework
+correctly characterizes population-level dynamics near $q_c$ but does not capture this
+mechanism. This identifies a scope condition for the baseline-deviation rule: the calibration
+window must fall in a low-noise region of the empirical signal. For the Chung--Lu graphs studied here, $q \le 0.15$ satisfies this condition
+empirically; the population-level $\mathcal{I}(q)$ analysis identifies ensemble type
+and network scale as the structural parameters governing its transferability.
 
+The CL--CM performance gap is quantifiable as a signal-to-noise ratio.
 The SNR contrast itself encodes structural information:
 $\mathrm{SNR}=\max_{q>q_0}\tilde{D}_{\mathrm{KL}}(q)\,/\,(\mu_0+z\sigma_0)$ exceeds one
 in all CL seeds (detection rate 40/40 at every $\gamma$) and falls below one in 26--39/40
@@ -783,9 +772,14 @@ motivates a clean separation between two monitoring objectives: (i) advance warn
 collapse under gradual random attrition, and (ii) shock quantification under targeted or
 adversarial removal via $I_{\mathrm{tgt}}$.
 
+The temporal advantage of the smoothed successive KL divergence signal over classical rolling-variance metrics stems from a fundamental difference in how they process structural data.
+Variance collapses a complex distribution into a single scalar statistic, losing information about distributional shape; KL divergence is sensitive to shape changes across the entire empirical degree spectrum.
+By directly measuring the information distance between successive steps, the metric bypasses the inherent lag of sliding-window estimators.
+The divergence between Chung--Lu and configuration-model signatures further demonstrates that the signal is sensitive to structural correlations embedded in the wiring mechanics of the graph ensemble, independent of the degree exponent $\gamma$.
+
 This study intentionally restricts the structural state to the empirical degree distribution
 to keep the signal interpretable and the decision rule fixed across regimes; richer summaries
-(joint-degree structure, mixing, motifs) may refine warning behavior under adversarial removal.
+(joint-degree structure, mixing, motifs) may refine warning behavior under targeted removal.
 All synthetic experiments use $N=10{,}000$ nodes; the CAIDA AS graph ($N=78{,}673$) provides one cross-scale data point (40-seed
 detection rate 40/40 with qualitatively matched signal shape), though systematic
 finite-size analysis remains future work.
