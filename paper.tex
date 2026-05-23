@@ -339,7 +339,7 @@ to Chung--Lu.
 \centering
 \includegraphics[width=0.95\linewidth]{%
 paper/figures/fig1_random_gamma2.5_seed18_alpha0.20.pdf}
-\vspace{2em}
+\sidecapoff
 \caption{Random failure ($\gamma=2.5$, seed 18, $\alpha=0.20$).
 GCC fraction $S(q)$ (left axis) declines gradually while smoothed successive KL
 $\tilde{D}_{\mathrm{KL}}(q)$ (right axis) departs from the calibration window well before collapse.
@@ -365,7 +365,7 @@ this ensemble, not any single realization.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\linewidth]{paper/figures/fig_gamma_sweep_random.pdf}
-\vspace{1.5em}
+\sidecapoff
 \caption{Random failure: mean $\pm$ standard deviation of $q_{\mathrm{warn}}$ and
 $q_{\mathrm{collapse}}$ across 40 seeds as a function of $\gamma$
 (Chung--Lu, $N=10{,}000$, $\alpha=0.20$).
@@ -408,7 +408,7 @@ To quantify this directly, we compute the Pearson correlation between $\tilde{D}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.7\linewidth]{paper/figures/fig_kl_lorenz.pdf}
-\vspace{1.5em}
+\sidecapoff
 \caption{Cumulative fraction of $\sum_k |c(k;\,q)|$, where
 $c(k;\,q)=P_{q+\Delta q}(k)\log_2[P_{q+\Delta q}(k)/P_q(k)]$, accounted for by occupied
 degree classes ($P_q(k)>0$) up to the $x$-th percentile (sorted ascending $k$), at
@@ -489,9 +489,10 @@ baseline below the population-level prediction. Near $q_c$, cascade-induced corr
 lift the empirical signal above the mean-field prediction. The post-minimum monotone rise in $\mathcal{I}(q)$ confirms
 that distributional change accelerates approaching $q_c$.
 
-\begin{figure}[p]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth, height=0.42\textheight, keepaspectratio]{paper/figures/fig_analytical_kl.pdf}
+\sidecapoff
 \caption{Analytical successive KL divergence $\tilde{D}_{\mathrm{KL}}(q)$ computed from
 the binomial-thinning residual distribution $\tilde{P}(k';\,q)$ (Eq.~\ref{eq:binomial_thinning}),
 EWMA-smoothed ($\alpha=0.20$), for $\gamma\in\{2.1,2.5,2.9\}$.
@@ -509,6 +510,7 @@ Fig.~S1) is large at small $q$ and grows again near $q_c$; the high baseline-win
 amplitude visible here is a direct consequence.}
 \label{fig:analytical_kl}
 \end{figure}
+\FloatBarrier
 
 % --- Block C: Synthetic targeted representative (Fig. 2) ---
 \subsection{Targeted Failure: Immediate Disruption}
@@ -584,6 +586,7 @@ sep=1.6ex}}
 \end{axis}
 \node[anchor=south, yshift=-2pt] at (caidaS.north) {\pgfplotslegendfromname{caidaLegend}};
 \end{tikzpicture}
+\sidecapoff
 \caption{CAIDA AS graph (2026-01-01, $N=78{,}673$ nodes), random failure (seed 0, $\alpha = 0.20$). GCC fraction $S(q)$ (left axis) and smoothed successive KL $\tilde{D}_{\mathrm{KL}}(q)$ (right axis); calibration window $q \leq 0.15$ shaded. The baseline-deviation rule identifies $q_{\mathrm{warn}} \approx 0.689$ ahead of $q_{\mathrm{collapse}} \approx 0.985$; 40-seed summary in \autoref{tab:caida_summary}.}
 \label{fig:caida_random}
 \end{figure}
@@ -600,10 +603,10 @@ ensemble structure beyond the tail exponent.
 
 \input{paper/tables/gamma_sweep_random_config.tex}
 
-\begin{figure}[p]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{paper/figures/kl_signal_comparison.pdf}
-\vspace{1.5em}
+\sidecapoff
 \caption{Smoothed successive KL $\tilde{D}_{\mathrm{KL}}(q)$ under random failure for a
 Chung--Lu network (left) and an exponent-matched configuration-model network (right),
 $\gamma=2.5$, seed 0, $\alpha=0.20$.
@@ -839,6 +842,7 @@ Not applicable.
 % format.vol.num.pages that causes BibTeX errors locally. CUP's typesetting
 % infrastructure patches this. Use apalike for local compilation; switch to
 % nwslike for the final submission package.
+\clearpage
 \bibliographystyle{apalike}
 \bibliography{references}
 
@@ -850,6 +854,7 @@ Not applicable.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.75\linewidth]{paper/figures/fig_fisher_info.pdf}
+\sidecapoff
 \caption{Fisher information $\mathcal{I}(q)$ of the residual degree distribution
 $\tilde{P}(k';\,q)$ (Eq.~\ref{eq:binomial_thinning}) under random node removal,
 computed via central finite differences, for $\gamma\in\{2.1,2.5,2.9\}$ (log $y$-axis).

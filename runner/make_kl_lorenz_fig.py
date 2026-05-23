@@ -130,16 +130,11 @@ class KLLorenzFigure:
         ax.set_xlim(0.0, 100.0)
         ax.set_ylim(0.0, 1.0)
         ax.legend(fontsize=9, loc="upper left")
-        ax.set_title(
-            rf"KL contribution by degree percentile, $q\approx{self.snapshot_q}$, "
-            rf"$N={self.n:,}$, seed={self.seed}",
-            fontsize=9,
-        )
 
         self.outdir.mkdir(parents=True, exist_ok=True)
         for ext in ("pdf", "png"):
             path = self.outdir / f"fig_kl_lorenz.{ext}"
-            fig.savefig(path, bbox_inches="tight", **({"dpi": 150} if ext == "png" else {}))
+            fig.savefig(path, bbox_inches="tight", pad_inches=0.4, **({"dpi": 150} if ext == "png" else {}))
         plt.close(fig)
         print(f"Saved: {self.outdir / 'fig_kl_lorenz'}.pdf / .png")
 
