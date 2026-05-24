@@ -81,13 +81,10 @@ reorganization at each damage step. We ask whether such rates provide early-warn
 connectivity collapse in power-law networks under progressive node removal, and under what
 conditions the signal transfers across generative ensembles with matched tail exponents.
 
-Unlike entropy, which summarizes structure at a fixed damage level, successive KL divergence
-measures rates of change; being sensitive to the full distributional shape rather than
-low-order moments, it detects connectivity shifts before they appear macroscopically.
 We use exponentially weighted moving average (EWMA)-smoothed successive KL divergence to detect the onset of nonstationary
 structural reorganization under progressive node removal, using fixed decision rules that
 do not reference connectivity; we do not estimate $q_c$, and in the targeted regime the
-signal is interpreted as an immediate-disruption intensity summary rather than advance warning~\citep{cohen2000resilience}.
+signal is interpreted as an immediate-disruption intensity summary rather than advance warning~\citep{cohen2001breakdown}.
 Across 40 independent seeds per $\gamma$ over nine values in $(2,3)$, the signal departs
 from the calibration-window baseline at $q_{\mathrm{warn}} \ll q_{\mathrm{collapse}}$ in all or nearly
 all seeds at every tested $\gamma$ (e.g., 40/40 at $\gamma=2.5$, median lead time
@@ -179,8 +176,7 @@ Substantial connectivity redistribution can thus occur while moments change only
 Under random failure the tail erodes slowly; under targeted removal it distorts
 immediately. Both processes can accumulate while $S(q)$ remains largely unchanged.
 KL divergence, comparing full successive distributions, detects this redistribution where
-moment-based indicators miss it. Our objective is not to predict $q_c$ but to detect the
-onset of reorganization~\citep{radicchi2024robustness}.
+moment-based indicators miss it.
 
 For $q < q_c$, $\tilde{P}(k';\,q)$ is smooth (Eq.~\ref{eq:binomial_thinning}); for small $\Delta q$ (away from $q_c$, where tail contraction eventually invalidates the smooth-derivative assumption),
 \begin{equation}
@@ -486,14 +482,9 @@ The mechanism is visible directly: the calibration window $q\le0.15$ falls in th
 high-amplitude early regime of $\tilde{D}_{\mathrm{KL}}(q)$, so $\mu_0$ is estimated from
 large values and the resulting threshold clears the post-window signal by a substantial margin.
 
-The calibration window $q \le 0.15$ falls in the high-$\mathcal{I}(q)$ early regime.
-In the empirical CL signal, the calibration window exhibits lower amplitude and variance than
-this analytical early regime. We hypothesize that simultaneous stub deletion, which removes
-all edges incident to a deleted node at once rather than independently, induces correlated
-neighbourhood updates absent from binomial thinning and suppresses the early empirical
-baseline below the population-level prediction. Near $q_c$, cascade-induced correlated shifts
-lift the empirical signal above the mean-field prediction. The post-minimum monotone rise in $\mathcal{I}(q)$ confirms
-that distributional change accelerates approaching $q_c$.
+The empirical CL calibration window exhibits lower amplitude than this analytical early
+regime; the mechanism is discussed in \S\ref{sec:discussion}. The post-minimum monotone
+rise in $\mathcal{I}(q)$ confirms that distributional change accelerates approaching $q_c$.
 
 \begin{figure}[htbp]
 \centering
@@ -632,10 +623,6 @@ that reflects the indicator's sensitivity to hard-constraint structural correlat
 
 \input{paper/tables/baseline_noise_comparison.tex}
 
-For ensembles with known properties, a pre-calibrated threshold would restore
-transferability; characterizing which structural properties govern ensemble-stable transfer
-is a natural next step.
-
 \subsection{Controls and Specificity}
 \label{sec:controls}
 % --- Block F: Control analyses (no-damage null and low-damage) ---
@@ -675,9 +662,7 @@ produce a valid warning, compared to $\approx$4/40 in the exponent-matched CM.
 This pattern implies that both the degree sequence and the wiring mechanism
 contribute to detection behavior: when the degree sequence is drawn from the same CL
 source, detection improves substantially, but the hard-constraint wiring still elevates the noise
-floor relative to CL. The residual gap ($28/50$ vs $40/40$) confirms that stub-pairing
-randomness, independent of the degree sequence, is a distinct structural factor shaping
-the indicator's behavior.
+floor relative to CL.
 
 Together, the two experiments decompose ensemble sensitivity into two separable
 causes: hard-constraint wiring and degree sequence realization.
@@ -686,10 +671,6 @@ elevates calibration-window churn even when the degree sequence is identical.
 The further gap between exponent-matched CM ($\approx$4/40) and sequence-matched CM (28/50)
 isolates degree sequence realization: drawing a fresh sequence at each seed adds a second source of noise floor
 elevation on top of the wiring effect.
-This degree-sequence-matched variant directly addresses the question of whether detection
-differences between CL and CM stem from the degree sequence or from wiring alone: the 28/50
-result confirms that the degree sequence accounts for roughly half the gap, while
-hard-constraint wiring accounts for the other half.
 
 \input{paper/tables/degree_matched_config_random_failure.tex}
 

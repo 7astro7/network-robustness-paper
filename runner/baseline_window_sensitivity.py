@@ -137,7 +137,8 @@ class BaselineWindowSensitivityExperiment:
             r"Each column varies the upper limit of the calibration window; all other settings "
             r"($\alpha=0.20$, $z=2$) are held fixed. "
             r"Detection rate $n_{\mathrm{det}}/40$ and $\tilde{q}_{\mathrm{warn}}$ [IQR] are "
-            r"computed across 40 seeds per $\gamma$.}"
+            r"computed across 40 seeds per $\gamma$. "
+            r"$\gamma=3.0$ is included as an out-of-range test point; it is absent from all other primary results tables.}"
         )
         lines.append(r"\label{tab:baseline_window_sensitivity}")
         n_cols = 1 + len(self.q0_values)

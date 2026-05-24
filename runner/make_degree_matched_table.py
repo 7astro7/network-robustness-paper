@@ -52,7 +52,8 @@ def main() -> None:
         r"$n_{\mathrm{det}}$: runs with a valid $q_{\mathrm{warn}}$ prior to collapse. "
         r"$\tilde{\Delta}_{\mathrm{warn}}$ [IQR]: median [interquartile range] lead time "
         r"($q_{\mathrm{collapse}} - q_{\mathrm{warn}}$) for detected runs. "
-        r"All settings ($\alpha=0.20$, $z=2$, baseline $q\le 0.15$) are identical to the Chung--Lu analysis.}"
+        r"All settings ($\alpha=0.20$, $z=2$, baseline $q\le 0.15$) are identical to the Chung--Lu analysis. "
+        r"$\gamma=3.0$ is included as an out-of-range test point; it is absent from all primary results tables.}"
     )
     lines.append(r"\label{tab:degree_matched_config}")
     lines.append(r"\begin{tabular}{c c c}")
