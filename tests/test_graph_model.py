@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 import pytest
 
-from core.graph_model import GraphModel, ConfigurationModel
+from core.graph_model import GraphModel, ConfigurationModel, DegreeMatchedConfigurationModel
 
 
 # ---------------------------------------------------------------------------
@@ -144,3 +144,55 @@ class TestConfigurationModel:
             np.random.seed(seed)
             cm = ConfigurationModel(n=100, gamma=2.5)
             assert isinstance(cm.G, nx.Graph)
+
+
+# ---------------------------------------------------------------------------
+# DegreeMatchedConfigurationModel
+# ---------------------------------------------------------------------------
+
+class TestDegreeMatchedConfigurationModel:
+    @pytest.fixture
+    def source_degrees(self):
+        np.random.seed(0)
+        gm = GraphModel(n=200, gamma=2.5)
+        return [d for _, d in gm.G.degree()]
+
+    def test_graph_is_simple(self, source_degrees):
+        np.random.seed(1)
+        dm = DegreeMatchedConfigurationModel(source_degrees)
+        assert isinstance(dm.G, nx.Graph)
+
+    def test_no_selfloops(self, source_degrees):
+        np.random.seed(1)
+        dm = DegreeMatchedConfigurationModel(source_degrees)
+        assert len(list(nx.selfloop_edges(dm.G))) == 0
+
+    def test_node_count_at_most_source(self, source_degrees):
+        np.random.seed(1)
+        dm = DegreeMatchedConfigurationModel(source_degrees)
+        assert dm.G.number_of_nodes() <= len(source_degrees)
+
+    def test_p0_is_valid_pmf(self, source_degrees):
+        np.random.seed(1)
+        dm = DegreeMatchedConfigurationModel(source_degrees)
+        assert dm.P0.sum() == pytest.approx(1.0, abs=1e-10)
+        assert np.all(dm.P0 >= 0.0)
+
+    def test_gamma_stored_for_metadata(self, source_degrees):
+        np.random.seed(1)
+        dm = DegreeMatchedConfigurationModel(source_degrees, gamma=2.5)
+        assert dm.gamma == pytest.approx(2.5)
+
+    def test_different_seeds_produce_different_graphs(self, source_degrees):
+        np.random.seed(1)
+        dm1 = DegreeMatchedConfigurationModel(source_degrees)
+        np.random.seed(99)
+        dm2 = DegreeMatchedConfigurationModel(source_degrees)
+        assert set(dm1.G.edges()) != set(dm2.G.edges())
+
+    def test_odd_degree_sum_handled(self):
+        np.random.seed(0)
+        odd_seq = [3, 3, 3]  # sum=9, odd
+        dm = DegreeMatchedConfigurationModel(odd_seq)
+        degrees = [d for _, d in dm.G.degree()]
+        assert sum(degrees) % 2 == 0
