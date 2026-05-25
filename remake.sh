@@ -53,7 +53,7 @@ echo ""
 echo "================================================================"
 echo " Step 8/16  Representative figures (Fig 1 random, Fig 2 targeted)"
 echo "================================================================"
-python runner/run_experiment.py --make-fig1-random
+python runner/run_experiment.py --make-fig1-random --seed 18
 python runner/run_experiment.py --make-fig2-targeted
 
 echo ""
@@ -85,6 +85,7 @@ echo " Step 13/16  Analytical KL signal + Fisher information figures"
 echo "================================================================"
 python -m runner.analytical_kl
 python -m runner.make_fisher_info_fig
+python scripts/plot_kl_signal_comparison.py
 
 echo ""
 echo "================================================================"
@@ -97,11 +98,36 @@ echo "================================================================"
 echo " Step 15/16  CAIDA figure + summary table"
 echo "================================================================"
 if [ -f "$CAIDA_EDGES" ]; then
-    python -m runner.make_caida_fig --edges "$CAIDA_EDGES"
+    python -m runner.make_caida_fig --edges "$CAIDA_EDGES" --seed 0
+    python -m runner.make_caida_fig --edges "$CAIDA_EDGES" --run-5-seeds --num-seeds 40
 else
     echo "WARNING: $CAIDA_EDGES not found — skipping CAIDA step."
     echo "See README.md for download instructions."
     echo "All synthetic results are unaffected."
+    echo "Generating placeholder files so paper.tex compiles without CAIDA data..."
+    mkdir -p paper/figures paper/tables
+    # Constants file: defines \CAIDAQWarn and \CAIDAQCollapse used by tikzpicture
+    printf '\\def\\CAIDAQWarn{N/A}\n\\def\\CAIDAQCollapse{N/A}\n' \
+        > paper/figures/caida_random_constants_20260101_seed0.tex
+    # Stub .dat files: pgfplots needs at least one coordinate
+    printf 'x y\n0.0 1.0\n' > paper/figures/caida_random_S_20260101_seed0.dat
+    printf 'x y\n0.005 0.0\n' > paper/figures/caida_random_dkl_20260101_seed0_alpha0.20.dat
+    # Stub summary table
+    cat > paper/tables/caida_summary.tex << 'STUBEOF'
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{CAIDA AS topology: detection rates under random failure. CAIDA data not available -- see README for download instructions.}
+\label{tab:caida_summary}
+\begin{tabular}{l c}
+\toprule
+Metric & Value \\
+\midrule
+Data & Not available \\
+\bottomrule
+\end{tabular}
+\end{table}
+STUBEOF
 fi
 
 echo ""

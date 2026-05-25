@@ -382,8 +382,16 @@ class GammaSweepExperiment:
         ]
 
         n_workers = os.cpu_count() or 1
+        n_total = len(all_args)
+        print(f"  [{self.graph_model}] Running {n_total} experiments "
+              f"({len(self.gammas)} gamma × {len(self.seeds)} seeds) "
+              f"on {n_workers} workers...", flush=True)
+        all_results = []
         with Pool(processes=n_workers) as pool:
-            all_results = pool.map(_run_seed_full, all_args)
+            for i, result in enumerate(pool.imap_unordered(_run_seed_full, all_args), 1):
+                all_results.append(result)
+                if i % max(1, n_total // 10) == 0 or i == n_total:
+                    print(f"  ... {i}/{n_total} done", flush=True)
 
         # Group results by gamma (preserving seed order within each gamma).
         from itertools import groupby
@@ -528,8 +536,14 @@ class GammaSweepExperiment:
         ]
 
         n_workers = os.cpu_count() or 1
+        n_total = len(all_args)
+        print(f"  [sensitivity] Running {n_total} experiments on {n_workers} workers...", flush=True)
+        all_results = []
         with Pool(processes=n_workers) as pool:
-            all_results = pool.map(_run_seed_random_only, all_args)
+            for i, result in enumerate(pool.imap_unordered(_run_seed_random_only, all_args), 1):
+                all_results.append(result)
+                if i % max(1, n_total // 10) == 0 or i == n_total:
+                    print(f"  ... {i}/{n_total} done", flush=True)
 
         from itertools import groupby
         all_results.sort(key=lambda r: (r["gamma"], r["seed"]))

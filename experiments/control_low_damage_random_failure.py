@@ -129,8 +129,9 @@ def run_low_damage_control(
     tex_path = out_path / "tables" / f"control_low_damage_gamma{gamma:.1f}_alpha{alpha:.2f}.tex"
 
     rows: list[ControlRow] = []
+    print(f"  [low-damage control] gamma={gamma}, {len(seeds)} seeds...", flush=True)
 
-    for seed in seeds:
+    for i, seed in enumerate(seeds, 1):
         np.random.seed(seed)
         random.seed(seed)
 
@@ -172,6 +173,8 @@ def run_low_damage_control(
                     s_min=s_min,
                 )
             )
+        if i % max(1, len(seeds) // 5) == 0 or i == len(seeds):
+            print(f"  ... {i}/{len(seeds)} seeds done", flush=True)
 
     # --- write CSV (per-seed transparency) ---
     with csv_path.open("w", newline="") as f:

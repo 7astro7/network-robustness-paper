@@ -23,9 +23,18 @@
 
 \newcommand{\CAIDASnapshot}{2026-01-01}
 
+% Set \blindtrue before compiling the anonymised Main Document for submission.
+% Set \blindfalse (default) for the author-copy and local builds.
+\newif\ifblind
+\blindfalse
+
 \begin{document}
 
-\lefttitle{Kraehling}
+\ifblind
+  \lefttitle{[Author]}
+\else
+  \lefttitle{Kraehling}
+\fi
 \righttitle{Network Science}
 
 \jnlPage{1}{1}
@@ -37,13 +46,17 @@
 \title{Entropy-Based Indicators of Critical Transitions in
 Power-Law Networks Under Progressive Node Removal}
 
+\ifblind
+\author{[Author]}
+\else
 \author{Zachary Kraehling}
 
 \affil{Independent Researcher, Nashville, TN 37203, USA\\
 \email{zak@zakkraehling.net}}
+\fi
 
 \begin{abstract}
-Early warning of network collapse is an open problem: classical connectivity measures such as giant-component fraction change little until failure is already underway, leaving little time for intervention. We propose tracking smoothed successive Kullback--Leibler (KL) divergence between adjacent empirical degree distributions as a structural early-warning signal for power-law networks under progressive node removal. The signal measures the rate of distributional reorganization at each damage step without referencing connectivity, and fires a detection rule grounded in a calibration window over the early damage trajectory. We derive the residual degree distribution analytically via binomial thinning and show that the Fisher information of this distribution grows near the percolation threshold, explaining why the signal accelerates before collapse. Across Chung--Lu graphs spanning the heavy-tailed regime $2 < \gamma < 3$, the signal departs from baseline well before giant-component collapse under random failure, with zero false triggers in null and low-damage controls; it produces earlier warning than rolling-variance early-warning signals under the same decision rule. Results replicate on an empirical Internet AS topology. Under targeted hub removal, the signal instead provides an immediate disruption intensity summary. A comparison with the configuration model reveals that the indicator is sensitive to ensemble wiring mechanics beyond the degree exponent: hard-constraint stub-pairing elevates the baseline noise floor and suppresses detection, a finding with practical implications for null-model selection in network monitoring.
+Early warning of network collapse is an open problem: classical connectivity measures change little until failure is already underway, leaving little time for intervention. We propose tracking smoothed successive Kullback--Leibler (KL) divergence between adjacent empirical degree distributions as a structural early-warning signal for power-law networks under progressive node removal. The signal measures distributional reorganization at each damage step without referencing connectivity, firing a detection rule calibrated on the early damage trajectory. We derive the residual degree distribution analytically via binomial thinning and show that the Fisher information of this distribution grows toward the percolation threshold after a mid-damage minimum, characterizing signal acceleration near $q_c$ in the population-level model. Across Chung--Lu graphs spanning $2 < \gamma < 3$, the signal departs from baseline before collapse under random failure, with zero false triggers in null and low-damage controls and earlier warning than rolling-variance signals under the same decision rule. Results replicate on an empirical Internet AS topology. Under targeted hub removal, the signal provides an immediate disruption intensity summary. Configuration-model comparison shows the indicator is sensitive to ensemble wiring mechanics beyond the degree exponent: hard-constraint stub-pairing elevates the noise floor and suppresses detection, with practical implications for null-model selection in network monitoring.
 \end{abstract}
 
 \begin{keywords}
@@ -91,8 +104,8 @@ all seeds at every tested $\gamma$ (e.g., 40/40 at $\gamma=2.5$, median lead tim
 $\Delta_{\mathrm{warn}} \approx 0.55$), reproduced on a Center for Applied Internet Data Analysis (CAIDA) Autonomous System (AS) graph (40/40 seeds).
 The residual degree distribution is derived analytically via binomial thinning; a Fisher
 information approximation shows that the per-step KL is proportional to $\mathcal{I}(q)$,
-which grows as the high-degree tail contracts near $q_c$, explaining the pre-collapse signal
-acceleration. Empirically, the baseline-deviation rule applied to successive KL produces
+which grows as the high-degree tail contracts near $q_c$, characterizing signal acceleration
+in the population-level model. Empirically, the baseline-deviation rule applied to successive KL produces
 earlier warning than rolling-variance EWS under the same decision rule, a timing advantage
 attributable to rolling-window lag.
 Configuration-model experiments reveal that the indicator diverges between Chung--Lu and
@@ -105,7 +118,7 @@ that directly affects whether genuine warnings are detected.
 
 \section{Related Work}
 
-Early-warning signals for tipping points have been studied across ecology, climate, finance, and other complex systems, where rising variance and lag-1 autocorrelation serve as generic indicators of critical slowing down near bifurcations \citep{scheffer2012anticipating,scheffer2009earlywarning}. These indicators are estimated from repeated observations of system state under a slowly drifting external parameter \citep{vannes2007slow,dakos2012methods}. Recent work extends EWS to machine-learning-based detection \citep{bury2021deeplearning} and to structural disintegration in complex systems via network-feature monitoring \citep{grassia2021machine}, as well as to percolation-based signals in coupled oscillatory systems \citep{ehstand2023network}. Our setting differs fundamentally: we have a single monotone structural-damage trajectory rather than a time series of repeated state observations, so variance and autocorrelation of a state variable are not available; instead we track successive KL divergence between adjacent empirical degree distributions, and we employ a fully analytical connection between this indicator and Fisher information.
+Early-warning signals for tipping points have been studied across ecology, climate, finance, and other complex systems, where rising variance and lag-1 autocorrelation serve as generic indicators of critical slowing down near bifurcations \citep{scheffer2012anticipating,scheffer2009earlywarning}. These indicators are estimated from repeated observations of system state under a slowly drifting external parameter \citep{vannes2007slow,dakos2012methods}. Recent work extends EWS to machine-learning-based detection \citep{bury2021deeplearning} and to structural disintegration in complex systems via network-feature monitoring \citep{grassia2021machine}, as well as to percolation-based signals in coupled oscillatory systems \citep{ehstand2023network}. Our setting differs fundamentally: we have a single monotone structural-damage trajectory rather than a time series of repeated state observations, so variance and autocorrelation of a state variable are not available; instead we track successive KL divergence between adjacent empirical degree distributions, and we employ an approximate analytical connection between this indicator and Fisher information.
 
 Network resilience and robustness have been characterized analytically via degree-moment conditions \citep{molloy1995critical,callaway2000network} and percolation theory \citep{cohen2000resilience}. \citet{gao2016resilience} show that high-dimensional network dynamics can be reduced to a one-dimensional system, enabling resilience prediction from network structure; their framework targets dynamical resilience rather than structural early warning under damage. \citet{suweis2014earlywarning} demonstrate that rising variance and cross-correlation in node-state dynamics anticipate instability on networks, but rely on a time series of node states rather than the evolving degree distribution. The robustness literature \citep{albert2000error,radicchi2024robustness} relies primarily on GCC fraction and degree-moment thresholds, not information-theoretic quantities that change before collapse. Structural properties such as modularity further modulate robustness under degree-based and betweenness-based targeted attacks \citep{bellingeri2021modularity}, but the focus remains on post-collapse topology rather than precursor signals. Information-theoretic measures of static graph complexity were introduced by \citet{dehmer2008information} but do not address progressive damage or percolation. The present work applies successive KL divergence to the sequence of empirical degree distributions under node removal, connecting distributional change rates to the Fisher information of the binomial-thinning residual distribution.
 
@@ -176,9 +189,11 @@ Substantial connectivity redistribution can thus occur while moments change only
 Under random failure the tail erodes slowly; under targeted removal it distorts
 immediately. Both processes can accumulate while $S(q)$ remains largely unchanged.
 KL divergence, comparing full successive distributions, detects this redistribution where
-moment-based indicators miss it.
+moment-based indicators miss it: two distributions with identical $\langle k \rangle$ and
+$\langle k^2 \rangle$ but different tail shapes have nonzero KL divergence, so successive
+KL captures functional-form changes that $\kappa(q)$ is blind to.
 
-For $q < q_c$, $\tilde{P}(k';\,q)$ is smooth (Eq.~\ref{eq:binomial_thinning}); for small $\Delta q$ (away from $q_c$, where tail contraction eventually invalidates the smooth-derivative assumption),
+For $q < q_c$, $\tilde{P}(k';\,q)$ is smooth (Eq.~\ref{eq:binomial_thinning}). For small $\Delta q$ away from $q_c$, the Taylor expansion of $D_{\mathrm{KL}}$ gives
 \begin{equation}
 D_{\mathrm{KL}}\!\left(\tilde{P}_{q+\Delta q}\,\|\,\tilde{P}_q\right)
 \;\approx\;
@@ -191,8 +206,10 @@ D_{\mathrm{KL}}\!\left(\tilde{P}_{q+\Delta q}\,\|\,\tilde{P}_q\right)
 \label{eq:fisher_approx}
 \end{equation}
 where $\mathcal{I}(q)$ is the Fisher information of $\tilde{P}$ with respect to $q$.
-Near $q_c$, accelerated tail contraction drives $\mathcal{I}(q)$ upward, producing the
-signal acceleration the detection rule captures. Under targeted failure, $\mathcal{I}(0)$
+This approximation holds for small $\Delta q$ away from $q_c$; near $q_c$, accelerated
+tail contraction invalidates the smooth-derivative assumption.
+Near $q_c$, $\mathcal{I}(q)$ grows, producing the signal acceleration the detection rule
+captures in the population-level model. Under targeted failure, $\mathcal{I}(0)$
 is already large; no calibration window forms.
 The stability of the calibration window $q\le0.15$ in the empirical CL signal is an
 empirical property visible in \autoref{fig:random_rep} and confirmed across window
@@ -210,7 +227,7 @@ independently, motivating its use for the primary analysis.
 
 We sweep $\gamma \in \{2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9\}$, averaging over
 40 seeds per $\gamma$. We also analyze an empirical CAIDA AS graph and repeat the pipeline
-on an exponent-matched CM ensemble (construction in the Appendix;
+on an exponent-matched CM ensemble (construction details in \S S5;
 results in \S\ref{sec:config_model_check_results}).
 
 \subsection{Failure Models}
@@ -240,7 +257,7 @@ not a continuous-time derivative. We also define degree entropy
 \[
 H(q) = -\sum_k P_q(k)\log_2 P_q(k),
 \]
-which summarizes heterogeneity at a fixed state. KL divergence detects reorganization even when $H(q)$ evolves gradually; entropy serves as a complementary indicator only.
+which summarizes heterogeneity at a fixed state. KL divergence detects reorganization even when $H(q)$ evolves gradually; entropy is included as a control signal to assess specificity, not as a diagnostic.
 
 \subsubsection*{Secondary control signals}
 In the Controls section we also evaluate: (i) successive JS divergence~\citep{lin1991js},
@@ -320,7 +337,7 @@ over both network heterogeneity and removal stochasticity.
 CAIDA experiments use $q_{\max}=0.99$ with 200 points.
 
 We use the CAIDA AS Relationships Dataset (serial-2; snapshot
-\CAIDASnapshot)~\citep{caida_as_rel_20260101}. We parse
+\CAIDASnapshot, $N=78{,}673$ nodes)~\citep{caida_as_rel_20260101}. We parse
 \texttt{AS1|AS2|rel|source}, drop comment lines, and form an undirected simple graph from
 unique AS pairs.
 
@@ -405,7 +422,7 @@ The signal is therefore concentrated in the low-$k$ classes, not the high-$k$ ta
 This is mechanistically expected: when any node is removed under random failure, each neighbour loses one link and shifts one step left in the degree distribution.
 Because $P(k)\sim k^{-\gamma}$ places the overwhelming majority of nodes at low degrees, these shifts produce large absolute changes in $P(k)$ at small $k$ and negligible changes at large $k$ where $P(k)\approx 0$.
 The KL signal therefore tracks diffuse low-degree redistribution in the surviving subgraph, not isolated hub-removal events.
-To quantify this directly, we compute the Pearson correlation between $\tilde{D}_{\mathrm{KL}}(q)$ and $\bar{k}_{\mathrm{removed}}(q)$, the mean original degree of nodes removed at each step: $r = 0.33 \pm 0.23$ (mean $\pm$ std across 40 seeds, $\gamma=2.5$). This moderate positive correlation reflects a step-level physical effect (steps that by chance remove higher-degree nodes produce larger per-step distributional shifts), but under random failure $\bar{k}_{\mathrm{removed}}(q)$ is drawn approximately i.i.d.\ from the original degree distribution at each step and carries no systematic trend with $q$; the pre-collapse rise of $\tilde{D}_{\mathrm{KL}}(q)$ is therefore driven by cumulative reorganization of the surviving subgraph, not by increasing removed-node degree.
+To quantify this directly, we compute the Pearson correlation between $\tilde{D}_{\mathrm{KL}}(q)$ and $\bar{k}_{\mathrm{removed}}(q)$, the mean original degree of nodes removed at each step: a moderate positive correlation (not shown) that reflects a step-level physical effect (steps that by chance remove higher-degree nodes produce larger per-step distributional shifts). Under random failure $\bar{k}_{\mathrm{removed}}(q)$ is drawn approximately i.i.d.\ from the original degree distribution at each step and carries no systematic trend with $q$; the pre-collapse rise of $\tilde{D}_{\mathrm{KL}}(q)$ is therefore driven by cumulative reorganization of the surviving subgraph, not by increasing removed-node degree.
 
 \begin{figure}[htbp]
 \centering
@@ -414,7 +431,7 @@ To quantify this directly, we compute the Pearson correlation between $\tilde{D}
 \caption{Cumulative fraction of $\sum_k |c(k;\,q)|$, where
 $c(k;\,q)=P_{q+\Delta q}(k)\log_2[P_{q+\Delta q}(k)/P_q(k)]$, accounted for by occupied
 degree classes ($P_q(k)>0$) up to the $x$-th percentile (sorted ascending $k$), at
-$q\approx0.30$ under random failure ($N=10{,}000$, seed 0). Absolute values are used so
+$q\approx0.30$ under random failure ($N=10{,}000$, seed 0; the concentration pattern is stable across seeds). Absolute values are used so
 that cancelling contributions do not mask concentration; the normaliser is
 $\sum_k|c(k;\,q)|$, not $D_{\mathrm{KL}}$. All curves lie far above the uniform diagonal:
 the bottom 50\% of occupied degree classes carry 94--99\% of the signal across 10 seeds.
@@ -445,7 +462,7 @@ comparator behavior near the lighter-tail boundary; it is absent from the primar
 ensemble tables, targeted removal, and noise-floor comparison, which are restricted
 to $\gamma\in\{2.1,\ldots,2.9\}$.
 Rolling-sd matches detection rate (40/40 at $\gamma=2.5$, 39/40 at $\gamma=3.0$) but
-$q_{\mathrm{warn}}$ is $\approx0.013$--$0.023$ later, reflecting rolling-window lag.
+$q_{\mathrm{warn}}$ is $\approx0.013$--$0.027$ later, reflecting rolling-window lag.
 Rolling-AC(1): 22/40 ($\gamma=2.5$), 15/40 ($\gamma=2.7$), 18/40 ($\gamma=3.0$), and
 consistently later $q_{\mathrm{warn}}$. The low AC(1) rate reflects the short effective
 memory of the KL sequence relative to the rolling window. Direct baseline deviation on $D_{\mathrm{KL}}$ warns earlier (lower median $q_{\mathrm{warn}}$)
@@ -457,6 +474,8 @@ it matches rolling-SD on detection rate and substantially outperforms rolling-AC
 \subsection{Fisher Information Shape: Mean-Field Reference}
 \label{sec:analytical_kl}
 
+The population-level baseline-deviation rule does not trigger at any $\gamma$; this section shows why and connects the failure of the analytical signal to the empirical detection mechanism.
+
 Supplementary Fig.~S1 shows $\mathcal{I}(q)$, computed numerically from
 $\tilde{P}(k';\,q)$ (Eq.~\ref{eq:binomial_thinning}) via central finite differences,
 for $\gamma\in\{2.1,2.5,2.9\}$ on a log scale.
@@ -466,18 +485,19 @@ $q\approx0.4$--$0.5$, then grows again toward $q_c$; successive KL per step scal
 $(\Delta q)^2\,\mathcal{I}(q)/2$, so the post-minimum rise in successive KL remains small
 in absolute terms. For $\gamma=2.1$ and $\gamma=2.5$, $q_c$ lies beyond $q_{\max}=0.9$
 and the near-$q_c$ uptick is not visible in the figure; for $\gamma=2.9$, $q_c\approx0.80$
-falls within the plotted range. Here $q_c$ denotes the Molloy--Reed percolation threshold
-applied to the population-level residual distribution $\tilde{P}(k';\,q)$; the empirical
-collapse fraction $q_{\mathrm{collapse}}$ (defined by $S(q)<0.1$ in finite graphs)
-differs from this analytical threshold due to finite-size effects and graph
-stochasticity; see \autoref{tab:gamma_sweep_random} for empirical values.
+falls within the plotted range. Here $q_c$ denotes the Molloy--Reed percolation threshold applied to the
+population-level residual distribution $\tilde{P}(k';\,q)$, computed by solving
+$(1-q)\kappa_0=1$ for the discrete power-law degree sequence with $k_{\max}=1000$;
+the empirical collapse fraction $q_{\mathrm{collapse}}$ (defined by $S(q)<0.1$ in
+finite graphs) differs from this analytical threshold due to finite-size effects and
+graph stochasticity; see \autoref{tab:gamma_sweep_random} for empirical values.
 
 \autoref{fig:analytical_kl} shows the analytical $\tilde{D}_{\mathrm{KL}}(q)$ after EWMA
 smoothing ($\alpha=0.20$) alongside the detection threshold $\mu_0+2\sigma_0$ for each
 $\gamma$.
 In every panel the threshold (blue dashed) sits above the post-window signal throughout
 $q>0.15$, and the baseline-deviation rule produces no detection ($q_{\mathrm{warn}}=\mathrm{none}$
-for all $\gamma\in\{2.1,2.3,2.5,2.7,2.9\}$).
+for $\gamma\in\{2.1,2.5,2.9\}$ displayed; confirmed numerically for all five values $\gamma\in\{2.1,2.3,2.5,2.7,2.9\}$).
 The mechanism is visible directly: the calibration window $q\le0.15$ falls in the
 high-amplitude early regime of $\tilde{D}_{\mathrm{KL}}(q)$, so $\mu_0$ is estimated from
 large values and the resulting threshold clears the post-window signal by a substantial margin.
@@ -561,7 +581,7 @@ sep=1.6ex}}
 % Warning marker
 \addplot [orange, dashed, thick, forget plot] coordinates {(\CAIDAQWarn,0) (\CAIDAQWarn,1)};
 % Collapse marker
-\addplot [black, dotted, very thin, opacity=0.7, forget plot] coordinates {(\CAIDAQCollapse,0)
+\addplot [black, dotted, thick, opacity=0.9, forget plot] coordinates {(\CAIDAQCollapse,0)
 (\CAIDAQCollapse,1)};
 \end{axis}
 
@@ -587,8 +607,9 @@ sep=1.6ex}}
 \caption{CAIDA AS graph (2026-01-01, $N=78{,}673$ nodes), random failure (seed 0, $\alpha = 0.20$). GCC fraction $S(q)$ (left axis) and smoothed successive KL $\tilde{D}_{\mathrm{KL}}(q)$ (right axis); calibration window $q \leq 0.15$ shaded. The baseline-deviation rule identifies $q_{\mathrm{warn}} \approx 0.689$ ahead of $q_{\mathrm{collapse}} \approx 0.985$; 40-seed summary in \autoref{tab:caida_summary}.}
 \label{fig:caida_random}
 \end{figure}
-CAIDA replicates the calibration-window-then-departure pattern (40/40, median
-$\Delta_{\mathrm{warn}} \approx 0.24$; \autoref{tab:caida_summary}).
+CAIDA replicates the calibration-window-then-departure pattern: 40/40 warnings,
+median $\Delta_{\mathrm{warn}} \approx 0.24$ across 38 seeds with defined lead time
+(\autoref{tab:caida_summary}).
 
 \input{paper/tables/caida_summary.tex}
 
@@ -618,7 +639,9 @@ sustained departure. In CM, hard-constraint wiring produces churn even at $q\le0
 inflating $(\mu_0,\sigma_0)$ and raising the threshold above the post-window signal.
 The indicator does not trigger in the majority of CM runs not because the signal is absent
 but because stub-pairing randomness elevates the noise floor: in 276/292 CM runs without a
-warning, the post-window signal never exceeded $\mu_0+2\sigma_0$, a consequence of low SNR
+warning, the post-window signal never exceeded $\mu_0+2\sigma_0$; the remaining 16 seeds
+exceeded the threshold only after $q_{\mathrm{collapse}}$ (not shown; both counts computed
+from the CM ensemble). This is a consequence of low SNR
 that reflects the indicator's sensitivity to hard-constraint structural correlations.
 
 \input{paper/tables/baseline_noise_comparison.tex}
@@ -780,117 +803,32 @@ extending the analysis to hub-protecting removal strategies~\citep{lee2022degree
 This research did not involve human participants, animal subjects, or data requiring ethical review.
 
 \subsection*{Availability of data and materials}
-All code required to reproduce the results in this article is available at \url{https://github.com/7astro7/network-robustness-paper} under the Apache 2.0 license. The CAIDA AS Relationships Dataset must be obtained separately from \url{https://www.caida.org/data/as-relationships/}.
+All code required to reproduce the results in this article is available at
+\ifblind
+  [repository URL anonymised for review]
+\else
+  \url{https://github.com/7astro7/network-robustness-paper}
+\fi
+under the Apache 2.0 license. The CAIDA AS Relationships Dataset must be obtained separately from \url{https://www.caida.org/data/as-relationships/}.
 
 \subsection*{Competing interests}
-The author declares no competing interests.
+The author declares none.
 
 \subsection*{Funding}
 No funding was received for this work.
 
+\ifblind\else
 \subsection*{Authors' contributions}
 Z.A.K. conceived the study, developed the methodology, implemented all experiments, analyzed the results, and wrote the manuscript.
+\fi
 
 \subsection*{Acknowledgements}
-Not applicable.
+The author used Claude Code (Anthropic, model \texttt{claude-sonnet-4-6}, accessed via CLI, May 2026) to assist with manuscript drafting and editorial revision, code implementation and debugging, and pipeline verification. The author takes full responsibility for the scientific content and accuracy of this work.
 
-% NOTE: nwslike.bst (CUP NWS house style) has a stack-management bug in
-% format.vol.num.pages that causes BibTeX errors locally. CUP's typesetting
-% infrastructure patches this. Use apalike for local compilation; switch to
-% nwslike for the final submission package.
+% For the submission source package swap this to nwslike — CUP patches the
+% stack bug in format.vol.num.pages that breaks local bibtex compilation.
 \clearpage
 \bibliographystyle{apalike}
 \bibliography{references}
-
-\clearpage
-\section*{Supplementary Material}
-
-\subsection*{S1. Fisher Information of the Residual Degree Distribution}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.75\linewidth]{paper/figures/fig_fisher_info.pdf}
-\sidecapoff
-\caption{Fisher information $\mathcal{I}(q)$ of the residual degree distribution
-$\tilde{P}(k';\,q)$ (Eq.~\ref{eq:binomial_thinning}) under random node removal,
-computed via central finite differences, for $\gamma\in\{2.1,2.5,2.9\}$ (log $y$-axis).
-Shaded: calibration window ($q \le 0.15$); gray dotted vertical line: analytical
-Molloy--Reed threshold $q_c$ for $\gamma=2.9$ (the only case with $q_c < q_{\max}=0.9$).
-$\mathcal{I}(q)$ is large at small $q$, reaches a minimum in the mid-damage range, then
-grows toward $q_c$, confirming that distributional change accelerates as the percolation
-threshold is approached.}
-\label{fig:fisher_info}
-\end{figure}
-
-\subsection*{S2. Reproducibility}
-
-\subsubsection*{One-command reproduction}
-All results can be regenerated from the repository root with:
-\begin{verbatim}
-bash run_docker.sh
-\end{verbatim}
-This builds a Docker image with pinned dependencies and runs the full pipeline,
-producing \texttt{paper.pdf} and all intermediate artifacts in \texttt{paper/}.
-Requires Docker. The CAIDA data file (\texttt{caida\_as\_edges.txt}) must be
-obtained separately; see \texttt{README.md} in the repository for download instructions.
-The pipeline will skip the CAIDA step gracefully if the file is absent.
-
-\subsubsection*{Without Docker}
-Individual steps can be run directly after installing dependencies
-(\texttt{pip install -r requirements.txt}):
-\begin{verbatim}
-# Chung-Lu gamma sweep
-.venv/bin/python main.py
-
-# Sensitivity table
-.venv/bin/python main.py --sensitivity-only
-
-# Configuration-model sweep (exponent-matched)
-.venv/bin/python main.py --graph-model config
-
-# Degree-sequence-matched CM diagnostic
-.venv/bin/python -m runner.degree_matched_config_check
-.venv/bin/python -m runner.make_degree_matched_table
-
-# Baseline-window sensitivity analysis
-.venv/bin/python -m runner.baseline_window_sensitivity
-
-# CAIDA figure
-.venv/bin/python -m runner.make_caida_fig --edges caida_as_edges.txt
-
-# Compile PDF
-latexmk -pdf paper.tex
-\end{verbatim}
-
-\subsection*{S3. Sensitivity to Smoothing and Threshold}
-This table reports sensitivity of warning timing to $\alpha$ and $z$ under the fixed decision rule.
-\input{paper/tables/sensitivity_alpha_z.tex}
-
-\subsection*{S4. Moment-Based Benchmark: Baseline Deviation on $\kappa(q)$}
-\label{sec:kappa_benchmark}
-This benchmark applies the same EWMA smoothing and baseline-deviation rule to $\kappa(q)$ as a low-order-moment comparator.
-\input{paper/tables/control_kappa_random_failure.tex}
-
-\subsection*{S5. Configuration-Model Graph Construction Details}
-\label{sec:config_model_check}
-Detection results and mechanistic interpretation for the exponent-matched configuration-model
-ensemble experiment are reported in the main Results section.
-Construction details are provided here.
-
-\subsubsection*{Exponent-matched CM (main experiment)}
-A target degree sequence is drawn from a discrete power-law distribution with exponent $\gamma$
-and minimum degree $k_{\min}=1$, truncated to $N=10{,}000$ nodes. The sequence is passed to the
-configuration-model stub-matching procedure; self-loops and parallel edges are removed; and the
-experiment is conducted on the largest connected component. Each ($\gamma$, seed) run uses an
-independently sampled degree sequence.
-
-\subsubsection*{Sequence-matched CM (degree-matched diagnostic)}
-For each ($\gamma$, cl\_seed) pair, a Chung--Lu graph $G_{\mathrm{CL}}$ is generated and its
-realized degree sequence $\mathbf{d}$ is extracted. Multiple CM wiring replicates are then
-constructed from $\mathbf{d}$ (varying only the stub-pairing seed), producing CM graphs with
-the exact same degree sequence as the CL source. Self-loops and parallel edges are removed and
-the experiment is conducted on the largest connected component.
-This design controls for the degree sequence and isolates the effect of the hard-constraint
-wiring mechanism.
 
 \end{document}

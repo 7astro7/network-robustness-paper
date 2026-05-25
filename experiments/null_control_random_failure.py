@@ -127,8 +127,9 @@ def run_null_control(
     tex_path = out_path / f"null_control_random_failure_gamma{gamma:.1f}_alpha{alpha:.2f}.tex"
 
     rows: list[NullControlResult] = []
+    print(f"  [null control] gamma={gamma}, {len(seeds)} seeds...", flush=True)
 
-    for seed in seeds:
+    for i, seed in enumerate(seeds, 1):
         np.random.seed(seed)
         random.seed(seed)
 
@@ -170,6 +171,8 @@ def run_null_control(
         ]:
             triggered = int(np.isfinite(q_warn))
             rows.append(NullControlResult(seed=seed, metric=metric, triggered=triggered, q_warn=float(q_warn) if np.isfinite(q_warn) else float("nan")))
+        if i % max(1, len(seeds) // 5) == 0 or i == len(seeds):
+            print(f"  ... {i}/{len(seeds)} seeds done", flush=True)
 
     # --- write CSV ---
     with csv_path.open("w", newline="") as f:
